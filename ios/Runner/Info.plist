@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>TenantSnap requires camera access to take high-resolution spatial photos for spatial checklists.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TenantSnap requires photo library access to upload photographic evidence for your home inspection checklists.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TenantSnap requires microphone access to support video condition logging.</string>
 </dict>
 </plist>

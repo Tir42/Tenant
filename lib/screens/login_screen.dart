@@ -68,13 +68,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Glassmorphic Login/Register Card (Matching layout in screenshot)
-                  AntigravityCard(
-                    glowColor: AntigravityColors.accentTeal,
-                    glowOpacity: 0.25,
-                    borderRadius: 24.0,
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  // White Card Centered Container (Matching room_detail and inspection_flow list screen styles)
+                  Container(
                     width: size.width * 0.9,
+                    constraints: const BoxConstraints(maxWidth: 380),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF2C3E50).withOpacity(0.08),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -87,17 +97,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                         // --- 2. TITLE WITH STYLIZED SNAP ---
                         RichText(
-                          text: TextSpan(
-                            style: AntigravityTextStyles.headingLarge(AntigravityColors.textMain).copyWith(
+                          text: const TextSpan(
+                            style: TextStyle(
+                              color: Color(0xFF2C3E50), // High legibility dark slate
                               fontSize: 26,
-                              shadows: [], // Remove heavy shadow for clean look
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                              fontFamily: 'Montserrat',
                             ),
-                            children: const [
+                            children: [
                               TextSpan(text: 'Tenant'),
                               TextSpan(
                                 text: 'Snap',
                                 style: TextStyle(
-                                  color: Color(0xFF00FF66), // Glowing green snap
+                                  color: Color(0xFF2ECC71), // Clean high-contrast green snap
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
@@ -107,10 +120,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         const SizedBox(height: 6),
                         
                         // --- 3. SUBTITLE ---
-                        Text(
+                        const Text(
                           'Effortless Home Documentation',
-                          style: AntigravityTextStyles.bodyMedium(AntigravityColors.textMuted).copyWith(
+                          style: TextStyle(
+                            color: Color(0xFF7F8C8D), // Legible grey for light mode
+                            fontFamily: 'Montserrat',
                             fontSize: 12,
+                            fontWeight: FontWeight.w500,
                             letterSpacing: 0.8,
                           ),
                         ),
@@ -154,11 +170,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               ),
                             );
                           },
-                          child: Text(
+                          child: const Text(
                             'Forgot Password?',
-                            style: AntigravityTextStyles.bodyMedium(AntigravityColors.textMuted).copyWith(
+                            style: TextStyle(
+                              color: Color(0xFF7F8C8D),
+                              fontFamily: 'Montserrat',
                               decoration: TextDecoration.underline,
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
@@ -215,8 +234,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             isSignUpMode
                                 ? 'Already have an account? Sign In'
                                 : "Don't have an account? Create one",
-                            style: AntigravityTextStyles.bodySmall(AntigravityColors.accentTeal).copyWith(
+                            style: const TextStyle(
+                              color: Color(0xFF007BFF), // Cohesive brand blue
+                              fontFamily: 'Montserrat',
                               fontWeight: FontWeight.bold,
+                              fontSize: 12,
                             ),
                           ),
                         ),

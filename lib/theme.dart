@@ -4,27 +4,24 @@ import 'package:flutter/material.dart';
 // --- Neo-Futuristic Antigravity Theme Constants ---
 
 class AntigravityColors {
-  static const Color primaryDb = Color(0xFF090B19);      // Deep Cosmic Blue (BG Darkest)
-  static const Color secondaryDb = Color(0xFF1B072B);    // Deep Cosmic Purple (BG Lightest)
+  static const Color primaryDb = Color(0xFFE5EEF5);      // Soft sky-blue start
+  static const Color secondaryDb = Color(0xFFC6DBED);    // Deeper pale sky-blue end
   
-  static const Color primaryCard = Color(0x3B0D122C);    // Transparent Glass Cosmic Blue
-  static const Color accentTeal = Color(0xFF00F2FE);     // Electric Teal Accent
-  static const Color roleTenant = Color(0xFF00F0FF);     // Cyan for Tenant
-  static const Color roleLandlord = Color(0xFFFF9100);   // Amber/Orange for Landlord
+  static const Color primaryCard = Color(0xFFFFFFFF);    // Pure White Card Background
+  static const Color accentTeal = Color(0xFF007BFF);     // Brand Blue Accent (Clean & cohesive)
+  static const Color roleTenant = Color(0xFF007BFF);     // Cool brand blue for Tenant
+  static const Color roleLandlord = Color(0xFFFF9100);   // Warm amber/orange for Landlord
   
-  static const Color textMain = Color(0xFFF0F4FF);       // Crisp Cosmic White Text
-  static const Color textMuted = Color(0xFF8A99AD);      // Cosmic Dust Muted Silver-Grey
+  static const Color textMain = Color(0xFF2C3E50);       // High contrast dark-slate text
+  static const Color textMuted = Color(0xFF7F8C8D);      // Muted silver-grey text
 
-  // Premium Background Cosmic Gradient
   static const Gradient bgGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
     colors: [
-      Color(0xFF0A0C1A),
-      Color(0xFF0F1126),
-      Color(0xFF1B0C30),
+      Color(0xFFE5EEF5), // Soft sky-blue start
+      Color(0xFFC6DBED), // Deeper pale sky-blue end
     ],
-    stops: [0.0, 0.5, 1.0],
   );
 }
 
@@ -36,12 +33,6 @@ class AntigravityTextStyles {
     fontWeight: FontWeight.w800,
     letterSpacing: 1.5,
     fontFamily: 'Montserrat',
-    shadows: [
-      Shadow(
-        color: AntigravityColors.accentTeal.withOpacity(0.4),
-        blurRadius: 10,
-      ),
-    ],
   );
 
   static TextStyle headingMedium(Color color) => TextStyle(
@@ -105,7 +96,7 @@ class AntigravityCard extends StatelessWidget {
     this.width,
     this.height,
     this.glowColor = AntigravityColors.accentTeal,
-    this.glowOpacity = 0.25,
+    this.glowOpacity = 0.08,
     this.borderRadius = 18.0,
     this.onTap,
     this.hasActiveGlow = false,
@@ -121,34 +112,27 @@ class AntigravityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: hasActiveGlow
-              ? glowColor
-              : glowColor.withOpacity(0.20),
+              ? glowColor.withOpacity(0.35)
+              : const Color(0xFFBDC3C7).withOpacity(0.2),
           width: hasActiveGlow ? 1.5 : 1.0,
         ),
         boxShadow: [
-          // Subtle neon ambient glow
+          // Subtle elegant soft glow or soft card drop shadow
           BoxShadow(
-            color: glowColor.withOpacity(hasActiveGlow ? glowOpacity * 1.8 : glowOpacity),
-            blurRadius: hasActiveGlow ? 16 : 8,
-            spreadRadius: hasActiveGlow ? 2 : -2,
-            offset: const Offset(0, 0),
-          ),
-          // Deep drop shadow for depth
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: hasActiveGlow 
+                ? glowColor.withOpacity(0.12)
+                : const Color(0xFF2C3E50).withOpacity(0.06),
+            blurRadius: hasActiveGlow ? 16 : 10,
+            spreadRadius: hasActiveGlow ? 1 : 0,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-          child: Padding(
-            padding: padding ?? const EdgeInsets.all(16.0),
-            child: child,
-          ),
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(16.0),
+          child: child,
         ),
       ),
     );
@@ -176,6 +160,7 @@ class NeonCircularProgress extends StatelessWidget {
   final Color activeColor;
   final Color inactiveColor;
   final String? centerText;
+  final Color textColor;
 
   const NeonCircularProgress({
     super.key,
@@ -185,6 +170,7 @@ class NeonCircularProgress extends StatelessWidget {
     this.activeColor = AntigravityColors.accentTeal,
     this.inactiveColor = const Color(0x1AFFFFFF),
     this.centerText,
+    this.textColor = const Color(0xFF2C3E50),
   });
 
   @override
@@ -208,9 +194,11 @@ class NeonCircularProgress extends StatelessWidget {
           ),
           Text(
             centerText ?? '${boundedPercent.toInt()}%',
-            style: AntigravityTextStyles.bodyMedium(AntigravityColors.textMain).copyWith(
+            style: TextStyle(
+              color: textColor,
               fontWeight: FontWeight.w700,
               fontSize: size * 0.24,
+              fontFamily: 'Montserrat',
             ),
           ),
         ],

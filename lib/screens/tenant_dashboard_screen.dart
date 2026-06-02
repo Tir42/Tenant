@@ -3,7 +3,14 @@ import '../theme.dart';
 import 'inspection_flow_list_screen.dart';
 
 class TenantDashboardScreen extends StatefulWidget {
-  const TenantDashboardScreen({super.key});
+  final String role; // 'tenant' or 'landlord'
+  final String? userName;
+
+  const TenantDashboardScreen({
+    super.key,
+    this.role = 'tenant',
+    this.userName,
+  });
 
   @override
   State<TenantDashboardScreen> createState() => _TenantDashboardScreenState();
@@ -44,19 +51,22 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      const Text(
                         'WORKSPACE NODE PANELS',
-                        style: AntigravityTextStyles.headingSmall(AntigravityColors.textMuted).copyWith(
+                        style: TextStyle(
+                          color: Color(0xFF7F8C8D),
+                          fontFamily: 'Montserrat',
                           fontSize: 11,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 2.0,
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AntigravityColors.accentTeal.withOpacity(0.1),
+                          color: const Color(0xFF007BFF).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AntigravityColors.accentTeal.withOpacity(0.3), width: 0.5),
+                          border: Border.all(color: const Color(0xFF007BFF).withOpacity(0.3), width: 0.5),
                         ),
                         child: Row(
                           children: [
@@ -64,14 +74,17 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                               width: 6,
                               height: 6,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF00FF66),
+                                color: Color(0xFF2ECC71), // Clean emerald green
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 6),
-                            Text(
+                            const Text(
                               'SYNCED',
-                              style: AntigravityTextStyles.bodySmall(AntigravityColors.accentTeal).copyWith(
+                              style: TextStyle(
+                                color: Color(0xFF007BFF),
+                                fontFamily: 'Montserrat',
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -95,10 +108,13 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
+    final bool isTenant = widget.role == 'tenant';
+    final Color activeColor = isTenant ? const Color(0xFF007BFF) : const Color(0xFFFF9100);
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Liam's Avatar + Greeting Info
+        // Avatar + Greeting Info
         Row(
           children: [
             // User Avatar Container
@@ -111,24 +127,27 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AntigravityColors.accentTeal,
+                      color: activeColor,
                       width: 1.5,
                     ),
-                    gradient: const RadialGradient(
-                      colors: [Color(0xFF1B072B), Color(0xFF0D122C)],
-                      radius: 0.85,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE5EEF5), Color(0xFFC6DBED)],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AntigravityColors.accentTeal.withOpacity(0.3),
-                        blurRadius: 8,
+                        color: activeColor.withOpacity(0.15),
+                        blurRadius: 6,
                       ),
                     ],
                   ),
                   child: Center(
                     child: Text(
-                      'L',
-                      style: AntigravityTextStyles.headingMedium(AntigravityColors.accentTeal).copyWith(
+                      widget.userName != null && widget.userName!.isNotEmpty
+                          ? widget.userName![0].toUpperCase()
+                          : (isTenant ? 'L' : 'V'),
+                      style: TextStyle(
+                        color: activeColor,
+                        fontFamily: 'Montserrat',
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                       ),
@@ -140,15 +159,15 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   width: 14,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00FF66),
+                    color: const Color(0xFF2ECC71), // Clean high contrast green
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AntigravityColors.primaryDb,
+                      color: Colors.white,
                       width: 2.0,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0xFF00FF66),
+                        color: Color(0xFF2ECC71),
                         blurRadius: 4,
                       ),
                     ],
@@ -162,16 +181,24 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'WELCOME BACK,',
-                  style: AntigravityTextStyles.bodySmall(AntigravityColors.textMuted).copyWith(
+                  isTenant ? 'WELCOME BACK,' : 'PORTAL ACTIVE,',
+                  style: const TextStyle(
+                    color: Color(0xFF7F8C8D),
+                    fontFamily: 'Montserrat',
+                    fontSize: 11,
                     letterSpacing: 1.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Liam Carter',
-                  style: AntigravityTextStyles.headingMedium(AntigravityColors.textMain).copyWith(
+                  widget.userName != null && widget.userName!.isNotEmpty
+                      ? widget.userName!
+                      : (isTenant ? 'Liam Carter' : 'Victoria Sterling'),
+                  style: const TextStyle(
+                    color: Color(0xFF2C3E50),
+                    fontFamily: 'Montserrat',
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -185,10 +212,14 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                backgroundColor: AntigravityColors.primaryDb,
+                backgroundColor: const Color(0xFF2C3E50),
                 content: Text(
                   'Loading cosmic notification logs...',
-                  style: AntigravityTextStyles.bodyMedium(AntigravityColors.accentTeal),
+                  style: TextStyle(
+                    color: activeColor,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             );
@@ -200,28 +231,35 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.04),
+                  color: Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AntigravityColors.textMuted.withOpacity(0.2),
+                    color: const Color(0xFFBDC3C7).withOpacity(0.4),
                     width: 1.0,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.notifications_none_outlined,
-                  color: AntigravityColors.textMain,
+                  color: Color(0xFF2C3E50),
                   size: 24,
                 ),
               ),
               // Bell Notification Badge Glow
               Container(
                 padding: const EdgeInsets.all(5),
-                decoration: const BoxDecoration(
-                  color: AntigravityColors.accentTeal,
+                decoration: BoxDecoration(
+                  color: activeColor,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AntigravityColors.accentTeal,
+                      color: activeColor.withOpacity(0.4),
                       blurRadius: 6,
                     ),
                   ],
@@ -229,7 +267,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                 child: const Text(
                   '2',
                   style: TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
@@ -243,9 +281,26 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
   }
 
   Widget _buildUpcomingInspectionNotification(BuildContext context) {
-    return AntigravityCard(
-      glowColor: AntigravityColors.accentTeal,
-      glowOpacity: 0.2,
+    final bool isTenant = widget.role == 'tenant';
+    final Color activeColor = isTenant ? const Color(0xFF007BFF) : const Color(0xFFFF9100);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: activeColor.withOpacity(0.15),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2C3E50).withOpacity(0.06),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,12 +310,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AntigravityColors.accentTeal.withOpacity(0.12),
+                  color: activeColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.assignment_late_outlined,
-                  color: AntigravityColors.accentTeal,
+                child: Icon(
+                  isTenant ? Icons.assignment_late_outlined : Icons.rate_review_outlined,
+                  color: activeColor,
                   size: 20,
                 ),
               ),
@@ -270,8 +325,10 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'UPCOMING INSPECTION ALERT',
-                      style: AntigravityTextStyles.headingSmall(AntigravityColors.accentTeal).copyWith(
+                      isTenant ? 'UPCOMING INSPECTION ALERT' : 'VERIFICATION TELEMETRY REQUEST',
+                      style: TextStyle(
+                        color: activeColor,
+                        fontFamily: 'Montserrat',
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.0,
@@ -279,9 +336,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Unit 402 - Urban Loft',
-                      style: AntigravityTextStyles.bodyMedium(AntigravityColors.textMain).copyWith(
+                      isTenant ? 'Unit 402 - Urban Loft' : 'Review Request: Unit 402',
+                      style: const TextStyle(
+                        color: Color(0xFF2C3E50),
+                        fontFamily: 'Montserrat',
                         fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -290,7 +350,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(color: Color(0x1EFFFFFF), height: 1),
+          const Divider(color: Color(0xFFE2E8F0), height: 1),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -299,32 +359,43 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SCHEDULED TIMESTAMP',
-                    style: AntigravityTextStyles.bodySmall(AntigravityColors.textMuted),
+                    isTenant ? 'SCHEDULED TIMESTAMP' : 'SUBMITTED BY TENANT',
+                    style: const TextStyle(
+                      color: Color(0xFF7F8C8D),
+                      fontFamily: 'Montserrat',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'June 5, 2026 • 14:00',
-                    style: AntigravityTextStyles.bodyLarge(AntigravityColors.textMain).copyWith(
+                    isTenant ? 'June 5, 2026 • 14:00' : 'Liam Carter • 2 Hours Ago',
+                    style: const TextStyle(
+                      color: Color(0xFF2C3E50),
+                      fontFamily: 'Montserrat',
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
-              // Neon Status countdown badge
+              // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.04),
+                  color: const Color(0xFFF2F4F7),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AntigravityColors.textMuted.withOpacity(0.2),
+                    color: const Color(0xFFBDC3C7).withOpacity(0.3),
                     width: 0.5,
                   ),
                 ),
                 child: Text(
-                  'IN 3 DAYS',
-                  style: AntigravityTextStyles.bodySmall(AntigravityColors.accentTeal).copyWith(
+                  isTenant ? 'IN 3 DAYS' : 'PENDING REVIEW',
+                  style: TextStyle(
+                    color: activeColor,
+                    fontFamily: 'Montserrat',
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -337,6 +408,9 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
   }
 
   Widget _buildActionCardsGrid(BuildContext context) {
+    final bool isTenant = widget.role == 'tenant';
+    final Color roleColor = isTenant ? const Color(0xFF007BFF) : const Color(0xFFFF9100);
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -345,255 +419,223 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
       mainAxisSpacing: 16,
       childAspectRatio: 0.85,
       children: [
-        // Card 1: Start New (Active Cyan-Glowing Interactive Card)
-        AntigravityCard(
+        // Card 1: Action (Cyan-Glowing for tenant, Landlord role color for landlord)
+        _buildDashboardGridItem(
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const InspectionFlowListScreen(),
-              ),
-            );
+            if (isTenant) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const InspectionFlowListScreen(),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Color(0xFF2C3E50),
+                  content: Text(
+                    'Opening verification queue for pending tenant submissions...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              );
+            }
           },
           hasActiveGlow: true,
-          glowColor: AntigravityColors.accentTeal,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AntigravityColors.accentTeal.withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.add_a_photo_outlined,
-                      color: AntigravityColors.accentTeal,
-                      size: 24,
-                    ),
-                  ),
-                  const NeonCircularProgress(
-                    percentage: 0.0,
-                    size: 32,
-                    strokeWidth: 2.5,
-                    centerText: '+',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'START NEW',
-                    style: AntigravityTextStyles.headingSmall(AntigravityColors.textMain).copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Initialize new inspection grid',
-                    style: AntigravityTextStyles.bodySmall(AntigravityColors.textMuted),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          glowColor: roleColor,
+          icon: isTenant ? Icons.add_a_photo_outlined : Icons.rate_review_outlined,
+          title: isTenant ? 'START NEW' : 'VERIFY CHECKS',
+          subtitle: isTenant ? 'Initialize new inspection grid' : '2 pending tenant checklists',
+          progressPercent: isTenant ? 0.0 : 100.0,
+          progressText: isTenant ? '+' : '2',
         ),
 
-        // Card 2: Active Inspections (Progress: 85%)
-        AntigravityCard(
+        // Card 2: Active / Managed
+        _buildDashboardGridItem(
           onTap: () {
-            // Tapping this goes straight to the room checklist flow!
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const InspectionFlowListScreen(),
-              ),
-            );
+            if (isTenant) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const InspectionFlowListScreen(),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Color(0xFF2C3E50),
+                  content: Text(
+                    'Loading property portfolios and telemetry nodes...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              );
+            }
           },
-          glowColor: AntigravityColors.roleTenant,
-          glowOpacity: 0.12,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AntigravityColors.roleTenant.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.insights_outlined,
-                      color: AntigravityColors.roleTenant,
-                      size: 24,
-                    ),
-                  ),
-                  NeonCircularProgress(
-                    percentage: activeInspectionsProgress.toDouble(),
-                    size: 38,
-                    strokeWidth: 3.0,
-                    activeColor: AntigravityColors.roleTenant,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'ACTIVE INSPECTIONS',
-                    style: AntigravityTextStyles.headingSmall(AntigravityColors.textMain).copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '1 Pending submission',
-                    style: AntigravityTextStyles.bodySmall(AntigravityColors.textMuted),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          hasActiveGlow: false,
+          glowColor: roleColor,
+          icon: isTenant ? Icons.insights_outlined : Icons.domain_outlined,
+          title: isTenant ? 'ACTIVE INSPECTIONS' : 'PORTFOLIO',
+          subtitle: isTenant ? '1 Pending submission' : '3 Managed active properties',
+          progressPercent: isTenant ? activeInspectionsProgress.toDouble() : 100.0,
+          progressText: isTenant ? null : '3',
         ),
 
-        // Card 3: History & Reports (Progress: 100%)
-        AntigravityCard(
+        // Card 3: History & Reports
+        _buildDashboardGridItem(
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                backgroundColor: AntigravityColors.primaryDb,
+                backgroundColor: const Color(0xFF2C3E50),
                 content: Text(
-                  'Retrieving compiled spatial report nodes...',
-                  style: AntigravityTextStyles.bodyMedium(AntigravityColors.accentTeal),
+                  isTenant 
+                      ? 'Retrieving compiled spatial report nodes...' 
+                      : 'Accessing verified audit and lease certificates...',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             );
           },
-          glowColor: const Color(0xFF00FF66), // Green glow for complete
-          glowOpacity: 0.12,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00FF66).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.folder_shared_outlined,
-                      color: Color(0xFF00FF66),
-                      size: 24,
-                    ),
-                  ),
-                  NeonCircularProgress(
-                    percentage: historyReportsProgress.toDouble(),
-                    size: 38,
-                    strokeWidth: 3.0,
-                    activeColor: const Color(0xFF00FF66),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'HISTORY & REPORTS',
-                    style: AntigravityTextStyles.headingSmall(AntigravityColors.textMain).copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '4 Saved PDF structures',
-                    style: AntigravityTextStyles.bodySmall(AntigravityColors.textMuted),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          hasActiveGlow: false,
+          glowColor: const Color(0xFF2ECC71), // Green highlight
+          icon: Icons.folder_shared_outlined,
+          title: isTenant ? 'HISTORY & REPORTS' : 'VERIFIED ARCHIVE',
+          subtitle: isTenant ? '4 Saved PDF structures' : '12 Spatial sign-offs',
+          progressPercent: historyReportsProgress.toDouble(),
         ),
 
-        // Card 4: Profile & Support (Progress: 95%)
-        AntigravityCard(
+        // Card 4: Settings / Profile
+        _buildDashboardGridItem(
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                backgroundColor: AntigravityColors.primaryDb,
+                backgroundColor: const Color(0xFF2C3E50),
                 content: Text(
-                  'Connecting telemetry interface to support terminal...',
-                  style: AntigravityTextStyles.bodyMedium(AntigravityColors.accentTeal),
+                  isTenant 
+                      ? 'Connecting telemetry interface to support terminal...' 
+                      : 'Loading landlord portal console & preferences...',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             );
           },
-          glowColor: AntigravityColors.roleLandlord,
-          glowOpacity: 0.12,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AntigravityColors.roleLandlord.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.support_agent_outlined,
-                      color: AntigravityColors.roleLandlord,
-                      size: 24,
-                    ),
-                  ),
-                  NeonCircularProgress(
-                    percentage: profileSupportProgress.toDouble(),
-                    size: 38,
-                    strokeWidth: 3.0,
-                    activeColor: AntigravityColors.roleLandlord,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'PROFILE & SUPPORT',
-                    style: AntigravityTextStyles.headingSmall(AntigravityColors.textMain).copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'All security certificates valid',
-                    style: AntigravityTextStyles.bodySmall(AntigravityColors.textMuted),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          hasActiveGlow: false,
+          glowColor: const Color(0xFFFF9100), // Amber highlight
+          icon: isTenant ? Icons.support_agent_outlined : Icons.settings_outlined,
+          title: isTenant ? 'PROFILE & SUPPORT' : 'PORTAL SETTINGS',
+          subtitle: isTenant ? 'All security certificates valid' : 'Integration telemetry active',
+          progressPercent: profileSupportProgress.toDouble(),
         ),
       ],
+    );
+  }
+
+  Widget _buildDashboardGridItem({
+    required VoidCallback onTap,
+    required bool hasActiveGlow,
+    required Color glowColor,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required double progressPercent,
+    String? progressText,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: hasActiveGlow ? glowColor.withOpacity(0.35) : const Color(0xFFBDC3C7).withOpacity(0.2),
+              width: hasActiveGlow ? 1.5 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: hasActiveGlow 
+                    ? glowColor.withOpacity(0.12)
+                    : const Color(0xFF2C3E50).withOpacity(0.04),
+                blurRadius: hasActiveGlow ? 16 : 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: glowColor.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      color: glowColor,
+                      size: 22,
+                    ),
+                  ),
+                  NeonCircularProgress(
+                    percentage: progressPercent,
+                    size: 36,
+                    strokeWidth: 2.8,
+                    activeColor: glowColor,
+                    inactiveColor: const Color(0xFFE2E8F0),
+                    centerText: progressText,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF2C3E50),
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF7F8C8D),
+                      fontFamily: 'Montserrat',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import '../theme.dart';
 import 'inspection_flow_list_screen.dart';
 
@@ -10,6 +11,7 @@ class PropertyDetailsScreen extends StatefulWidget {
 }
 
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
+  String _selectedRole = 'tenant'; // 'tenant' or 'landlord'
   final _tenantController = TextEditingController();
   final _landlordController = TextEditingController();
   final _addressController = TextEditingController();
@@ -35,13 +37,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AntigravityColors.accentTeal,
-              onPrimary: AntigravityColors.primaryDb,
-              surface: Color(0xFF1B0C30),
-              onSurface: Colors.white,
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF007BFF),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Color(0xFF2C3E50),
             ),
-            dialogBackgroundColor: AntigravityColors.primaryDb,
+            dialogBackgroundColor: Colors.white,
           ),
           child: child!,
         );
@@ -55,10 +57,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   }
 
   void _handleStartInspection() {
-    if (_tenantController.text.isEmpty || _addressController.text.isEmpty) {
+    final bool isTenant = _selectedRole == 'tenant';
+    final String name = isTenant ? _tenantController.text : _landlordController.text;
+    final String roleLabel = isTenant ? 'Tenant Name' : 'Landlord Name';
+
+    if (name.isEmpty || _addressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter the Tenant Name and Property Address to proceed.'),
+        SnackBar(
+          content: Text('Please enter the $roleLabel and Property Address to proceed.'),
         ),
       );
       return;
@@ -90,42 +96,93 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Glassmorphic Card matching the uploaded screenshot layout
-                  AntigravityCard(
-                    glowColor: AntigravityColors.accentTeal,
-                    glowOpacity: 0.25,
-                    borderRadius: 24.0,
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  // Elegant white card centered container matching premium light theme
+                  Container(
                     width: size.width * 0.9,
+                    constraints: const BoxConstraints(maxWidth: 380),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF2C3E50).withOpacity(0.08),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // --- TITLE ---
-                        Text(
+                        const Text(
                           'Tell Us About Your\nNew Home',
-                          style: AntigravityTextStyles.headingLarge(AntigravityColors.textMain).copyWith(
+                          style: TextStyle(
+                            color: Color(0xFF2C3E50),
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.w800,
                             fontSize: 26,
-                            height: 1.2,
-                            shadows: [], // Crisp look as in screenshot
+                            height: 1.25,
                           ),
                         ),
                         const SizedBox(height: 28),
 
-                        // --- 1. TENANT NAME FIELD ---
-                        _buildCustomInputField(
-                          controller: _tenantController,
-                          hintText: 'Tenant Name',
-                          icon: Icons.person,
+                        // --- ROLE SELECTOR DROPDOWN ---
+                        _buildCustomDropdownField(
+                          value: _selectedRole,
+                          icon: _selectedRole == 'tenant' ? Icons.person : Icons.apartment,
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'tenant',
+                              child: Text(
+                                'Register as Tenant',
+                                style: TextStyle(
+                                  color: Color(0xFF2C3E50),
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'landlord',
+                              child: Text(
+                                'Register as Landlord',
+                                style: TextStyle(
+                                  color: Color(0xFF2C3E50),
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedRole = newValue;
+                              });
+                            }
+                          },
                         ),
                         const SizedBox(height: 16),
 
-                        // --- 2. LANDLORD NAME FIELD ---
-                        _buildCustomInputField(
-                          controller: _landlordController,
-                          hintText: 'Landlord Name',
-                          icon: Icons.apartment,
-                        ),
+                        // --- DYNAMIC ROLE-BASED NAME FIELD ---
+                        if (_selectedRole == 'tenant')
+                          _buildCustomInputField(
+                            controller: _tenantController,
+                            hintText: 'Tenant Name',
+                            icon: Icons.person,
+                          )
+                        else
+                          _buildCustomInputField(
+                            controller: _landlordController,
+                            hintText: 'Landlord Name',
+                            icon: Icons.apartment,
+                          ),
                         const SizedBox(height: 16),
 
                         // --- 3. PROPERTY ADDRESS FIELD ---
@@ -256,6 +313,73 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomDropdownField({
+    required String value,
+    required List<DropdownMenuItem<String>> items,
+    required ValueChanged<String?> onChanged,
+    required IconData icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField2<String>(
+        value: value,
+        isExpanded: true,
+        style: const TextStyle(
+          color: Color(0xFF2C3E50),
+          fontWeight: FontWeight.w600,
+          fontFamily: 'Montserrat',
+          fontSize: 14,
+        ),
+        items: items,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          prefixIcon: Icon(
+            icon,
+            color: const Color(0xFF007BFF),
+            size: 20,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+        buttonStyleData: const ButtonStyleData(
+          height: 48,
+          padding: EdgeInsets.zero,
+        ),
+        iconStyleData: const IconStyleData(
+          icon: Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Color(0xFF007BFF),
+              size: 24,
+            ),
+          ),
+        ),
+        dropdownStyleData: DropdownStyleData(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+          ),
+          elevation: 12,
+        ),
+        menuItemStyleData: const MenuItemStyleData(
+          height: 48,
+          padding: EdgeInsets.symmetric(horizontal: 16),
         ),
       ),
     );
