@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../theme.dart';
+import 'package:tenantsnap/screens/theme.dart';
+
 import '../models/inspection_model.dart';
 
 class ReportReviewScreen extends StatelessWidget {

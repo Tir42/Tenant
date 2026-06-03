@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import '../theme.dart';
+import 'package:tenantsnap/screens/theme.dart';
+
 import 'tenant_dashboard_screen.dart';
 
 class RoleSelectionScreen extends StatefulWidget {

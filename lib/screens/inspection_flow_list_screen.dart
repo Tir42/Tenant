@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme.dart';
+import 'package:tenantsnap/screens/theme.dart';
+
 import '../models/inspection_model.dart';
 import 'room_detail_screen.dart';
 import 'report_review_screen.dart';
@@ -14,11 +15,18 @@ class InspectionFlowListScreen extends StatefulWidget {
 class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
   // Local state for the dynamic inspection rooms list
   late List<RoomInspection> _roomsList;
+  final ScrollController _listScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _roomsList = [];
+    _roomsList = getDefaultInspectionData();
+  }
+
+  @override
+  void dispose() {
+    _listScrollController.dispose();
+    super.dispose();
   }
 
   // Handle callback updates from detail screen
@@ -250,23 +258,13 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Your Inspection\nProgress',
+                                    'Tell Us About Your\nNew Home',
                                     style: TextStyle(
                                       color: Color(0xFF2C3E50),
                                       fontFamily: 'Montserrat',
                                       fontWeight: FontWeight.w800,
                                       fontSize: 22,
                                       height: 1.25,
-                                    ),
-                                  ),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    'Select a room to begin',
-                                    style: TextStyle(
-                                      color: Color(0xFF7F8C8D),
-                                      fontFamily: 'Montserrat',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
                                     ),
                                   ),
                                 ],
@@ -361,8 +359,27 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                             ),
                           )
                         else
-                          Column(
-                            children: _roomsList.map((room) => _buildRoomTile(context, room)).toList(),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: size.height * 0.42,
+                            ),
+                            child: Scrollbar(
+                              controller: _listScrollController,
+                              thumbVisibility: true,
+                              trackVisibility: true,
+                              thickness: 5.0,
+                              radius: const Radius.circular(10),
+                              child: SingleChildScrollView(
+                                controller: _listScrollController,
+                                physics: const BouncingScrollPhysics(),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: Column(
+                                    children: _roomsList.map((room) => _buildRoomTile(context, room)).toList(),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         
                         const SizedBox(height: 20),
@@ -393,7 +410,6 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
       photoCount += item.photos.length;
     }
 
-    // Shorten category names for perfect layout symmetry
     String displayLeftName = room.name;
     if (displayLeftName == "Utility / Laundry Room") displayLeftName = "Laundry";
     if (displayLeftName == "Pantry / Storage Room") displayLeftName = "Pantry";
@@ -407,6 +423,15 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
     if (displayLeftName == "Living Room / Lounge") displayLeftName = "Living Room";
     if (displayLeftName == "Entry / Mudroom") displayLeftName = "Entry";
 
+    String subtitleText = "";
+    if (room.name == "Bathroom") {
+      subtitleText = "00";
+    } else if (room.name == "Washroom") {
+      subtitleText = "";
+    } else {
+      subtitleText = photoCount > 0 ? "$photoCount photos" : "No photos captured";
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Ink(
@@ -414,154 +439,65 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
           color: const Color(0xFFF2F4F7), // Light-grey cards
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(
-          children: [
-            // Left click area: Navigate to RoomDetailScreen
-            Expanded(
-              flex: 12,
-              child: InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => RoomDetailScreen(
-                        room: room,
-                        onUpdated: _updateRoomState,
-                      ),
-                    ),
-                  );
-                },
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  bottomLeft: Radius.circular(16),
+        child: InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => RoomDetailScreen(
+                  room: room,
+                  onUpdated: _updateRoomState,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                  child: Row(
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+            child: Row(
+              children: [
+                Icon(
+                  room.icon,
+                  color: const Color(0xFF2C3E50),
+                  size: 22,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        room.icon,
-                        color: const Color(0xFF2C3E50),
-                        size: 20,
+                      Text(
+                        displayLeftName,
+                        style: const TextStyle(
+                          color: Color(0xFF2C3E50),
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          displayLeftName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      if (subtitleText.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitleText,
                           style: const TextStyle(
-                            color: Color(0xFF2C3E50),
+                            color: Color(0xFF8F9CA9),
                             fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Subtle vertical separator line between left & right click zones
-            Container(
-              height: 28,
-              width: 1,
-              color: const Color(0xFFBDC3C7).withOpacity(0.3),
-            ),
-
-            // Right click area: Navigate to ReportReviewScreen for this specific room
-            Expanded(
-              flex: 14,
-              child: InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => ReportReviewScreen(
-                        singleRoom: room,
-                      ),
-                    ),
-                  );
-                },
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${room.number} ${room.name.split(" / ").first}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFF007BFF), // Cohesive brand blue link color
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w800,
-                                fontSize: 11,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              photoCount > 0
-                                  ? '($photoCount ${photoCount == 1 ? "photo" : "photos"})'
-                                  : '(No photos)',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFF8F9CA9),
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 9,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Progress badge on the far right (if progress > 0)
-                      const SizedBox(width: 8),
-                      if (room.progress > 0) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: room.progress == 100.0
-                                ? const Color(0xFF2ECC71).withOpacity(0.12)
-                                : const Color(0xFF007BFF).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${room.progress.toInt()}%',
-                            style: TextStyle(
-                              color: room.progress == 100.0
-                                  ? const Color(0xFF2ECC71)
-                                  : const Color(0xFF007BFF),
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
                       ],
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFF007BFF),
-                        size: 16,
-                      ),
                     ],
                   ),
                 ),
-              ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF8F9CA9),
+                  size: 20,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

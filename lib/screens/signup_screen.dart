@@ -1,33 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:tenantsnap/screens/theme.dart';
 
-import 'forgot_password_screen.dart';
 import 'property_details_screen.dart';
-import 'signup_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+  final _confirmPasswordController = TextEditingController();
+
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   void _handlePrimaryAction() {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
+    if (_firstNameController.text.trim().isEmpty ||
+        _lastNameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _phoneController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill in all credentials.'),
+          content: Text('Please fill in all details to create your profile.'),
+        ),
+      );
+      return;
+    }
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match.'),
         ),
       );
       return;
@@ -35,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Decrypting credentials profile...'),
+        content: Text('Generating new secure tenant profile...'),
       ),
     );
 
@@ -50,15 +69,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
-    return PopScope(
-      canPop: true, // Allow the screen to pop immediately
-      onPopInvokedWithResult: (bool didPop, Object? result) {
-        if (didPop) {
-          // Trigger the update callback so parent screens get the latest comments
-          // _triggerUpdate();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -95,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         // --- 1. VECTOR LOGO ---
                         CustomPaint(
                           size: const Size(80, 70),
-                          painter: LoginLogoPainter(),
+                          painter: SignUpLogoPainter(),
                         ),
                         const SizedBox(height: 16),
 
@@ -122,10 +133,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ),
                         ),
                         const SizedBox(height: 6),
-                        
+
                         // --- 3. SUBTITLE ---
                         const Text(
-                          'Effortless Home Documentation',
+                          'Create Secure Account',
                           style: TextStyle(
                             color: Color(0xFF7F8C8D),
                             fontFamily: 'Montserrat',
@@ -137,12 +148,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         const SizedBox(height: 28),
 
                         // --- 4. TEXT FIELDS ---
+                        // First Name & Last Name
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCustomTextField(
+                                controller: _firstNameController,
+                                hintText: 'First Name',
+                                icon: Icons.person_outline,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildCustomTextField(
+                                controller: _lastNameController,
+                                hintText: 'Last Name',
+                                icon: Icons.person_outline,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
                         // Email Field
                         _buildCustomTextField(
                           controller: _emailController,
                           hintText: 'Email',
                           icon: Icons.mail_outline,
                           keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Phone Number
+                        _buildCustomTextField(
+                          controller: _phoneController,
+                          hintText: 'Phone Number',
+                          icon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 14),
 
@@ -153,30 +195,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           icon: Icons.lock_outline,
                           obscureText: true,
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 14),
 
-                        // --- 5. FORGOT PASSWORD LINK ---
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                            );
-                          },
-
-                          child: const Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Color(0xFF7F8C8D),
-                              fontFamily: 'Montserrat',
-                              decoration: TextDecoration.underline,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                        // Confirm Password Field
+                        _buildCustomTextField(
+                          controller: _confirmPasswordController,
+                          hintText: 'Confirm Password',
+                          icon: Icons.lock_outline,
+                          obscureText: true,
                         ),
                         const SizedBox(height: 24),
 
-                        // --- 6. PRIMARY ROUNDED BUTTON ---
+                        // --- 5. PRIMARY BUTTON ---
                         Container(
                           width: double.infinity,
                           height: 48,
@@ -202,11 +232,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
+                                  borderRadius: BorderRadius.circular(24)),
                             ),
                             child: Text(
-                              'Sign In',
+                              'Create Account',
                               style: AntigravityTextStyles.bodyLarge(Colors.white).copyWith(
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
@@ -216,17 +245,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         ),
                         const SizedBox(height: 16),
 
-                        // --- 7. NAVIGATE TO SIGN UP ---
+                        // --- 6. NAVIGATE BACK TO SIGN IN ---
                         GestureDetector(
                           onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const SignUpScreen(),
-                              ),
-                            );
+                            Navigator.of(context).pop();
                           },
                           child: const Text(
-                            "Don't have an account? Create one",
+                            'Already have an account? Sign In',
                             style: TextStyle(
                               color: Color(0xFF007BFF),
                               fontFamily: 'Montserrat',
@@ -244,7 +269,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
         ),
       ),
-      )
     );
   }
 
@@ -298,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 }
 
 // Custom Painter for the Logo (matching the design)
-class LoginLogoPainter extends CustomPainter {
+class SignUpLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final double w = size.width;

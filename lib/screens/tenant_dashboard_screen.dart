@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme.dart';
+import 'package:tenantsnap/screens/theme.dart';
+
 import 'inspection_flow_list_screen.dart';
 import 'report_review_screen.dart';
 

@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../theme.dart';
+import 'package:tenantsnap/screens/theme.dart';
+
 import '../models/inspection_model.dart';
 
 class RoomDetailScreen extends StatefulWidget {
@@ -53,6 +54,51 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   void _triggerUpdate() {
     widget.room.comment = _commentController.text;
     widget.onUpdated(widget.room);
+  }
+
+  void _loadDemoData() {
+    setState(() {
+      for (var item in _checklist) {
+        final nameLower = item.name.toLowerCase();
+        if (nameLower.contains('ceiling')) {
+          item.status = RoomItemStatus.sad;
+        } else if (nameLower.contains('wall') ||
+                   nameLower.contains('floor') ||
+                   nameLower.contains('door') ||
+                   nameLower.contains('window') ||
+                   nameLower.contains('light') ||
+                   nameLower.contains('outlet')) {
+          item.status = RoomItemStatus.happy;
+        }
+
+        // Add some mock photos for demonstration
+        if (nameLower.contains('door') || nameLower.contains('window')) {
+          item.photos = ['assets/bedroom_closet_door.jpg'];
+        } else if (nameLower.contains('outlet') || nameLower.contains('light')) {
+          item.photos = ['assets/bedroom_walls_outlet.jpg'];
+        }
+      }
+
+      // Synchronize timeline feed photos
+      _photos = [];
+      for (var item in _checklist) {
+        for (var path in item.photos) {
+          _photos.add({
+            "path": path,
+            "timestamp": "2026-06-02 10:33 • GPS 45.42, -75.69",
+          });
+        }
+      }
+      
+      widget.room.recalculateProgress();
+    });
+    _triggerUpdate();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Demo data loaded successfully!'),
+      ),
+    );
   }
 
   final ImagePicker _picker = ImagePicker();
@@ -424,6 +470,18 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                         ),
                         const SizedBox(height: 24),
 
+                        const Text(
+                          'VERIFY STATUS NODES',
+                          style: TextStyle(
+                            color: Color(0xFF95A5A6),
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
                         // Checklist items workspace area styled with light-blue inner background
                         Container(
                           padding: const EdgeInsets.all(10),
@@ -439,6 +497,32 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
                         // Add Custom Feature button exactly matching mockup solid blue button styling
                         _buildAddFeatureButton(),
+                        const SizedBox(height: 12),
+
+                        // Save and Go Back Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: _saveAndGoBack,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF007BFF), // Cohesive brand blue
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            child: const Text(
+                              'Save',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -485,7 +569,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       thumbnailBuilder: _buildPhotoThumbnail,
     );
   }
-
+  void _saveAndGoBack() {
+    widget.room.recalculateProgress();
+    widget.onUpdated(widget.room);
+    Navigator.of(context).pop(widget.room);
+  }
   void _showPhotoPreviewDialog(InspectionItem item, String photoPath) {
     final bool isRealFile = !photoPath.startsWith('assets/');
 

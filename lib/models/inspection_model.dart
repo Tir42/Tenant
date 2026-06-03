@@ -397,3 +397,98 @@ List<RoomInspection> getMockInspectionData() {
   }
   return mockData;
 }
+
+List<RoomInspection> getDefaultInspectionData() {
+  return [
+    RoomInspection(
+      id: 1,
+      number: "01",
+      name: "Bedroom 1",
+      icon: Icons.bed_outlined,
+      progress: 0.0,
+      checklist: [
+        InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Floor", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Doors / Windows", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Light Fixtures", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Outlets", status: RoomItemStatus.neutral),
+      ],
+    ),
+    RoomInspection(
+      id: 2,
+      number: "02",
+      name: "Living Room",
+      icon: Icons.chair_outlined,
+      progress: 0.0,
+      checklist: [
+        InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Floor", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Doors / Windows", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Light Fixtures", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Outlets", status: RoomItemStatus.neutral),
+      ],
+    ),
+    RoomInspection(
+      id: 3,
+      number: "03",
+      name: "Living Room",
+      icon: Icons.chair_outlined,
+      progress: 0.0,
+      checklist: [
+        InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Floor", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Doors / Windows", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Light Fixtures", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Outlets", status: RoomItemStatus.neutral),
+      ],
+    ),
+    RoomInspection(
+      id: 4,
+      number: "04",
+      name: "Kitchen",
+      icon: Icons.kitchen_outlined,
+      progress: 0.0,
+      checklist: [
+        InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Walls / Backsplash", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Floor / Tiles", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Cabinets / Countertops", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Sink / Faucet", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Appliances", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Outlets", status: RoomItemStatus.neutral),
+      ],
+    ),
+    RoomInspection(
+      id: 5,
+      number: "05",
+      name: "Bathroom",
+      icon: Icons.bathtub_outlined,
+      progress: 0.0,
+      checklist: [
+        InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Walls / Tiles", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Floor / Tiles", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Sink / Faucet", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Toilet", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Shower / Tub", status: RoomItemStatus.neutral),
+      ],
+    ),
+    RoomInspection(
+      id: 6,
+      number: "06",
+      name: "Washroom",
+      icon: Icons.local_laundry_service_outlined,
+      progress: 0.0,
+      checklist: [
+        InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Floor", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Washer / Dryer", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Sink / Faucet", status: RoomItemStatus.neutral),
+      ],
+    ),
+  ];
+}

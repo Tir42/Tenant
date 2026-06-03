@@ -1,21 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart'; // <-- Import package
+import 'package:tenantsnap/screens/theme.dart';
 import 'screens/login_screen.dart';
-import 'theme.dart';
 
 void main() {
+  // 1. Initialize WidgetsBinding
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  
+  // 2. Preserve native splash screen
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
   runApp(const TenantSnapApp());
 }
 
-class TenantSnapApp extends StatelessWidget {
+class TenantSnapApp extends StatefulWidget {
   const TenantSnapApp({super.key});
+
+  @override
+  State<TenantSnapApp> createState() => _TenantSnapAppState();
+}
+
+class _TenantSnapAppState extends State<TenantSnapApp> {
+  @override
+  void initState() {
+    super.initState();
+    _initialization();
+  }
+
+  void _initialization() async {
+    // 3. Keep splash screen for 2 seconds (or load your settings/APIs here)
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // 4. Remove splash screen and transition to LoginScreen
+    FlutterNativeSplash.remove();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'TenantSnap',
       debugShowCheckedModeBanner: false,
-      
-      // Neo-Futuristic Dark Theme Mapping
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: AntigravityColors.primaryDb,
@@ -27,21 +51,8 @@ class TenantSnapApp extends StatelessWidget {
           surface: AntigravityColors.primaryCard,
         ),
         fontFamily: 'Montserrat',
-        dividerTheme: const DividerThemeData(
-          color: Color(0x15FFFFFF),
-          space: 1,
-        ),
-        snackBarTheme: SnackBarThemeData(
-          backgroundColor: AntigravityColors.primaryDb,
-          contentTextStyle: AntigravityTextStyles.bodyMedium(AntigravityColors.accentTeal),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: AntigravityColors.accentTeal.withOpacity(0.3), width: 0.5),
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
+        // ... rest of your theme properties ...
       ),
-      
       home: const LoginScreen(),
     );
   }
