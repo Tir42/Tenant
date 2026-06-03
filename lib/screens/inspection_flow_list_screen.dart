@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models/inspection_model.dart';
 import 'room_detail_screen.dart';
+import 'report_review_screen.dart';
 
 class InspectionFlowListScreen extends StatefulWidget {
   const InspectionFlowListScreen({super.key});
@@ -17,78 +18,7 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-populate with the exact list from the mockup screenshot
-    _roomsList = [
-      RoomInspection(
-        id: 1,
-        number: "1",
-        name: "Bedroom 1",
-        icon: Icons.bed_outlined,
-        progress: 0.0,
-        checklist: [
-          InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Floor / Carpet / Tiles", status: RoomItemStatus.neutral),
-        ],
-      ),
-      RoomInspection(
-        id: 2,
-        number: "2",
-        name: "Living Room",
-        icon: Icons.chair_outlined,
-        progress: 0.0,
-        checklist: [
-          InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Floor / Carpet / Tiles", status: RoomItemStatus.neutral),
-        ],
-      ),
-      RoomInspection(
-        id: 3,
-        number: "3",
-        name: "Living Room",
-        icon: Icons.tungsten_outlined, // floor lamp / light bulb icon
-        progress: 0.0,
-        checklist: [
-          InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
-        ],
-      ),
-      RoomInspection(
-        id: 4,
-        number: "4",
-        name: "Kitchen",
-        icon: Icons.kitchen_outlined,
-        progress: 0.0,
-        checklist: [
-          InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Appliances", status: RoomItemStatus.neutral),
-        ],
-      ),
-      RoomInspection(
-        id: 5,
-        number: "5",
-        name: "Bathroom",
-        icon: Icons.bathtub_outlined,
-        progress: 0.0,
-        checklist: [
-          InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
-        ],
-      ),
-      RoomInspection(
-        id: 6,
-        number: "6",
-        name: "Washroom",
-        icon: Icons.local_laundry_service_outlined,
-        progress: 0.0,
-        checklist: [
-          InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
-          InspectionItem(name: "Walls", status: RoomItemStatus.neutral),
-        ],
-      ),
-    ];
+    _roomsList = [];
   }
 
   // Handle callback updates from detail screen
@@ -311,49 +241,140 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Row with Header title & an elegant close/back button at top-right
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Text(
-                              'Tell Us About Your\nNew Home',
-                              style: TextStyle(
-                                color: Color(0xFF2C3E50),
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w800,
-                                fontSize: 23,
-                                height: 1.25,
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Your Inspection\nProgress',
+                                    style: TextStyle(
+                                      color: Color(0xFF2C3E50),
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 22,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    'Select a room to begin',
+                                    style: TextStyle(
+                                      color: Color(0xFF7F8C8D),
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () => Navigator.of(context).pop(),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF2F4F7),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close_rounded,
-                                  color: Color(0xFF7F8C8D),
-                                  size: 16,
+                            if (_roomsList.isNotEmpty) ...[
+                              const SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => ReportReviewScreen(
+                                        allRooms: _roomsList,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF007BFF), // Cohesive brand blue
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF007BFF).withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.description_outlined,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 24),
 
-                        // List of spaces exactly matching the mock list layout
-                        Column(
-                          children: _roomsList.map((room) => _buildRoomTile(context, room)).toList(),
-                        ),
+                        if (_roomsList.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 16.0),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF2F4F7),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: const Color(0xFFBDC3C7).withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.holiday_village_outlined,
+                                      color: Color(0xFF8F9CA9),
+                                      size: 40,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No Spaces Added Yet',
+                                    style: TextStyle(
+                                      color: Color(0xFF2C3E50),
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Begin your property inspection by adding rooms or checklist areas.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Color(0xFF7F8C8D),
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          Column(
+                            children: _roomsList.map((room) => _buildRoomTile(context, room)).toList(),
+                          ),
                         
                         const SizedBox(height: 20),
 
                         // Add Custom Room Button
                         _buildAddRoomButton(),
+
+                        if (_roomsList.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          // Review & Send Report Button
+                          _buildReviewReportButton(),
+                        ],
                       ],
                     ),
                   ),
@@ -367,86 +388,180 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
   }
 
   Widget _buildRoomTile(BuildContext context, RoomInspection room) {
-    // Determine dynamic photos subtitle
-    String? subtitle = "No photos captured";
-    if (room.name == "Bathroom") {
-      subtitle = "00";
-    } else if (room.name == "Washroom") {
-      subtitle = null; // No subtitle layout spacing for Washroom to align exactly with mockup screenshot
-    } else {
-      int photoCount = 0;
-      for (var item in room.checklist) {
-        photoCount += item.photos.length;
-      }
-      if (photoCount > 0) {
-        subtitle = photoCount == 1 ? "1 photo captured" : "$photoCount photos captured";
-      }
+    int photoCount = 0;
+    for (var item in room.checklist) {
+      photoCount += item.photos.length;
     }
+
+    // Shorten category names for perfect layout symmetry
+    String displayLeftName = room.name;
+    if (displayLeftName == "Utility / Laundry Room") displayLeftName = "Laundry";
+    if (displayLeftName == "Pantry / Storage Room") displayLeftName = "Pantry";
+    if (displayLeftName == "Balcony / Terrace") displayLeftName = "Balcony";
+    if (displayLeftName == "Garage / Carport") displayLeftName = "Garage";
+    if (displayLeftName == "Study / Office Room") displayLeftName = "Study";
+    if (displayLeftName == "Basement / Cellar") displayLeftName = "Basement";
+    if (displayLeftName == "Attic / Loft") displayLeftName = "Attic";
+    if (displayLeftName == "Sunroom / Conservatory") displayLeftName = "Sunroom";
+    if (displayLeftName == "Workshop / Hobby Room") displayLeftName = "Workshop";
+    if (displayLeftName == "Living Room / Lounge") displayLeftName = "Living Room";
+    if (displayLeftName == "Entry / Mudroom") displayLeftName = "Entry";
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => RoomDetailScreen(
-                  room: room,
-                  onUpdated: _updateRoomState,
-                ),
-              ),
-            );
-          },
+      child: Ink(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F4F7), // Light-grey cards
           borderRadius: BorderRadius.circular(16),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F4F7), // Light-grey cards
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-            child: Row(
-              children: [
-                // Custom Slate Icon
-                Icon(
-                  room.icon,
-                  color: const Color(0xFF2C3E50),
-                  size: 22,
-                ),
-                const SizedBox(width: 16),
-                
-                // Name and Description
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        room.name,
-                        style: const TextStyle(
-                          color: Color(0xFF2C3E50),
-                          fontFamily: 'Montserrat',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
+        ),
+        child: Row(
+          children: [
+            // Left click area: Navigate to RoomDetailScreen
+            Expanded(
+              flex: 12,
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => RoomDetailScreen(
+                        room: room,
+                        onUpdated: _updateRoomState,
                       ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle,
+                    ),
+                  );
+                },
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        room.icon,
+                        color: const Color(0xFF2C3E50),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          displayLeftName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Color(0xFF8F9CA9),
+                            color: Color(0xFF2C3E50),
                             fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+
+            // Subtle vertical separator line between left & right click zones
+            Container(
+              height: 28,
+              width: 1,
+              color: const Color(0xFFBDC3C7).withOpacity(0.3),
+            ),
+
+            // Right click area: Navigate to ReportReviewScreen for this specific room
+            Expanded(
+              flex: 14,
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ReportReviewScreen(
+                        singleRoom: room,
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${room.number} ${room.name.split(" / ").first}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF007BFF), // Cohesive brand blue link color
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              photoCount > 0
+                                  ? '($photoCount ${photoCount == 1 ? "photo" : "photos"})'
+                                  : '(No photos)',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF8F9CA9),
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Progress badge on the far right (if progress > 0)
+                      const SizedBox(width: 8),
+                      if (room.progress > 0) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: room.progress == 100.0
+                                ? const Color(0xFF2ECC71).withOpacity(0.12)
+                                : const Color(0xFF007BFF).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${room.progress.toInt()}%',
+                            style: TextStyle(
+                              color: room.progress == 100.0
+                                  ? const Color(0xFF2ECC71)
+                                  : const Color(0xFF007BFF),
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 9,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Color(0xFF007BFF),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -485,6 +600,58 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                 'Add Custom Room',
                 style: TextStyle(
                   color: Color(0xFF2C3E50),
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+    )
+    );
+  }
+
+  Widget _buildReviewReportButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ReportReviewScreen(
+                allRooms: _roomsList,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: const Color(0xFF007BFF), // Cohesive brand blue
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF007BFF).withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.assignment_turned_in_outlined,
+                color: Colors.white,
+                size: 16,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Review & Send Report',
+                style: TextStyle(
+                  color: Colors.white,
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
                   fontSize: 14,

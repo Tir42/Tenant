@@ -28,42 +28,19 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     super.initState();
     _commentController = TextEditingController(text: widget.room.comment);
     
-    // Seed checklist items exactly as shown in the mockup screenshot:
-    // 1. Ceiling (😄 active)
-    // 2. Walls (😄 active)
-    // 3. Floor / Carpet / Tiles (neutral/inactive)
-    // 4. Doors / Door Frames (showing 2 photo thumbnails, no smileys)
-    // 5. Closets / Wardrobes (smileys & camera icon)
-    // 6. Shelving (smileys & camera icon)
-    // 7. Closets / Wardrobes (smileys & camera icon)
-    // 8. Windows / Blinds / Curtains (😟 active & camera icon)
-    // 9. Light Fixtures (smileys & camera icon)
-    // 10. Electrical Outlets (showing 2 photo thumbnails, no smileys)
-    _checklist = [
-      InspectionItem(name: "Ceiling", status: RoomItemStatus.happy),
-      InspectionItem(name: "Walls", status: RoomItemStatus.happy),
-      InspectionItem(name: "Floor / Carpet / Tiles", status: RoomItemStatus.neutral),
-      InspectionItem(name: "Doors / Door Frames", status: RoomItemStatus.happy, photos: ["assets/bedroom_door1.jpg", "assets/bedroom_door2.jpg"]),
-      InspectionItem(name: "Closets / Wardrobes", status: RoomItemStatus.neutral),
-      InspectionItem(name: "Shelving", status: RoomItemStatus.neutral),
-      InspectionItem(name: "Closets / Wardrobes", status: RoomItemStatus.neutral),
-      InspectionItem(name: "Windows / Blinds / Curtains", status: RoomItemStatus.sad),
-      InspectionItem(name: "Light Fixtures", status: RoomItemStatus.neutral),
-      InspectionItem(name: "Electrical Outlets", status: RoomItemStatus.happy, photos: ["assets/outlet1.jpg", "assets/outlet2.jpg"]),
-    ];
+    // Dynamically load the checklist directly from the configured room model
+    _checklist = widget.room.checklist;
 
-    // Synchronize initial mockup photos in timeline feed
-    _photos = [
-      {"path": "assets/bedroom_door1.jpg", "timestamp": "2026-06-02 10:14 • GPS 45.42, -75.69"},
-      {"path": "assets/bedroom_door2.jpg", "timestamp": "2026-06-02 10:14 • GPS 45.42, -75.69"},
-      {"path": "assets/outlet1.jpg", "timestamp": "2026-06-02 10:15 • GPS 45.42, -75.69"},
-      {"path": "assets/outlet2.jpg", "timestamp": "2026-06-02 10:15 • GPS 45.42, -75.69"},
-    ];
-    
-    // Set mock data room checklist to match our mockup checklist
-    widget.room.checklist.clear();
-    widget.room.checklist.addAll(_checklist);
-    widget.room.recalculateProgress();
+    // Dynamically synchronize existing item photos in timeline feed
+    _photos = [];
+    for (var item in _checklist) {
+      for (var path in item.photos) {
+        _photos.add({
+          "path": path,
+          "timestamp": "2026-06-02 10:14 • GPS 45.42, -75.69",
+        });
+      }
+    }
   }
 
   @override
@@ -418,15 +395,20 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '${widget.room.name} Inspection',
-                              style: const TextStyle(
-                                color: Color(0xFF2C3E50),
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w800,
-                                fontSize: 21,
+                            Expanded(
+                              child: Text(
+                                '${widget.room.name} Inspection',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFF2C3E50),
+                                  fontFamily: 'Montserrat',
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 21,
+                                ),
                               ),
                             ),
+                            const SizedBox(width: 12),
                             GestureDetector(
                               onTap: () {
                                 _triggerUpdate();
@@ -470,9 +452,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   }
 
   Widget _buildChecklistRow(InspectionItem item) {
-    final bool canSnap = item.name != "Ceiling" && 
-                         item.name != "Walls" && 
-                         item.name != "Floor / Carpet / Tiles";
+    final String lowercaseName = item.name.toLowerCase();
+    final bool canSnap = !lowercaseName.startsWith("ceiling") && 
+                         !lowercaseName.startsWith("walls") && 
+                         !lowercaseName.startsWith("floor");
 
     return InspectionChecklistRow(
       item: item,
