@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum RoomItemStatus { happy, sad, neutral }
 
 class InspectionItem {
@@ -18,7 +16,8 @@ class RoomInspection {
   final int id;
   final String number;
   final String name;
-  final IconData icon;
+  // Use a simple string identifier for the icon to avoid depending on Flutter packages here
+  final String icon;
   double progress; // 0 to 100
   final List<InspectionItem> checklist;
   String comment;
@@ -51,7 +50,7 @@ List<RoomInspection> getMockInspectionData() {
       id: 1,
       number: "1",
       name: "Entry / Mudroom",
-      icon: Icons.door_front_door_outlined,
+      icon: 'door_front_door_outlined',
       progress: 100.0,
       checklist: [
         InspectionItem(name: "Ceiling", status: RoomItemStatus.happy),
@@ -64,7 +63,7 @@ List<RoomInspection> getMockInspectionData() {
       id: 2,
       number: "2",
       name: "Living Room",
-      icon: Icons.chair_outlined,
+      icon: 'chair_outlined',
       progress: 70.0,
       checklist: [
         InspectionItem(name: "Ceiling", status: RoomItemStatus.happy),
@@ -78,7 +77,7 @@ List<RoomInspection> getMockInspectionData() {
       id: 3,
       number: "3",
       name: "Dining Room",
-      icon: Icons.restaurant_menu_outlined,
+      icon: 'restaurant_menu_outlined',
       progress: 80.0,
       checklist: [
         InspectionItem(name: "Ceiling", status: RoomItemStatus.happy),
@@ -91,7 +90,7 @@ List<RoomInspection> getMockInspectionData() {
       id: 4,
       number: "4",
       name: "Bedroom 1",
-      icon: Icons.bed_outlined,
+      icon: 'bed_outlined',
       progress: 0.0,
       checklist: [
         InspectionItem(name: "Ceiling", status: RoomItemStatus.neutral),
@@ -106,7 +105,7 @@ List<RoomInspection> getMockInspectionData() {
       id: 5,
       number: "5",
       name: "Kitchen",
-      icon: Icons.kitchen_outlined,
+      icon: 'kitchen_outlined',
       progress: 90.0,
       comment: "Minor scuff marks near refrigerator base panel.",
       checklist: [
@@ -125,7 +124,7 @@ List<RoomInspection> getMockInspectionData() {
       id: 6,
       number: "6",
       name: "Bathroom",
-      icon: Icons.bathtub_outlined,
+      icon: 'bathtub_outlined',
       progress: 30.0,
       checklist: [
         InspectionItem(name: "Ceiling", status: RoomItemStatus.happy),
