@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'inspection_flow_list_screen.dart';
+import 'report_review_screen.dart';
 
 class TenantDashboardScreen extends StatefulWidget {
   final String role; // 'tenant' or 'landlord'
@@ -114,98 +115,107 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Avatar + Greeting Info
-        Row(
-          children: [
-            // User Avatar Container
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: activeColor,
-                      width: 1.5,
-                    ),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE5EEF5), Color(0xFFC6DBED)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: activeColor.withOpacity(0.15),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.userName != null && widget.userName!.isNotEmpty
-                          ? widget.userName![0].toUpperCase()
-                          : (isTenant ? 'L' : 'V'),
-                      style: TextStyle(
+        // Avatar + Greeting Info (Expanded to prevent horizontal wiggles)
+        Expanded(
+          child: Row(
+            children: [
+              // User Avatar Container
+              Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
                         color: activeColor,
+                        width: 1.5,
+                      ),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE5EEF5), Color(0xFFC6DBED)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: activeColor.withOpacity(0.15),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        widget.userName != null && widget.userName!.isNotEmpty
+                            ? widget.userName![0].toUpperCase()
+                            : (isTenant ? 'L' : 'V'),
+                        style: TextStyle(
+                          color: activeColor,
+                          fontFamily: 'Montserrat',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Glowing Neon Online Indicator Badge
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2ECC71), // Clean high contrast green
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2.0,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0xFF2ECC71),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 14),
+              // Greetings details (Expanded to scale cleanly with narrow widths)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isTenant ? 'WELCOME BACK,' : 'PORTAL ACTIVE,',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF7F8C8D),
                         fontFamily: 'Montserrat',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                ),
-                // Glowing Neon Online Indicator Badge
-                Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2ECC71), // Clean high contrast green
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 2.0,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0xFF2ECC71),
-                        blurRadius: 4,
+                    const SizedBox(height: 3),
+                    Text(
+                      widget.userName != null && widget.userName!.isNotEmpty
+                          ? widget.userName!
+                          : (isTenant ? 'Liam Carter' : 'Victoria Sterling'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF2C3E50),
+                        fontFamily: 'Montserrat',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(width: 14),
-            // Greetings details
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isTenant ? 'WELCOME BACK,' : 'PORTAL ACTIVE,',
-                  style: const TextStyle(
-                    color: Color(0xFF7F8C8D),
-                    fontFamily: 'Montserrat',
-                    fontSize: 11,
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  widget.userName != null && widget.userName!.isNotEmpty
-                      ? widget.userName!
-                      : (isTenant ? 'Liam Carter' : 'Victoria Sterling'),
-                  style: const TextStyle(
-                    color: Color(0xFF2C3E50),
-                    fontFamily: 'Montserrat',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 12),
 
         // Glowing Notification Bell
         GestureDetector(
@@ -355,30 +365,37 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isTenant ? 'SCHEDULED TIMESTAMP' : 'SUBMITTED BY TENANT',
-                    style: const TextStyle(
-                      color: Color(0xFF7F8C8D),
-                      fontFamily: 'Montserrat',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isTenant ? 'SCHEDULED TIMESTAMP' : 'SUBMITTED BY TENANT',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF7F8C8D),
+                        fontFamily: 'Montserrat',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    isTenant ? 'June 5, 2026 • 14:00' : 'Liam Carter • 2 Hours Ago',
-                    style: const TextStyle(
-                      color: Color(0xFF2C3E50),
-                      fontFamily: 'Montserrat',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 3),
+                    Text(
+                      isTenant ? 'June 5, 2026 • 14:00' : 'Liam Carter • 2 Hours Ago',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF2C3E50),
+                        fontFamily: 'Montserrat',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 12),
               // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -490,18 +507,13 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
         // Card 3: History & Reports
         _buildDashboardGridItem(
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: const Color(0xFF2C3E50),
-                content: Text(
-                  isTenant 
-                      ? 'Retrieving compiled spatial report nodes...' 
-                      : 'Accessing verified audit and lease certificates...',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w600,
-                  ),
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const ReportReviewScreen(
+                  roomName: 'Bedroom 1 (Archive)',
+                  tenantName: 'Liam Carter',
+                  landlordName: 'Victoria Sterling',
+                  inspectionDate: 'May 14, 2026',
                 ),
               ),
             );

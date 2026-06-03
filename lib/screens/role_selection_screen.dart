@@ -49,7 +49,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Container(
-              height: size.height - 80,
+              constraints: BoxConstraints(
+                minHeight: size.height - 100,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
