@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tenantsnap/screens/theme.dart';
 
-import 'property_details_screen.dart';
+import 'home_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -58,9 +58,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
 
-    Navigator.of(context).push(
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => const PropertyDetailsScreen(),
+        builder: (context) => const HomeScreen(),
       ),
     );
   }

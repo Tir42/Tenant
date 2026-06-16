@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:tenantsnap/screens/theme.dart';
 
 import 'forgot_password_screen.dart';
-import 'property_details_screen.dart';
 import 'signup_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,24 +24,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   void _handlePrimaryAction() {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all credentials.'),
-        ),
-      );
-      return;
-    }
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Decrypting credentials profile...'),
+        duration: Duration(milliseconds: 500),
       ),
     );
 
-    Navigator.of(context).push(
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => const PropertyDetailsScreen(),
+        builder: (context) => const HomeScreen(),
       ),
     );
   }

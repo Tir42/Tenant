@@ -6,7 +6,30 @@ import 'room_detail_screen.dart';
 import 'report_review_screen.dart';
 
 class InspectionFlowListScreen extends StatefulWidget {
-  const InspectionFlowListScreen({super.key});
+  final String idCode;
+  final String tenantName;
+  final String landlordName;
+  final String propertyAddress;
+  final String city;
+  final String state;
+  final String zipcode;
+  final String country;
+  final String possessionDate;
+  final String agreementDate;
+
+  const InspectionFlowListScreen({
+    super.key,
+    this.idCode = '',
+    this.tenantName = 'Liam Carter',
+    this.landlordName = 'Victoria Sterling',
+    this.propertyAddress = 'Unit 402 - Urban Loft',
+    this.city = '',
+    this.state = '',
+    this.zipcode = '',
+    this.country = '',
+    this.possessionDate = 'June 5, 2026',
+    this.agreementDate = 'June 2, 2026',
+  });
 
   @override
   State<InspectionFlowListScreen> createState() => _InspectionFlowListScreenState();
@@ -278,6 +301,11 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => ReportReviewScreen(
                                         allRooms: _roomsList,
+                                        tenantName: widget.tenantName,
+                                        landlordName: widget.landlordName,
+                                        propertyAddress: '${widget.propertyAddress}${widget.city.isNotEmpty ? ", ${widget.city}" : ""}${widget.state.isNotEmpty ? ", ${widget.state}" : ""}${widget.zipcode.isNotEmpty ? " ${widget.zipcode}" : ""}${widget.country.isNotEmpty ? ", ${widget.country}" : ""}',
+                                        inspectionDate: widget.agreementDate.isNotEmpty ? widget.agreementDate : widget.possessionDate,
+                                        idCode: widget.idCode,
                                       ),
                                     ),
                                   );
@@ -557,6 +585,11 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
             MaterialPageRoute(
               builder: (context) => ReportReviewScreen(
                 allRooms: _roomsList,
+                tenantName: widget.tenantName,
+                landlordName: widget.landlordName,
+                propertyAddress: '${widget.propertyAddress}${widget.city.isNotEmpty ? ", ${widget.city}" : ""}${widget.state.isNotEmpty ? ", ${widget.state}" : ""}${widget.zipcode.isNotEmpty ? " ${widget.zipcode}" : ""}${widget.country.isNotEmpty ? ", ${widget.country}" : ""}',
+                inspectionDate: widget.agreementDate.isNotEmpty ? widget.agreementDate : widget.possessionDate,
+                idCode: widget.idCode,
               ),
             ),
           );

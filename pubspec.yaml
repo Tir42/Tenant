@@ -64,6 +64,9 @@ flutter:
   assets:
     - assets/app_icon.png
     - assets/splash.png
+    - assets/photo_inspect.png
+    - assets/room_doc.png
+    - assets/signed_report.png
 
 flutter_native_splash:
   color: "#001F27"

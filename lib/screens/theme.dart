@@ -10,7 +10,7 @@ class AntigravityColors {
   static const Color primaryCard = Color(0xFFFFFFFF);    // Pure White Card Background
   static const Color accentTeal = Color(0xFF007BFF);     // Brand Blue Accent (Clean & cohesive)
   static const Color roleTenant = Color(0xFF007BFF);     // Cool brand blue for Tenant
-  static const Color roleLandlord = Color(0xFFFF9100);   // Warm amber/orange for Landlord
+  static const Color roleLandlord = Color(0xFF2ECC71);   // Cool green for Landlord
   
   static const Color textMain = Color(0xFF2C3E50);       // High contrast dark-slate text
   static const Color textMuted = Color(0xFF7F8C8D);      // Muted silver-grey text

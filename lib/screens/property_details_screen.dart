@@ -3,9 +3,17 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:tenantsnap/screens/theme.dart';
 
 import 'inspection_flow_list_screen.dart';
+import 'home_screen.dart';
 
 class PropertyDetailsScreen extends StatefulWidget {
-  const PropertyDetailsScreen({super.key});
+  final String role;
+  final String? userName;
+
+  const PropertyDetailsScreen({
+    super.key,
+    this.role = 'tenant',
+    this.userName,
+  });
 
   @override
   State<PropertyDetailsScreen> createState() => _PropertyDetailsScreenState();
@@ -15,9 +23,27 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   String _selectedRole = 'tenant'; // 'tenant' or 'landlord'
   final _tenantController = TextEditingController();
   final _landlordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRole = widget.role;
+    if (widget.userName != null) {
+      if (_selectedRole == 'tenant') {
+        _tenantController.text = widget.userName!;
+      } else {
+        _landlordController.text = widget.userName!;
+      }
+    }
+  }
   final _addressController = TextEditingController();
   final _possessionDateController = TextEditingController();
   final _leaseDateController = TextEditingController();
+  final _idCodeController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _zipController = TextEditingController();
+  final _countryController = TextEditingController();
 
   @override
   void dispose() {
@@ -26,6 +52,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     _addressController.dispose();
     _possessionDateController.dispose();
     _leaseDateController.dispose();
+    _idCodeController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _zipController.dispose();
+    _countryController.dispose();
     super.dispose();
   }
 
@@ -57,24 +88,28 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     }
   }
 
-  void _handleStartInspection() {
-    final bool isTenant = _selectedRole == 'tenant';
-    final String name = isTenant ? _tenantController.text : _landlordController.text;
-    final String roleLabel = isTenant ? 'Tenant Name' : 'Landlord Name';
+  void _handleSubmit() {
+    final String tenantName = _tenantController.text.trim();
+    final String landlordName = _landlordController.text.trim();
+    final String address = _addressController.text.trim();
 
-    if (name.isEmpty || _addressController.text.isEmpty) {
+    if (tenantName.isEmpty || landlordName.isEmpty || address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please enter the $roleLabel and Property Address to proceed.'),
+        const SnackBar(
+          content: Text('Please enter Tenant Name, Landlord Name, and Full Address to proceed.'),
         ),
       );
       return;
     }
 
-    Navigator.of(context).push(
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (context) => const InspectionFlowListScreen(),
+        builder: (context) => HomeScreen(
+          role: _selectedRole,
+          userName: _selectedRole == 'tenant' ? tenantName : landlordName,
+        ),
       ),
+      (route) => false,
     );
   }
 
@@ -118,6 +153,31 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Back navigation button to return to home selector screen
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: const Icon(
+                                Icons.arrow_back_rounded,
+                                color: Color(0xFF007BFF),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Back to Home',
+                              style: TextStyle(
+                                color: Color(0xFF007BFF),
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
                         // --- TITLE ---
                         const Text(
                           'Tell Us About Your\nNew Home',
@@ -171,26 +231,79 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // --- DYNAMIC ROLE-BASED NAME FIELD ---
-                        if (_selectedRole == 'tenant')
-                          _buildCustomInputField(
-                            controller: _tenantController,
-                            hintText: 'Tenant Name',
-                            icon: Icons.person,
-                          )
-                        else
-                          _buildCustomInputField(
-                            controller: _landlordController,
-                            hintText: 'Landlord Name',
-                            icon: Icons.apartment,
-                          ),
+                        // --- ID CODE FIELD ---
+                        _buildCustomInputField(
+                          controller: _idCodeController,
+                          hintText: 'ID Code',
+                          icon: Icons.badge_outlined,
+                        ),
                         const SizedBox(height: 16),
 
-                        // --- 3. PROPERTY ADDRESS FIELD ---
+                        // --- TENANT NAME FIELD ---
+                        _buildCustomInputField(
+                          controller: _tenantController,
+                          hintText: 'Tenant Name',
+                          icon: Icons.person,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- LANDLORD NAME FIELD ---
+                        _buildCustomInputField(
+                          controller: _landlordController,
+                          hintText: 'Landlord Name',
+                          icon: Icons.business,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- FULL ADDRESS FIELD ---
                         _buildCustomInputField(
                           controller: _addressController,
-                          hintText: 'Property Address',
+                          hintText: 'Full Address',
                           icon: Icons.home,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- CITY & STATE ---
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCustomInputField(
+                                controller: _cityController,
+                                hintText: 'City',
+                                icon: Icons.location_city,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildCustomInputField(
+                                controller: _stateController,
+                                hintText: 'State',
+                                icon: Icons.map,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- ZIP CODE & COUNTRY ---
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCustomInputField(
+                                controller: _zipController,
+                                hintText: 'Zip Code',
+                                icon: Icons.pin_drop,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildCustomInputField(
+                                controller: _countryController,
+                                hintText: 'Country',
+                                icon: Icons.public,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
 
@@ -212,7 +325,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // --- 6. START INSPECTION PILL BUTTON ---
+                        // --- 6. SUBMIT BUTTON ---
                         Container(
                           width: double.infinity,
                           height: 50,
@@ -220,7 +333,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             borderRadius: BorderRadius.circular(25),
                             gradient: const LinearGradient(
                               colors: [
-                                Color(0xFF007BFF), // Rich Blue as in screenshot
+                                Color(0xFF007BFF), // Rich Blue
                                 Color(0xFF00C6FF),
                               ],
                             ),
@@ -233,7 +346,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             ],
                           ),
                           child: ElevatedButton(
-                            onPressed: _handleStartInspection,
+                            onPressed: _handleSubmit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
@@ -242,7 +355,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                               ),
                             ),
                             child: Text(
-                              'Start Inspection',
+                              'Submit',
                               style: AntigravityTextStyles.bodyLarge(Colors.white).copyWith(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
@@ -270,7 +383,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // White card as in screenshot
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
@@ -285,7 +398,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         readOnly: isDatePicker,
         onTap: isDatePicker ? () => _selectDate(context, controller) : null,
         style: const TextStyle(
-          color: Color(0xFF2C3E50), // Muted dark slate text
+          color: Color(0xFF2C3E50),
           fontWeight: FontWeight.w600,
           fontFamily: 'Montserrat',
           fontSize: 14,
@@ -293,13 +406,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF95A5A6), // Muted placeholder grey
+            color: Color(0xFF95A5A6),
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: Icon(
             icon,
-            color: const Color(0xFF007BFF), // Custom blue icon color as in screenshot
+            color: const Color(0xFF007BFF),
             size: 20,
           ),
           suffixIcon: isDatePicker

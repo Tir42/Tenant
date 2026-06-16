@@ -12,6 +12,7 @@ class ReportReviewScreen extends StatelessWidget {
   final String landlordName;
   final String propertyAddress;
   final String inspectionDate;
+  final String idCode;
 
   const ReportReviewScreen({
     super.key,
@@ -22,6 +23,7 @@ class ReportReviewScreen extends StatelessWidget {
     this.landlordName = 'Victoria Sterling',
     this.propertyAddress = 'Unit 402 - Urban Loft',
     this.inspectionDate = 'June 2, 2026',
+    this.idCode = '',
   });
 
   @override
@@ -236,6 +238,7 @@ class ReportReviewScreen extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Metadata block
+          if (idCode.isNotEmpty) _buildMetadataRow('ID Code', idCode),
           _buildMetadataRow('Tenant', tenantName),
           _buildMetadataRow('Landlord', landlordName),
           _buildMetadataRow('Address', propertyAddress),
