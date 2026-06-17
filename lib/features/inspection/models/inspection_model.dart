@@ -14,6 +14,27 @@ class InspectionItem {
     List<String>? photos,
     this.comment = '',
   }) : photos = photos ?? [];
+
+  factory InspectionItem.fromJson(Map<String, dynamic> json) {
+    return InspectionItem(
+      name: json['name'] as String,
+      status: RoomItemStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => RoomItemStatus.neutral,
+      ),
+      photos: List<String>.from(json['photos'] ?? []),
+      comment: json['comment'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'status': status.name,
+      'photos': photos,
+      'comment': comment,
+    };
+  }
 }
 
 class RoomInspection {
@@ -43,6 +64,41 @@ class RoomInspection {
     }
     int answered = checklist.where((item) => item.status != RoomItemStatus.neutral || item.photos.isNotEmpty).length;
     progress = (answered / checklist.length) * 100.0;
+  }
+
+  factory RoomInspection.fromJson(Map<String, dynamic> json) {
+    final iconData = json['icon'] as Map<String, dynamic>;
+    return RoomInspection(
+      id: json['id'] as int,
+      number: json['number'] as String,
+      name: json['name'] as String,
+      icon: IconData(
+        iconData['codePoint'] as int,
+        fontFamily: iconData['fontFamily'] as String?,
+        fontPackage: iconData['fontPackage'] as String?,
+      ),
+      progress: (json['progress'] as num).toDouble(),
+      checklist: (json['checklist'] as List)
+          .map((item) => InspectionItem.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      comment: json['comment'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'number': number,
+      'name': name,
+      'icon': {
+        'codePoint': icon.codePoint,
+        'fontFamily': icon.fontFamily,
+        'fontPackage': icon.fontPackage,
+      },
+      'progress': progress,
+      'checklist': checklist.map((item) => item.toJson()).toList(),
+      'comment': comment,
+    };
   }
 }
 
@@ -488,6 +544,18 @@ List<RoomInspection> getDefaultInspectionData() {
         InspectionItem(name: "Floor", status: RoomItemStatus.neutral),
         InspectionItem(name: "Washer / Dryer", status: RoomItemStatus.neutral),
         InspectionItem(name: "Sink / Faucet", status: RoomItemStatus.neutral),
+      ],
+    ),
+    RoomInspection(
+      id: 7,
+      number: "07",
+      name: "utils",
+      icon: Icons.home_outlined,
+      progress: 0.0,
+      checklist: [
+        InspectionItem(name: "Furniture", status: RoomItemStatus.neutral),
+        InspectionItem(name: "TV", status: RoomItemStatus.neutral),
+        InspectionItem(name: "Refrigerator", status: RoomItemStatus.neutral),
       ],
     ),
   ];

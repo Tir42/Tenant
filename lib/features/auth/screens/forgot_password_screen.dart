@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tenantsnap/screens/theme.dart';
+import 'package:tenantsnap/core/theme/app_theme.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -33,7 +33,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -86,14 +85,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         fontFamily: 'Montserrat',
                         fontSize: 14,
                       ),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Email',
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           color: Color(0xFF95A5A6),
                         ),
-                        prefixIcon: const Icon(Icons.mail_outline, color: Color(0xFF7F8C8D)),
+                        prefixIcon: Icon(Icons.mail_outline, color: Color(0xFF7F8C8D)),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                       ),
                     ),
                   ),

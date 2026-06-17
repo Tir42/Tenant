@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart'; // <-- Import package
-import 'package:tenantsnap/screens/theme.dart';
-import 'screens/login_screen.dart';
+import 'package:get/get.dart';
+import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/features/auth/screens/login_screen.dart';
+import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 
 void main() {
   // 1. Initialize WidgetsBinding
@@ -9,6 +11,9 @@ void main() {
   
   // 2. Preserve native splash screen
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Initialize GetX controller
+  Get.put(InspectionController());
 
   runApp(const TenantSnapApp());
 }
@@ -37,7 +42,7 @@ class _TenantSnapAppState extends State<TenantSnapApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'TenantSnap',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -51,7 +56,6 @@ class _TenantSnapAppState extends State<TenantSnapApp> {
           surface: AntigravityColors.primaryCard,
         ),
         fontFamily: 'Montserrat',
-        // ... rest of your theme properties ...
       ),
       home: const LoginScreen(),
     );

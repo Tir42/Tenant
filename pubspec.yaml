@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   dropdown_button2: ^2.3.9
   image_picker: ^1.1.2
+  get: ^4.6.6
+  pdf: ^3.11.0
 
 
 dev_dependencies:

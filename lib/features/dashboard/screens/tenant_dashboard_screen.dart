@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:tenantsnap/screens/theme.dart';
-
-import 'inspection_flow_list_screen.dart';
-import 'report_review_screen.dart';
+import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/features/inspection/screens/inspection_flow_list_screen.dart';
+import 'package:tenantsnap/features/inspection/screens/report_review_screen.dart';
 
 class TenantDashboardScreen extends StatefulWidget {
   final String role; // 'tenant' or 'landlord'

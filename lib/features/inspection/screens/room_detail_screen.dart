@@ -1,18 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:tenantsnap/screens/theme.dart';
-
-import '../models/inspection_model.dart';
+import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
+import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 
 class RoomDetailScreen extends StatefulWidget {
-  final RoomInspection room;
-  final Function(RoomInspection) onUpdated;
+  final int roomId;
 
   const RoomDetailScreen({
     super.key,
-    required this.room,
-    required this.onUpdated,
+    required this.roomId,
   });
 
   @override
@@ -20,28 +19,41 @@ class RoomDetailScreen extends StatefulWidget {
 }
 
 class _RoomDetailScreenState extends State<RoomDetailScreen> {
-  late List<InspectionItem> _checklist;
+  final InspectionController controller = Get.find<InspectionController>();
   late TextEditingController _commentController;
-  List<Map<String, String>> _photos = []; // [{path, timestamp}]
+  final ImagePicker _picker = ImagePicker();
+
+  final List<String> _availableUtilities = [
+    'Furniture',
+    'TV',
+    'Refrigerator',
+    'Microwave',
+    'Washing Machine',
+    'Air Conditioner',
+    'Oven',
+    'Dishwasher',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _commentController = TextEditingController(text: widget.room.comment);
-    
-    // Dynamically load the checklist directly from the configured room model
-    _checklist = widget.room.checklist;
+    final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
+    _commentController = TextEditingController(text: room.comment);
 
-    // Dynamically synchronize existing item photos in timeline feed
-    _photos = [];
-    for (var item in _checklist) {
-      for (var path in item.photos) {
-        _photos.add({
-          "path": path,
-          "timestamp": "2026-06-02 10:14 • GPS 45.42, -75.69",
-        });
+    // Sync any custom features already in the room's checklist into _availableUtilities
+    if (room.name.toLowerCase() == 'utils') {
+      for (var item in room.checklist) {
+        if (!_availableUtilities.contains(item.name)) {
+          _availableUtilities.add(item.name);
+        }
       }
     }
+
+    _commentController.addListener(() {
+      final r = controller.roomsList.firstWhere((room) => room.id == widget.roomId);
+      r.comment = _commentController.text;
+      controller.roomsList.refresh();
+    });
   }
 
   @override
@@ -50,60 +62,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     super.dispose();
   }
 
-  // Helper to trigger callback updates
-  void _triggerUpdate() {
-    widget.room.comment = _commentController.text;
-    widget.onUpdated(widget.room);
-  }
-
-  void _loadDemoData() {
-    setState(() {
-      for (var item in _checklist) {
-        final nameLower = item.name.toLowerCase();
-        if (nameLower.contains('ceiling')) {
-          item.status = RoomItemStatus.sad;
-        } else if (nameLower.contains('wall') ||
-                   nameLower.contains('floor') ||
-                   nameLower.contains('door') ||
-                   nameLower.contains('window') ||
-                   nameLower.contains('light') ||
-                   nameLower.contains('outlet')) {
-          item.status = RoomItemStatus.happy;
-        }
-
-        // Add some mock photos for demonstration
-        if (nameLower.contains('door') || nameLower.contains('window')) {
-          item.photos = ['assets/bedroom_closet_door.jpg'];
-        } else if (nameLower.contains('outlet') || nameLower.contains('light')) {
-          item.photos = ['assets/bedroom_walls_outlet.jpg'];
-        }
-      }
-
-      // Synchronize timeline feed photos
-      _photos = [];
-      for (var item in _checklist) {
-        for (var path in item.photos) {
-          _photos.add({
-            "path": path,
-            "timestamp": "2026-06-02 10:33 • GPS 45.42, -75.69",
-          });
-        }
-      }
-      
-      widget.room.recalculateProgress();
-    });
-    _triggerUpdate();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Demo data loaded successfully!'),
-      ),
-    );
-  }
-
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _pickImage(ImageSource source, {InspectionItem? targetItem}) async {
+  Future<void> _pickImage(ImageSource source, {required InspectionItem targetItem}) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
@@ -112,33 +71,15 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         imageQuality: 85,
       );
 
-      if (!mounted) return;
-
       if (pickedFile != null) {
-        final now = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 5);
-        final today = DateTime.now().toLocal().toString().split(' ')[0];
-        final mockGps = " • GPS 45.42, -75.69";
-        
-        setState(() {
-          if (targetItem != null) {
-            targetItem.photos.add(pickedFile.path);
-          }
-          _photos.add({
-            "path": pickedFile.path,
-            "timestamp": "$today $now$mockGps",
-          });
-          widget.room.recalculateProgress();
-        });
-        _triggerUpdate();
+        controller.addPhotoToItem(widget.roomId, targetItem.name, pickedFile.path);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFF2C3E50),
             duration: const Duration(seconds: 2),
             content: Text(
-              targetItem != null
-                  ? 'Photo added to ${targetItem.name}!'
-                  : 'Photo added to timeline feed!',
+              'Photo added to ${targetItem.name}!',
               style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'Montserrat',
@@ -150,7 +91,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         );
       }
     } catch (e) {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error capturing picture: $e'),
@@ -159,7 +99,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
-  void _showImageSourcePicker({InspectionItem? targetItem}) {
+  void _showImageSourcePicker({required InspectionItem targetItem}) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -177,9 +117,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  targetItem != null
-                      ? 'Add Photo for ${targetItem.name}'
-                      : 'Add Photo to Timeline Feed',
+                  'Add Photo for ${targetItem.name}',
                   style: const TextStyle(
                     color: Color(0xFF2C3E50),
                     fontFamily: 'Montserrat',
@@ -269,130 +207,106 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     );
   }
 
-
-  // Dynamic Add Custom Feature modal prompt
   void _showAddFeatureDialog() {
     final TextEditingController nameController = TextEditingController();
-    bool hasCameraOption = true;
 
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Text(
-                'Add Custom Feature',
-                style: TextStyle(
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Add Custom Feature',
+            style: TextStyle(
+              color: Color(0xFF2C3E50),
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: nameController,
+                style: const TextStyle(
                   color: Color(0xFF2C3E50),
                   fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'e.g. Air Conditioning, Heater',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF95A5A6),
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w500,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF2F4F7),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    style: const TextStyle(
-                      color: Color(0xFF2C3E50),
-                      fontFamily: 'Montserrat',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Air Conditioning, Heater',
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF95A5A6),
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w500,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF2F4F7),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: hasCameraOption,
-                        activeColor: const Color(0xFF007BFF),
-                        onChanged: (value) {
-                          setDialogState(() {
-                            hasCameraOption = value ?? true;
-                          });
-                        },
-                      ),
-                      const Text(
-                        'Include Camera Snap Option',
-                        style: TextStyle(
-                          color: Color(0xFF2C3E50),
-                          fontFamily: 'Montserrat',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
-                      color: Color(0xFF95A5A6),
-                      fontFamily: 'Montserrat',
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Color(0xFF95A5A6),
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w700,
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    final String name = nameController.text.trim();
-                    if (name.isNotEmpty) {
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final String name = nameController.text.trim();
+                if (name.isNotEmpty) {
+                  final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
+                  if (room.name.toLowerCase() == 'utils') {
+                    controller.addUtilityItem(name);
+                    if (!_availableUtilities.contains(name)) {
                       setState(() {
-                        _checklist.add(
-                          InspectionItem(name: name, status: RoomItemStatus.neutral),
-                        );
-                        widget.room.recalculateProgress();
+                        _availableUtilities.add(name);
                       });
-                      _triggerUpdate();
-                      Navigator.of(context).pop();
                     }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007BFF),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  ),
-                  child: const Text(
-                    'Add Feature',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
+                  } else {
+                    room.checklist.add(InspectionItem(name: name, status: RoomItemStatus.neutral));
+                    room.recalculateProgress();
+                    controller.roomsList.refresh();
+                  }
+                  Navigator.of(context).pop();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF007BFF),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            );
-          },
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              child: const Text(
+                'Add Feature',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -406,7 +320,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: AntigravityColors.bgGradient,
         ),
         child: SafeArea(
@@ -417,7 +331,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Center-positioned premium mockup card container
                   Container(
                     width: size.width * 0.9,
                     constraints: const BoxConstraints(maxWidth: 380),
@@ -434,97 +347,122 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       ],
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left-aligned Title & Right-aligned Blue Back Arrow exactly matching mockup
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${widget.room.name} Inspection',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Color(0xFF2C3E50),
+                    child: Obx(() {
+                      final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
+                      final checklist = room.checklist;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${room.name} Inspection',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF2C3E50),
+                                    fontFamily: 'Montserrat',
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 21,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: () => Navigator.of(context).pop(),
+                                child: const Icon(
+                                  Icons.arrow_back_ios_rounded,
+                                  color: Color(0xFF007BFF),
+                                  size: 24,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          if (room.name.toLowerCase() == 'utils') ...[
+                            const Text(
+                              'LANDLORD PROVIDED UTILITIES',
+                              style: TextStyle(
+                                color: Color(0xFF95A5A6),
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 10,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEBF2F7),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _availableUtilities.map((utility) => _buildChipItem(utility, checklist)).toList(),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+
+                          const Text(
+                            'VERIFY STATUS NODES',
+                            style: TextStyle(
+                              color: Color(0xFF95A5A6),
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEBF2F7),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Column(
+                              children: checklist.map((item) => _buildChecklistRow(item)).toList(),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildAddFeatureButton(),
+                          const SizedBox(height: 12),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF007BFF),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: const Text(
+                                'Save',
+                                style: TextStyle(
+                                  color: Colors.white,
                                   fontFamily: 'Montserrat',
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 21,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            GestureDetector(
-                              onTap: () {
-                                _triggerUpdate();
-                                Navigator.of(context).pop();
-                              },
-                              child: const Icon(
-                                Icons.arrow_back_ios_rounded,
-                                color: Color(0xFF007BFF), // Mockup blue back arrow
-                                size: 24,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-
-                        const Text(
-                          'VERIFY STATUS NODES',
-                          style: TextStyle(
-                            color: Color(0xFF95A5A6),
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 10,
-                            letterSpacing: 1.2,
                           ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Checklist items workspace area styled with light-blue inner background
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEBF2F7), // Soft grey/blue panel background
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Column(
-                            children: _checklist.map((item) => _buildChecklistRow(item)).toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Add Custom Feature button exactly matching mockup solid blue button styling
-                        _buildAddFeatureButton(),
-                        const SizedBox(height: 12),
-
-                        // Save and Go Back Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: _saveAndGoBack,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF007BFF), // Cohesive brand blue
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: const Text(
-                              'Save',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      );
+                    }),
                   ),
                 ],
               ),
@@ -535,45 +473,94 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     );
   }
 
-  Widget _buildChecklistRow(InspectionItem item) {
-    final String lowercaseName = item.name.toLowerCase();
-    final bool canSnap = !lowercaseName.startsWith("ceiling") && 
-                         !lowercaseName.startsWith("walls") && 
-                         !lowercaseName.startsWith("floor");
+  Widget _buildChipItem(String utility, List<InspectionItem> checklist) {
+    final bool isSel = checklist.any((item) => item.name == utility);
+    return InkWell(
+      onTap: () {
+        if (isSel) {
+          controller.removeUtilityItem(utility);
+        } else {
+          controller.addUtilityItem(utility);
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSel
+              ? const LinearGradient(
+                  colors: [Color(0xFF007BFF), Color(0xFF0056B3)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSel ? null : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSel ? Colors.transparent : const Color(0xFFBDC3C7).withOpacity(0.5),
+            width: 1.5,
+          ),
+          boxShadow: isSel
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF007BFF).withOpacity(0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSel) ...[
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              utility,
+              style: TextStyle(
+                color: isSel ? Colors.white : const Color(0xFF2C3E50),
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildChecklistRow(InspectionItem item) {
     return InspectionChecklistRow(
       item: item,
-      canSnap: canSnap,
       onHappyTap: () {
-        setState(() {
-          item.status = RoomItemStatus.happy;
-          widget.room.recalculateProgress();
-        });
-        _triggerUpdate();
+        controller.updateItemStatus(widget.roomId, item.name, RoomItemStatus.happy);
       },
       onSadTap: () {
-        setState(() {
-          item.status = RoomItemStatus.sad;
-          widget.room.recalculateProgress();
-        });
-        _triggerUpdate();
+        controller.updateItemStatus(widget.roomId, item.name, RoomItemStatus.sad);
       },
       onNeutralTap: () {
-        setState(() {
-          item.status = RoomItemStatus.neutral;
-          widget.room.recalculateProgress();
-        });
-        _triggerUpdate();
+        if (controller.roomsList.firstWhere((r) => r.id == widget.roomId).name.toLowerCase() == 'utils') {
+          controller.removeUtilityItem(item.name);
+        } else {
+          final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
+          room.checklist.remove(item);
+          room.recalculateProgress();
+          controller.roomsList.refresh();
+        }
       },
       onCameraTap: () => _showImageSourcePicker(targetItem: item),
       thumbnailBuilder: _buildPhotoThumbnail,
     );
   }
-  void _saveAndGoBack() {
-    widget.room.recalculateProgress();
-    widget.onUpdated(widget.room);
-    Navigator.of(context).pop(widget.room);
-  }
+
   void _showPhotoPreviewDialog(InspectionItem item, String photoPath) {
     final bool isRealFile = !photoPath.startsWith('assets/');
 
@@ -589,7 +576,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Gorgeous Image Preview
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
@@ -637,7 +623,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Close Button
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text(
@@ -649,15 +634,12 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       ),
                     ),
                   ),
-                  // Delete Button
                   ElevatedButton.icon(
                     onPressed: () {
-                      setState(() {
-                        item.photos.remove(photoPath);
-                        _photos.removeWhere((p) => p["path"] == photoPath);
-                        widget.room.recalculateProgress();
-                      });
-                      _triggerUpdate();
+                      final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
+                      item.photos.remove(photoPath);
+                      room.recalculateProgress();
+                      controller.roomsList.refresh();
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -674,7 +656,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE74C3C), // Solid Red
+                      backgroundColor: const Color(0xFFE74C3C),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -720,16 +702,15 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         );
       }
     } else {
-      // Mock assets - load gorgeous curated network previews for perfect mockup aesthetic!
-      String imageUrl = "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=150"; // default cozy room
+      String imageUrl = "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=150";
       if (photoPath.contains("door")) {
         imageUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=150" // plant / door details
-            : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=150"; // cozy room door frame
+            ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=150"
+            : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=150";
       } else if (photoPath.contains("outlet")) {
         imageUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150" // electrical outlet details
-            : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=150"; // wall corner aesthetic
+            ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150"
+            : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=150";
       }
       
       imageWidget = Image.network(
@@ -774,7 +755,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         borderRadius: BorderRadius.circular(20),
         child: Ink(
           decoration: BoxDecoration(
-            color: const Color(0xFF007BFF), // Solid blue button exactly matching mockup
+            color: const Color(0xFF007BFF),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -811,10 +792,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   }
 }
 
-// --- Decoupled Standalone Checklist Row Widget ---
 class InspectionChecklistRow extends StatelessWidget {
   final InspectionItem item;
-  final bool canSnap;
   final VoidCallback onHappyTap;
   final VoidCallback onSadTap;
   final VoidCallback onNeutralTap;
@@ -824,7 +803,6 @@ class InspectionChecklistRow extends StatelessWidget {
   const InspectionChecklistRow({
     super.key,
     required this.item,
-    required this.canSnap,
     required this.onHappyTap,
     required this.onSadTap,
     required this.onNeutralTap,
@@ -839,7 +817,7 @@ class InspectionChecklistRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white, // White card list item
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -853,11 +831,9 @@ class InspectionChecklistRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Item Name (Left) and Controls (Right)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left Side: Feature Name styled in slate Montserrat
               Expanded(
                 child: Text(
                   item.name,
@@ -872,12 +848,9 @@ class InspectionChecklistRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              
-              // Right Side: Toggles and camera buttons
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 😄 Happy Smile (Active green circle)
                   _buildMockupToggle(
                     isSelected: item.status == RoomItemStatus.happy,
                     activeColor: const Color(0xFF2ECC71),
@@ -885,8 +858,6 @@ class InspectionChecklistRow extends StatelessWidget {
                     onTap: onHappyTap,
                   ),
                   const SizedBox(width: 6),
-                  
-                  // 😟 Sad Face (Active red circle)
                   _buildMockupToggle(
                     isSelected: item.status == RoomItemStatus.sad,
                     activeColor: const Color(0xFFE74C3C),
@@ -894,40 +865,35 @@ class InspectionChecklistRow extends StatelessWidget {
                     onTap: onSadTap,
                   ),
                   const SizedBox(width: 6),
-                  
-                  // Option 3: Either Neutral Dash or Circular Camera Icon Button
-                  if (canSnap)
-                    GestureDetector(
-                      onTap: onCameraTap,
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2C3E50),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.camera_alt,
-                            size: 13,
-                            color: Colors.white,
-                          ),
+                  _buildMockupToggle(
+                    isSelected: item.status == RoomItemStatus.neutral,
+                    activeColor: const Color(0xFF95A5A6),
+                    icon: Icons.remove,
+                    onTap: onNeutralTap,
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: onCameraTap,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2C3E50),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.camera_alt,
+                          size: 13,
+                          color: Colors.white,
                         ),
                       ),
-                    )
-                  else
-                    _buildMockupToggle(
-                      isSelected: item.status == RoomItemStatus.neutral,
-                      activeColor: const Color(0xFF95A5A6),
-                      icon: Icons.remove,
-                      onTap: onNeutralTap,
                     ),
+                  ),
                 ],
               ),
             ],
           ),
-          
-          // Row 2: Photo thumbnails (if any) displayed below the controls
           if (hasPhotos) ...[
             const SizedBox(height: 10),
             SingleChildScrollView(

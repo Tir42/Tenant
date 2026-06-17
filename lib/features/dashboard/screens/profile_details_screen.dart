@@ -1,0 +1,210 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:tenantsnap/features/auth/controllers/auth_controller.dart';
+
+class ProfileDetailsScreen extends StatefulWidget {
+  final String role;
+  final String userName;
+
+  const ProfileDetailsScreen({
+    super.key,
+    required this.role,
+    required this.userName,
+  });
+
+  @override
+  State<ProfileDetailsScreen> createState() => _ProfileDetailsScreenState();
+}
+
+class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
+  late String _activeRole;
+  late String _userName;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeRole = widget.role;
+    _userName = widget.userName;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color activeColor = _activeRole == 'tenant' ? const Color(0xFF007BFF) : const Color(0xFF2ECC71);
+    final authController = Get.find<AuthController>();
+
+    final String activeEmail = authController.email.value.isNotEmpty ? authController.email.value : (_activeRole == 'tenant' ? 'Liam.Carter@snapnode.io' : 'Victoria.Sterling@snapnode.io');
+    final String activePhone = authController.phone.value.isNotEmpty ? authController.phone.value : (_activeRole == 'tenant' ? '+1 (555) 012-3456' : '+1 (555) 019-2834');
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF2C3E50), size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'MY PROFILE',
+          style: TextStyle(
+            color: Color(0xFF2C3E50),
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+            letterSpacing: 1.5,
+          ),
+        ),
+        centerTitle: true,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Divider(
+            color: Color(0xFFE2E8F0),
+            height: 1.0,
+            thickness: 1.0,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: 88,
+                          height: 88,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: activeColor, width: 2.0),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFE5EEF5), Color(0xFFC6DBED)],
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                              style: TextStyle(
+                                color: activeColor,
+                                fontFamily: 'Montserrat',
+                                fontSize: 34,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2ECC71),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _userName,
+                      style: const TextStyle(
+                        color: Color(0xFF2C3E50),
+                        fontFamily: 'Montserrat',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      activeEmail,
+                      style: const TextStyle(
+                        color: Color(0xFF7F8C8D),
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: activeColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: activeColor.withOpacity(0.2), width: 0.8),
+                      ),
+                      child: Text(
+                        _activeRole == 'tenant' ? 'SECURE TENANT NODE' : 'VERIFIED LANDLORD PORTAL',
+                        style: TextStyle(
+                          color: activeColor,
+                          fontFamily: 'Montserrat',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 36),
+              const Text(
+                'USER CREDENTIAL NODE DETAILS',
+                style: TextStyle(
+                  color: Color(0xFF7F8C8D),
+                  fontFamily: 'Montserrat',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildTelemetryRow('Registered Email', activeEmail),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
+              _buildTelemetryRow('Registered Phone', activePhone),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
+              _buildTelemetryRow('Device ID Token', 'TS-9482-AD7X'),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
+              _buildTelemetryRow('Workspace Node ID', 'WSN-0294-SF82'),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
+              _buildTelemetryRow('Last Synced Stamp', 'June 16, 2026 • 17:30'),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTelemetryRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF7F8C8D),
+            fontFamily: 'Montserrat',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Color(0xFF2C3E50),
+            fontFamily: 'Montserrat',
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
