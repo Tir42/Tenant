@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tenantsnap/features/auth/screens/login_screen.dart';
+import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final String role;

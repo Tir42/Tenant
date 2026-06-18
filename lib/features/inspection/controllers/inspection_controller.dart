@@ -21,6 +21,17 @@ class InspectionController extends GetxController {
   // Active rooms list
   final roomsList = <RoomInspection>[].obs;
 
+  final availableUtilities = <String>[
+    'Furniture',
+    'TV',
+    'Refrigerator',
+    'Microwave',
+    'Washing Machine',
+    'Air Conditioner',
+    'Oven',
+    'Dishwasher',
+  ].obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -29,6 +40,18 @@ class InspectionController extends GetxController {
 
   void initializeDefaultRooms() {
     roomsList.assignAll(getDefaultInspectionData());
+    syncAvailableUtilitiesFromChecklist();
+  }
+
+  void syncAvailableUtilitiesFromChecklist() {
+    int utilsIndex = roomsList.indexWhere((r) => r.name.toLowerCase() == 'utils');
+    if (utilsIndex != -1) {
+      for (var item in roomsList[utilsIndex].checklist) {
+        if (!availableUtilities.contains(item.name)) {
+          availableUtilities.add(item.name);
+        }
+      }
+    }
   }
 
   // Set metadata
@@ -156,6 +179,9 @@ class InspectionController extends GetxController {
         );
         roomsList[utilsIndex].recalculateProgress();
         roomsList.refresh();
+      }
+      if (!availableUtilities.contains(itemName)) {
+        availableUtilities.add(itemName);
       }
     }
   }

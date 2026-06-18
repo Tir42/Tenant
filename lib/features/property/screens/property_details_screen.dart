@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
-import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 import 'package:tenantsnap/features/inspection/screens/inspection_flow_list_screen.dart';
 import 'package:tenantsnap/features/dashboard/screens/settings_screen.dart';
-import 'package:tenantsnap/features/auth/screens/login_screen.dart';
-import 'package:tenantsnap/features/auth/controllers/auth_controller.dart';
+import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
+import 'package:tenantsnap/features/property/controllers/property_details_controller.dart';
 
 class PropertyDetailsScreen extends StatefulWidget {
   final String role;
@@ -22,127 +21,33 @@ class PropertyDetailsScreen extends StatefulWidget {
 }
 
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
-  String _selectedRole = 'tenant';
-  final _tenantController = TextEditingController();
-  final _landlordController = TextEditingController();
-  final _tenantPhoneController = TextEditingController();
-  final _landlordPhoneController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _possessionDateController = TextEditingController();
-  final _leaseDateController = TextEditingController();
-  final _idCodeController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _stateController = TextEditingController();
-  final _zipController = TextEditingController();
-  final _countryController = TextEditingController();
-  bool _showPhoneInPdf = true;
+  late final PropertyDetailsController _detailsController;
 
   @override
   void initState() {
     super.initState();
-    _selectedRole = widget.role;
-
-    final controller = Get.find<InspectionController>();
-    final authController = Get.find<AuthController>();
-
-    _idCodeController.text = controller.idCode.value;
-    if (_idCodeController.text == 'TS-402-URBL' && authController.idCode.value.isNotEmpty) {
-      _idCodeController.text = authController.idCode.value;
-    }
-
-    _tenantController.text = controller.tenantName.value;
-    if (_tenantController.text == 'Liam Carter' && _selectedRole == 'tenant' && authController.name.value.isNotEmpty) {
-      _tenantController.text = authController.name.value;
-    }
-
-    _landlordController.text = controller.landlordName.value;
-    if (_landlordController.text == 'Victoria Sterling' && _selectedRole == 'landlord' && authController.name.value.isNotEmpty) {
-      _landlordController.text = authController.name.value;
-    }
-
-    _tenantPhoneController.text = controller.tenantPhone.value;
-    if (_tenantPhoneController.text == '+1 (555) 012-3456' && _selectedRole == 'tenant' && authController.phone.value.isNotEmpty) {
-      _tenantPhoneController.text = authController.phone.value;
-    }
-
-    _landlordPhoneController.text = controller.landlordPhone.value;
-    if (_landlordPhoneController.text == '+1 (555) 019-2834' && _selectedRole == 'landlord' && authController.phone.value.isNotEmpty) {
-      _landlordPhoneController.text = authController.phone.value;
-    }
-
-    _showPhoneInPdf = controller.showPhoneInPdf.value;
-
-    _addressController.text = controller.propertyAddress.value;
-    _cityController.text = controller.city.value;
-    _stateController.text = controller.state.value;
-    _zipController.text = controller.zipcode.value;
-    _countryController.text = controller.country.value;
-    _possessionDateController.text = controller.possessionDate.value;
-    _leaseDateController.text = controller.agreementDate.value;
-
-    if (widget.userName != null && widget.userName!.isNotEmpty) {
-      if (_selectedRole == 'tenant') {
-        _tenantController.text = widget.userName!;
-      } else {
-        _landlordController.text = widget.userName!;
-      }
-    }
+    _detailsController = Get.put(PropertyDetailsController());
+    _detailsController.initializeData(
+      initialRole: widget.role,
+      initialUserName: widget.userName,
+    );
   }
 
   @override
   void dispose() {
-    _tenantController.dispose();
-    _landlordController.dispose();
-    _tenantPhoneController.dispose();
-    _landlordPhoneController.dispose();
-    _addressController.dispose();
-    _possessionDateController.dispose();
-    _leaseDateController.dispose();
-    _idCodeController.dispose();
-    _cityController.dispose();
-    _stateController.dispose();
-    _zipController.dispose();
-    _countryController.dispose();
+    Get.delete<PropertyDetailsController>();
     super.dispose();
-  }
-
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF007BFF),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF2C3E50),
-            ),
-            dialogBackgroundColor: Colors.white,
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        controller.text = "${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}";
-      });
-    }
   }
 
   void _showAddressDialog() {
     final streetController = TextEditingController();
-    final cityController = TextEditingController(text: _cityController.text);
-    final stateController = TextEditingController(text: _stateController.text);
-    final zipController = TextEditingController(text: _zipController.text);
-    final countryController = TextEditingController(text: _countryController.text);
+    final cityController = TextEditingController(text: _detailsController.cityController.text);
+    final stateController = TextEditingController(text: _detailsController.stateController.text);
+    final zipController = TextEditingController(text: _detailsController.zipController.text);
+    final countryController = TextEditingController(text: _detailsController.countryController.text);
 
-    if (_addressController.text.isNotEmpty) {
-      final parts = _addressController.text.split(',');
+    if (_detailsController.addressController.text.isNotEmpty) {
+      final parts = _detailsController.addressController.text.split(',');
       if (parts.isNotEmpty) {
         streetController.text = parts[0].trim();
       }
@@ -203,28 +108,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 final zip = zipController.text.trim();
                 final country = countryController.text.trim();
 
-                setState(() {
-                  _cityController.text = city;
-                  _stateController.text = state;
-                  _zipController.text = zip;
-                  _countryController.text = country;
-                  
-                  final List<String> addressParts = [];
-                  if (street.isNotEmpty) addressParts.add(street);
-                  if (city.isNotEmpty) addressParts.add(city);
-                  if (state.isNotEmpty) {
-                    if (zip.isNotEmpty) {
-                      addressParts.add("$state $zip");
-                    } else {
-                      addressParts.add(state);
-                    }
-                  } else if (zip.isNotEmpty) {
-                    addressParts.add(zip);
-                  }
-                  if (country.isNotEmpty) addressParts.add(country);
-
-                  _addressController.text = addressParts.join(', ');
-                });
+                _detailsController.updateAddress(
+                  street: street,
+                  city: city,
+                  state: state,
+                  zip: zip,
+                  country: country,
+                );
 
                 Navigator.of(context).pop();
               },
@@ -297,20 +187,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   }
 
   void _handleSubmit() {
-    final String idCodeVal = _idCodeController.text.trim();
-    final String tenantNameVal = _tenantController.text.trim();
-    final String landlordNameVal = _landlordController.text.trim();
-    final String tenantPhoneVal = _tenantPhoneController.text.trim();
-    final String landlordPhoneVal = _landlordPhoneController.text.trim();
-    final String addressVal = _addressController.text.trim();
-    final String cityVal = _cityController.text.trim();
-    final String stateVal = _stateController.text.trim();
-    final String zipVal = _zipController.text.trim();
-    final String countryVal = _countryController.text.trim();
-    final String possessionDateVal = _possessionDateController.text.trim();
-    final String agreementDateVal = _leaseDateController.text.trim();
+    final success = _detailsController.submitMetadata();
 
-    if (tenantNameVal.isEmpty || landlordNameVal.isEmpty || addressVal.isEmpty) {
+    if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter Tenant Name, Landlord Name, and Full Address to proceed.'),
@@ -318,23 +197,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       );
       return;
     }
-
-    final controller = Get.find<InspectionController>();
-    controller.updateMetadata(
-      id: idCodeVal,
-      tenant: tenantNameVal,
-      landlord: landlordNameVal,
-      address: addressVal,
-      cityVal: cityVal,
-      stateVal: stateVal,
-      zipVal: zipVal,
-      countryVal: countryVal,
-      possession: possessionDateVal.isNotEmpty ? possessionDateVal : '06/20/2026',
-      agreement: agreementDateVal.isNotEmpty ? agreementDateVal : '06/15/2026',
-      tenantPh: tenantPhoneVal,
-      landlordPh: landlordPhoneVal,
-      showPhone: _showPhoneInPdf,
-    );
 
     Get.off(() => const InspectionFlowListScreen());
   }
@@ -428,8 +290,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         GestureDetector(
                           onTap: () {
                             Get.to(() => SettingsScreen(
-                              role: _selectedRole,
-                              userName: _selectedRole == 'tenant' ? _tenantController.text : _landlordController.text,
+                              role: _detailsController.selectedRole.value,
+                              userName: _detailsController.selectedRole.value == 'tenant' 
+                                  ? _detailsController.tenantController.text 
+                                  : _detailsController.landlordController.text,
                             ));
                           },
                           child: Container(
@@ -507,36 +371,34 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDropdownField(
+                      Obx(() => _buildDropdownField(
                         label: 'Register as',
-                        value: _selectedRole,
+                        value: _detailsController.selectedRole.value,
                         items: ['Tenant', 'Landlord'],
                         onChanged: (String? newValue) {
                           if (newValue != null) {
-                            setState(() {
-                              _selectedRole = newValue.toLowerCase();
-                            });
+                            _detailsController.updateSelectedRole(newValue);
                           }
                         },
-                      ),
+                      )),
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _idCodeController,
+                        controller: _detailsController.idCodeController,
                         label: 'ID CODE',
                         hintText: 'Enter ID code...',
                       ),
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _tenantController,
+                        controller: _detailsController.tenantController,
                         label: 'TENANT NAME',
                         hintText: 'Enter tenant name...',
                       ),
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _tenantPhoneController,
+                        controller: _detailsController.tenantPhoneController,
                         label: 'TENANT PHONE',
                         hintText: 'Enter tenant phone number...',
                         keyboardType: TextInputType.phone,
@@ -544,14 +406,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _landlordController,
+                        controller: _detailsController.landlordController,
                         label: 'LANDLORD NAME',
                         hintText: 'Enter landlord name...',
                       ),
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _landlordPhoneController,
+                        controller: _detailsController.landlordPhoneController,
                         label: 'LANDLORD PHONE',
                         hintText: 'Enter landlord phone number...',
                         keyboardType: TextInputType.phone,
@@ -559,7 +421,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _addressController,
+                        controller: _detailsController.addressController,
                         label: 'FULL ADDRESS',
                         hintText: 'Enter address...',
                         readOnly: true,
@@ -568,24 +430,24 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _possessionDateController,
+                        controller: _detailsController.possessionDateController,
                         label: 'POSSESSION DATE',
                         hintText: 'Select date...',
                         isDatePicker: true,
-                        onTap: () => _selectDate(context, _possessionDateController),
+                        onTap: () => _detailsController.selectDate(context, _detailsController.possessionDateController),
                       ),
                       const SizedBox(height: 18),
 
                       _buildFormTextField(
-                        controller: _leaseDateController,
+                        controller: _detailsController.leaseDateController,
                         label: 'AGREEMENT DATE',
                         hintText: 'Select date...',
                         isDatePicker: true,
-                        onTap: () => _selectDate(context, _leaseDateController),
+                        onTap: () => _detailsController.selectDate(context, _detailsController.leaseDateController),
                       ),
                       const SizedBox(height: 18),
 
-                      Row(
+                      Obx(() => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
@@ -599,16 +461,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             ),
                           ),
                           Switch(
-                            value: _showPhoneInPdf,
+                            value: _detailsController.showPhoneInPdf.value,
                             onChanged: (bool val) {
-                              setState(() {
-                                _showPhoneInPdf = val;
-                              });
+                              _detailsController.toggleShowPhoneInPdf(val);
                             },
                             activeColor: const Color(0xFF007BFF),
                           ),
                         ],
-                      ),
+                      )),
                       const SizedBox(height: 28),
 
                       Container(

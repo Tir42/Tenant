@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart'; // <-- Import package
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
-import 'package:tenantsnap/features/auth/screens/login_screen.dart';
+import 'package:tenantsnap/features/auth/login/screen/splash_screen.dart';
+import 'package:tenantsnap/core/services/rest_client.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+
 
 void main() {
   // 1. Initialize WidgetsBinding
@@ -12,7 +14,8 @@ void main() {
   // 2. Preserve native splash screen
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Initialize GetX controller
+  // Initialize GetX controllers
+  Get.put(RestClient());
   Get.put(InspectionController());
 
   runApp(const TenantSnapApp());
@@ -33,10 +36,8 @@ class _TenantSnapAppState extends State<TenantSnapApp> {
   }
 
   void _initialization() async {
-    // 3. Keep splash screen for 2 seconds (or load your settings/APIs here)
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // 4. Remove splash screen and transition to LoginScreen
+    // Remove native splash screen shortly after app start to let the animated Flutter splash screen run
+    await Future.delayed(const Duration(milliseconds: 200));
     FlutterNativeSplash.remove();
   }
 
@@ -57,7 +58,8 @@ class _TenantSnapAppState extends State<TenantSnapApp> {
         ),
         fontFamily: 'Montserrat',
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }
+

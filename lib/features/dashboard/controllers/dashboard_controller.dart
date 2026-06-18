@@ -1,9 +1,17 @@
 import 'package:get/get.dart';
-import 'package:tenantsnap/features/auth/controllers/auth_controller.dart';
+import 'package:tenantsnap/core/controllers/base_controller.dart';
 
 class DashboardController extends GetxController {
   final activeRole = 'tenant'.obs;
   final userName = 'Liam Carter'.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (BaseController.name.value.isNotEmpty) {
+      userName.value = BaseController.name.value;
+    }
+  }
   
   final currentCarouselPage = 0.obs;
   final currentSubsPage = 0.obs;
@@ -75,17 +83,7 @@ class DashboardController extends GetxController {
 
   void toggleRole(String role) {
     activeRole.value = role;
-    final authController = Get.find<AuthController>();
-    if (role == 'tenant') {
-      userName.value = authController.name.value.isNotEmpty ? authController.name.value : 'Liam Carter';
-    } else {
-      final emailLower = authController.email.value.toLowerCase();
-      if (emailLower.contains('sterling') || emailLower.contains('landlord')) {
-        userName.value = authController.name.value.isNotEmpty ? authController.name.value : 'Victoria Sterling';
-      } else {
-        userName.value = 'Victoria Sterling';
-      }
-    }
+    userName.value = BaseController.name.value.isNotEmpty ? BaseController.name.value : (role == 'tenant' ? 'Tenant' : 'Landlord');
   }
 
   void updateUserName(String newName) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/features/auth/login/controller/login_controller.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -17,7 +19,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _sendReset() {
+  void _sendReset() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -25,14 +27,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
       return;
     }
-    // Placeholder for real password‑reset logic.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password reset link sent (mock).')),
-    );
+    
+    final loginController = Get.find<LoginController>();
+    final success = await loginController.sendPasswordResetEmail(email);
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset link sent successfully!')),
+        );
+        Get.back();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send reset link.')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loginController = Get.find<LoginController>();
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -101,14 +116,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   SizedBox(
                     width: double.infinity,
                     height: 48,
-                    child: ElevatedButton(
-                      onPressed: _sendReset,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007BFF),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      ),
-                      child: const Text('Send Reset Link', style: TextStyle(color: Colors.white, fontFamily: 'Montserrat')),
-                    ),
+                    child: Obx(() {
+                      if (loginController.isLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF007BFF),
+                          ),
+                        );
+                      }
+                      return ElevatedButton(
+                        onPressed: _sendReset,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007BFF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
+                        child: const Text('Send Reset Link', style: TextStyle(color: Colors.white, fontFamily: 'Montserrat')),
+                      );
+                    }),
                   ),
                 ],
               ),

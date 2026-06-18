@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tenantsnap/features/auth/controllers/auth_controller.dart';
+import 'package:tenantsnap/core/controllers/base_controller.dart';
 
 class ProfileDetailsScreen extends StatefulWidget {
   final String role;
@@ -24,16 +24,14 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   void initState() {
     super.initState();
     _activeRole = widget.role;
-    _userName = widget.userName;
+    _userName = BaseController.name.value.isNotEmpty ? BaseController.name.value : widget.userName;
   }
 
   @override
   Widget build(BuildContext context) {
     final Color activeColor = _activeRole == 'tenant' ? const Color(0xFF007BFF) : const Color(0xFF2ECC71);
-    final authController = Get.find<AuthController>();
-
-    final String activeEmail = authController.email.value.isNotEmpty ? authController.email.value : (_activeRole == 'tenant' ? 'Liam.Carter@snapnode.io' : 'Victoria.Sterling@snapnode.io');
-    final String activePhone = authController.phone.value.isNotEmpty ? authController.phone.value : (_activeRole == 'tenant' ? '+1 (555) 012-3456' : '+1 (555) 019-2834');
+    final String activeEmail = BaseController.email.value.isNotEmpty ? BaseController.email.value : '';
+    final String activePhone = BaseController.phone.value.isNotEmpty ? BaseController.phone.value : '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -92,10 +90,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                             child: Text(
                               _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
                               style: TextStyle(
-                                color: activeColor,
-                                fontFamily: 'Montserrat',
-                                fontSize: 34,
-                                fontWeight: FontWeight.w900,
+                                  color: activeColor,
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
@@ -169,7 +167,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               const Divider(color: Color(0xFFE2E8F0), height: 24),
               _buildTelemetryRow('Registered Phone', activePhone),
               const Divider(color: Color(0xFFE2E8F0), height: 24),
-              _buildTelemetryRow('Device ID Token', 'TS-9482-AD7X'),
+              _buildTelemetryRow('Unique ID Code', BaseController.idCode.value.isNotEmpty ? BaseController.idCode.value : 'TS-402-URBL'),
               const Divider(color: Color(0xFFE2E8F0), height: 24),
               _buildTelemetryRow('Workspace Node ID', 'WSN-0294-SF82'),
               const Divider(color: Color(0xFFE2E8F0), height: 24),

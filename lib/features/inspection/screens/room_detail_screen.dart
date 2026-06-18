@@ -23,31 +23,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   late TextEditingController _commentController;
   final ImagePicker _picker = ImagePicker();
 
-  final List<String> _availableUtilities = [
-    'Furniture',
-    'TV',
-    'Refrigerator',
-    'Microwave',
-    'Washing Machine',
-    'Air Conditioner',
-    'Oven',
-    'Dishwasher',
-  ];
-
   @override
   void initState() {
     super.initState();
     final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
     _commentController = TextEditingController(text: room.comment);
-
-    // Sync any custom features already in the room's checklist into _availableUtilities
-    if (room.name.toLowerCase() == 'utils') {
-      for (var item in room.checklist) {
-        if (!_availableUtilities.contains(item.name)) {
-          _availableUtilities.add(item.name);
-        }
-      }
-    }
 
     _commentController.addListener(() {
       final r = controller.roomsList.firstWhere((room) => room.id == widget.roomId);
@@ -276,11 +256,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
                   if (room.name.toLowerCase() == 'utils') {
                     controller.addUtilityItem(name);
-                    if (!_availableUtilities.contains(name)) {
-                      setState(() {
-                        _availableUtilities.add(name);
-                      });
-                    }
                   } else {
                     room.checklist.add(InspectionItem(name: name, status: RoomItemStatus.neutral));
                     room.recalculateProgress();
@@ -404,7 +379,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                               child: Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children: _availableUtilities.map((utility) => _buildChipItem(utility, checklist)).toList(),
+                                children: controller.availableUtilities.map((utility) => _buildChipItem(utility, checklist)).toList(),
                               ),
                             ),
                             const SizedBox(height: 20),
