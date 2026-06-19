@@ -17,8 +17,4 @@ class BaseController extends GetxController {
     restClient = Get.find<RestClient>();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

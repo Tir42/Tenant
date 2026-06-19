@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
+import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
 
 class ProfileDetailsScreen extends StatefulWidget {
   final String role;
@@ -133,9 +134,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: activeColor.withOpacity(0.08),
+                        color: activeColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: activeColor.withOpacity(0.2), width: 0.8),
+                        border: Border.all(color: activeColor.withValues(alpha: 0.2), width: 0.8),
                       ),
                       child: Text(
                         _activeRole == 'tenant' ? 'SECURE TENANT NODE' : 'VERIFIED LANDLORD PORTAL',
@@ -173,6 +174,68 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               const Divider(color: Color(0xFFE2E8F0), height: 24),
               _buildTelemetryRow('Last Synced Stamp', 'June 16, 2026 • 17:30'),
               const Divider(color: Color(0xFFE2E8F0), height: 24),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                height: 50,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  color: const Color(0xFFFFF5F5), // Light elegant red backdrop
+                  border: Border.all(color: const Color(0xFFFFC9C9), width: 1.0),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    // Reset global profile details
+                    BaseController.name.value = '';
+                    BaseController.email.value = '';
+                    BaseController.phone.value = '';
+                    BaseController.idCode.value = '';
+
+                    // Show visual disconnect snackbar
+                    Get.snackbar(
+                      'Disconnected',
+                      'Secure session closed successfully.',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: const Color(0xFF2C3E50),
+                      colorText: Colors.white,
+                      margin: const EdgeInsets.all(16),
+                      duration: const Duration(seconds: 2),
+                    );
+
+                    // Redirect to Login Screen
+                    Get.offAll(
+                      () => const LoginScreen(),
+                      transition: Transition.fade,
+                      duration: const Duration(milliseconds: 600),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(25),
+                  child: const Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.logout_rounded,
+                          color: Color(0xFFFA5252),
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'SECURE LOG OUT',
+                          style: TextStyle(
+                            color: Color(0xFFFA5252),
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

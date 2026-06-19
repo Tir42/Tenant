@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:country_picker/country_picker.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/inspection/screens/inspection_flow_list_screen.dart';
-import 'package:tenantsnap/features/dashboard/screens/settings_screen.dart';
-import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
 import 'package:tenantsnap/features/property/controllers/property_details_controller.dart';
+import 'package:tenantsnap/features/property/widgets/property_form_text_field.dart';
+import 'package:tenantsnap/features/property/widgets/address_popup_field.dart';
 
 class PropertyDetailsScreen extends StatefulWidget {
   final String role;
@@ -59,15 +61,15 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28.0),
+            borderRadius: BorderRadius.circular(28.0.w),
           ),
-          title: const Text(
+          title: Text(
             'ENTER ADDRESS DETAILS',
             style: TextStyle(
-              color: Color(0xFF2C3E50),
+              color: const Color(0xFF2C3E50),
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.w800,
-              fontSize: 14,
+              fontSize: 14.0.sp,
               letterSpacing: 1.2,
             ),
           ),
@@ -76,27 +78,41 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildPopupField(controller: streetController, label: 'STREET ADDRESS', hint: 'e.g. 1180 Folsom St'),
-                const SizedBox(height: 12),
-                _buildPopupField(controller: cityController, label: 'CITY', hint: 'e.g. San Francisco'),
-                const SizedBox(height: 12),
-                _buildPopupField(controller: stateController, label: 'STATE', hint: 'e.g. CA'),
-                const SizedBox(height: 12),
-                _buildPopupField(controller: zipController, label: 'ZIP CODE', hint: 'e.g. 94103'),
-                const SizedBox(height: 12),
-                _buildPopupField(controller: countryController, label: 'COUNTRY / COUNTY', hint: 'e.g. USA'),
+                AddressPopupField(controller: streetController, label: 'STREET ADDRESS', hint: 'e.g. 1180 Folsom St'),
+                SizedBox(height: 12.0.h),
+                AddressPopupField(controller: cityController, label: 'CITY', hint: 'e.g. San Francisco'),
+                SizedBox(height: 12.0.h),
+                AddressPopupField(controller: stateController, label: 'STATE', hint: 'e.g. CA'),
+                SizedBox(height: 12.0.h),
+                AddressPopupField(controller: zipController, label: 'ZIP CODE', hint: 'e.g. 94103'),
+                SizedBox(height: 12.0.h),
+                AddressPopupField(
+                  controller: countryController,
+                  label: 'COUNTRY / COUNTY',
+                  hint: 'e.g. USA',
+                  readOnly: true,
+                  onTap: () {
+                    showCountryPicker(
+                      context: context,
+                      onSelect: (Country country) {
+                        countryController.text = country.name;
+                      },
+                    );
+                  },
+                ),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Color(0xFF95A5A6),
+                  color: const Color(0xFF95A5A6),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
+                  fontSize: 14.0.sp,
                 ),
               ),
             ),
@@ -121,15 +137,16 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF007BFF),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.0.w),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Submit',
                 style: TextStyle(
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
+                  fontSize: 14.0.sp,
                 ),
               ),
             ),
@@ -139,57 +156,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
-  Widget _buildPopupField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF7F8C8D),
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 10,
-            letterSpacing: 1.0,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F4F7),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: TextField(
-            controller: controller,
-            style: const TextStyle(
-              color: Color(0xFF2C3E50),
-              fontFamily: 'Montserrat',
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(
-                color: Color(0xFF95A5A6),
-                fontSize: 12,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              border: InputBorder.none,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  void _handleSubmit() {
-    final success = _detailsController.submitMetadata();
+  void _handleSubmit() async {
+    final success = await _detailsController.submitMetadata();
 
     if (!success) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter Tenant Name, Landlord Name, and Full Address to proceed.'),
@@ -214,249 +186,177 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         child: SafeArea(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            padding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 16.0.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // --- HEADER: BACK ARROW & ACTIONS ---
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 44.w,
+                        height: 44.h,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6.0.w,
+                              offset: Offset(0, 2.0.h),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.arrow_back_rounded,
+                            color: const Color(0xFF2C3E50),
+                            size: 20.w,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 14.0.w),
                     Expanded(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.arrow_back_rounded,
-                                  color: Color(0xFF2C3E50),
-                                  size: 20,
-                                ),
-                              ),
+                          Text(
+                            'Property Details',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: const Color(0xFF2C3E50),
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.w800,
+                              fontSize: 22.0.sp,
                             ),
                           ),
-                          const SizedBox(width: 14),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Property Details',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Color(0xFF2C3E50),
-                                    fontFamily: 'Montserrat',
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 22,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Register address & lease data',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Color(0xFF7F8C8D),
-                                    fontFamily: 'Montserrat',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                          SizedBox(height: 2.0.h),
+                          Text(
+                            'Register address & lease data',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: const Color(0xFF7F8C8D),
+                              fontFamily: 'Montserrat',
+                              fontSize: 12.0.sp,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Get.to(() => SettingsScreen(
-                              role: _detailsController.selectedRole.value,
-                              userName: _detailsController.selectedRole.value == 'tenant' 
-                                  ? _detailsController.tenantController.text 
-                                  : _detailsController.landlordController.text,
-                            ));
-                          },
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.settings_outlined,
-                                color: Color(0xFF2C3E50),
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: () {
-                            Get.offAll(() => const LoginScreen());
-                          },
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.logout_rounded,
-                                color: Color(0xFF2C3E50),
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.0.h),
 
                 // --- FORM CARD CONTAINER ---
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(32.0),
+                    borderRadius: BorderRadius.circular(32.0.w),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF2C3E50).withOpacity(0.06),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
+                        color: const Color(0xFF2C3E50).withValues(alpha: 0.06),
+                        blurRadius: 24.0.w,
+                        offset: Offset(0, 10.0.h),
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
+                  padding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 28.0.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Obx(() => _buildDropdownField(
                         label: 'Register as',
                         value: _detailsController.selectedRole.value,
-                        items: ['Tenant', 'Landlord'],
+                        items: const ['Tenant', 'Landlord'],
                         onChanged: (String? newValue) {
                           if (newValue != null) {
                             _detailsController.updateSelectedRole(newValue);
                           }
                         },
                       )),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.idCodeController,
                         label: 'ID CODE',
                         hintText: 'Enter ID code...',
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.tenantController,
                         label: 'TENANT NAME',
                         hintText: 'Enter tenant name...',
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.tenantPhoneController,
                         label: 'TENANT PHONE',
                         hintText: 'Enter tenant phone number...',
                         keyboardType: TextInputType.phone,
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.landlordController,
                         label: 'LANDLORD NAME',
                         hintText: 'Enter landlord name...',
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.landlordPhoneController,
                         label: 'LANDLORD PHONE',
                         hintText: 'Enter landlord phone number...',
                         keyboardType: TextInputType.phone,
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.addressController,
                         label: 'FULL ADDRESS',
                         hintText: 'Enter address...',
                         readOnly: true,
                         onTap: _showAddressDialog,
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.possessionDateController,
                         label: 'POSSESSION DATE',
                         hintText: 'Select date...',
                         isDatePicker: true,
                         onTap: () => _detailsController.selectDate(context, _detailsController.possessionDateController),
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
-                      _buildFormTextField(
+                      PropertyFormTextField(
                         controller: _detailsController.leaseDateController,
                         label: 'AGREEMENT DATE',
                         hintText: 'Select date...',
                         isDatePicker: true,
                         onTap: () => _detailsController.selectDate(context, _detailsController.leaseDateController),
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18.0.h),
 
                       Obx(() => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'SHOW PHONE NUMBERS IN PDF',
                             style: TextStyle(
-                              color: Color(0xFF7F8C8D),
+                              color: const Color(0xFF7F8C8D),
                               fontFamily: 'Montserrat',
                               fontWeight: FontWeight.bold,
-                              fontSize: 11,
+                              fontSize: 11.0.sp,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -469,13 +369,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           ),
                         ],
                       )),
-                      const SizedBox(height: 28),
+                      SizedBox(height: 28.0.h),
 
                       Container(
                         width: double.infinity,
-                        height: 50,
+                        height: 50.0.h,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(25.0.w),
                           gradient: const LinearGradient(
                             colors: [
                               Color(0xFF3B82F6), 
@@ -484,31 +384,40 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF3B82F6).withOpacity(0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
+                              color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
+                              blurRadius: 8.0.w,
+                              offset: Offset(0, 4.0.h),
                             ),
                           ],
                         ),
-                        child: ElevatedButton(
-                          onPressed: _handleSubmit,
+                        child: Obx(() => ElevatedButton(
+                          onPressed: _detailsController.isLoading.value ? null : _handleSubmit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
+                              borderRadius: BorderRadius.circular(25.0.w),
                             ),
                           ),
-                          child: const Text(
-                            'Save & Continue',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Montserrat',
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
+                          child: _detailsController.isLoading.value
+                              ? SizedBox(
+                                  width: 20.w,
+                                  height: 20.h,
+                                  child: CircularProgressIndicator(
+                                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                    strokeWidth: 2.0.w,
+                                  ),
+                                )
+                              : Text(
+                                  'Save & Continue',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 15.0.sp,
+                                  ),
+                                ),
+                        )),
                       ),
                     ],
                   ),
@@ -521,77 +430,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
-  Widget _buildFormTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hintText,
-    bool readOnly = false,
-    bool isDatePicker = false,
-    VoidCallback? onTap,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF7F8C8D),
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 11,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: TextField(
-            controller: controller,
-            readOnly: readOnly || isDatePicker,
-            onTap: onTap,
-            keyboardType: keyboardType,
-            style: const TextStyle(
-              color: Color(0xFF2C3E50),
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Montserrat',
-              fontSize: 15,
-            ),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: const TextStyle(
-                color: Color(0xFF95A5A6),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: const BorderSide(color: Color(0xFF007BFF), width: 1.5),
-              ),
-              suffixIcon: isDatePicker
-                  ? const Padding(
-                      padding: EdgeInsets.only(right: 16),
-                      child: Icon(
-                        Icons.calendar_today_outlined,
-                        color: Color(0xFF2C3E50),
-                        size: 18,
-                      ),
-                    )
-                  : null,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildDropdownField({
     required String label,
@@ -606,36 +444,36 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF2C3E50),
+          style: TextStyle(
+            color: const Color(0xFF2C3E50),
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.bold,
-            fontSize: 13,
+            fontSize: 13.0.sp,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.0.h),
         Container(
-          height: 48,
+          height: 48.0.h,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+            borderRadius: BorderRadius.circular(24.0.w),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0.w),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: 20.0.w),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: displayValue,
               isExpanded: true,
-              icon: const Icon(
+              icon: Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: Color(0xFF7F8C8D),
-                size: 20,
+                color: const Color(0xFF7F8C8D),
+                size: 20.w,
               ),
-              style: const TextStyle(
-                color: Color(0xFF2C3E50),
+              style: TextStyle(
+                color: const Color(0xFF2C3E50),
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Montserrat',
-                fontSize: 14,
+                fontSize: 14.0.sp,
               ),
               items: items.map((String item) {
                 return DropdownMenuItem<String>(

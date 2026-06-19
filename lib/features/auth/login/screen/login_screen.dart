@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/auth/login/controller/login_controller.dart';
 import 'forgot_password_screen.dart';
@@ -18,37 +19,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final loginController = Get.put(LoginController());
   
-  String? _emailError;
-  String? _passwordError;
-
   void _handlePrimaryAction() async {
-    final email = loginController.emailController.text.trim();
-    final password = loginController.passwordController.text;
-
-    setState(() {
-      _emailError = null;
-      _passwordError = null;
-    });
-
-    bool hasValidationError = false;
-
-    if (email.isEmpty) {
-      setState(() => _emailError = 'Email is required.');
-      hasValidationError = true;
-    } else if (!GetUtils.isEmail(email)) {
-      setState(() => _emailError = 'Please enter a valid email address.');
-      hasValidationError = true;
-    }
-
-    if (password.isEmpty) {
-      setState(() => _passwordError = 'Password is required.');
-      hasValidationError = true;
-    } else if (password.length < 6) {
-      setState(() => _passwordError = 'Password must be at least 6 characters.');
-      hasValidationError = true;
-    }
-
-    if (hasValidationError) {
+    if (!loginController.validateInputs()) {
       return;
     }
 
@@ -61,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
     final errorMsg = await loginController.login();
     if (errorMsg == null && mounted) {
+      final email = loginController.emailController.text.trim();
       final idCode = BaseController.idCode.value.toLowerCase();
       final role = (idCode.startsWith('ll') || email.toLowerCase().contains('sterling') || email.toLowerCase().contains('landlord')) ? 'landlord' : 'tenant';
       Get.off(() => HomeScreen(
@@ -68,15 +41,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         userName: BaseController.name.value,
       ));
     } else if (errorMsg != null && mounted) {
-      setState(() {
-        if (errorMsg.toLowerCase().contains('password')) {
-          _passwordError = errorMsg;
-        } else if (errorMsg.toLowerCase().contains('user') || errorMsg.toLowerCase().contains('email')) {
-          _emailError = errorMsg;
-        } else {
-          _passwordError = errorMsg;
-        }
-      });
+      if (errorMsg.toLowerCase().contains('password')) {
+        loginController.passwordError.value = errorMsg;
+      } else if (errorMsg.toLowerCase().contains('user') || errorMsg.toLowerCase().contains('email')) {
+        loginController.emailError.value = errorMsg;
+      } else {
+        loginController.passwordError.value = errorMsg;
+      }
     }
   }
 
@@ -95,27 +66,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
           // Soft Violet Blob (Top-left)
           Positioned(
-            top: -120,
-            left: -120,
+            top: -120.h,
+            left: -120.w,
             child: Container(
-              width: 320,
-              height: 320,
+              width: 320.w,
+              height: 320.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF8B5CF6).withOpacity(0.12),
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
               ),
             ),
           ),
           // Soft Blue-Teal Blob (Bottom-right)
           Positioned(
-            bottom: -80,
-            right: -100,
+            bottom: -80.h,
+            right: -100.w,
             child: Container(
-              width: 360,
-              height: 360,
+              width: 360.w,
+              height: 360.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF06B6D4).withOpacity(0.12),
+                color: const Color(0xFF06B6D4).withValues(alpha: 0.12),
               ),
             ),
           ),
@@ -132,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             child: Center(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(horizontal: 24.0.w),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -142,24 +113,25 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Custom bobbing animation for the high-tech logo
                           _FloatingWidget(
-                            child: CustomPaint(
-                              size: const Size(85, 75),
-                              painter: LoginLogoPainter(),
+                            child: Image.asset(
+                              'assets/app_icon.png',
+                              width: 85.0.w,
+                              height: 75.0.h,
+                              fit: BoxFit.contain,
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          SizedBox(height: 18.0.h),
                           RichText(
-                            text: const TextSpan(
+                            text: TextSpan(
                               style: TextStyle(
-                                color: Color(0xFF2C3E50),
-                                fontSize: 30,
+                                color: const Color(0xFF2C3E50),
+                                fontSize: 30.0.sp,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
                                 fontFamily: 'Montserrat',
                               ),
-                              children: [
+                              children: const [
                                 TextSpan(text: 'Tenant'),
                                 TextSpan(
                                   text: 'Snap',
@@ -171,13 +143,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               ],
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          const Text(
+                          SizedBox(height: 6.0.h),
+                          Text(
                             'Effortless Home Documentation',
                             style: TextStyle(
-                              color: Color(0xFF7F8C8D),
+                              color: const Color(0xFF7F8C8D),
                               fontFamily: 'Montserrat',
-                              fontSize: 13,
+                              fontSize: 13.0.sp,
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.5,
                             ),
@@ -185,42 +157,42 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         ],
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.0.h),
 
                     // --- Toggle Tabs (Sign in / Create account) ---
                     _StaggeredEntrance(
                       delayMs: 180,
                       child: Container(
                         width: double.infinity,
-                        height: 48,
+                        height: 48.0.h,
                         decoration: BoxDecoration(
                           color: const Color(0xFFEEF2F6),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(24.0.w),
                         ),
                         child: Row(
                           children: [
                             Expanded(
                               child: Container(
-                                margin: const EdgeInsets.all(4),
+                                margin: EdgeInsets.all(4.0.w),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(20.0.w),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 4.0.w,
+                                      offset: Offset(0, 2.0.h),
                                     ),
                                   ],
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
                                     'Sign in',
                                     style: TextStyle(
-                                      color: Color(0xFF2C3E50),
+                                      color: const Color(0xFF2C3E50),
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Montserrat',
-                                      fontSize: 13,
+                                      fontSize: 13.0.sp,
                                     ),
                                   ),
                                 ),
@@ -233,14 +205,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 },
                                 child: Container(
                                   color: Colors.transparent,
-                                  child: const Center(
+                                  child: Center(
                                     child: Text(
                                       'Create account',
                                       style: TextStyle(
-                                        color: Color(0xFF7F8C8D),
+                                        color: const Color(0xFF7F8C8D),
                                         fontWeight: FontWeight.bold,
                                         fontFamily: 'Montserrat',
-                                        fontSize: 13,
+                                        fontSize: 13.0.sp,
                                       ),
                                     ),
                                   ),
@@ -251,20 +223,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.0.h),
 
                     // --- Email Field ---
                     _StaggeredEntrance(
                       delayMs: 260,
-                      child: _buildCustomTextField(
+                      child: Obx(() => _buildCustomTextField(
                         controller: loginController.emailController,
                         hintText: 'you@home.com',
                         icon: Icons.mail_outline,
                         keyboardType: TextInputType.emailAddress,
-                        errorText: _emailError,
-                      ),
+                        errorText: loginController.emailError.value,
+                      )),
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14.0.h),
 
                     // --- Password Field ---
                     _StaggeredEntrance(
@@ -274,29 +246,29 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         hintText: 'Password',
                         icon: Icons.lock_outline,
                         obscureText: loginController.obscurePassword.value,
-                        errorText: _passwordError,
+                        errorText: loginController.passwordError.value,
                         suffixIcon: IconButton(
                           icon: Icon(
                             loginController.obscurePassword.value
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                             color: const Color(0xFF7F8C8D),
-                            size: 18,
+                            size: 18.w,
                           ),
                           onPressed: loginController.toggleObscurePassword,
                         ),
                       )),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.0.h),
 
                     // --- Sign In Button ---
                     _StaggeredEntrance(
                       delayMs: 420,
                       child: Obx(() => Container(
                         width: double.infinity,
-                        height: 50,
+                        height: 50.0.h,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(25.0.w),
                           gradient: const LinearGradient(
                             colors: [
                               Color(0xFF3B82F6), // Vibrant Blue
@@ -305,9 +277,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF3B82F6).withOpacity(0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
+                              color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
+                              blurRadius: 8.0.w,
+                              offset: Offset(0, 4.0.h),
                             ),
                           ],
                         ),
@@ -317,19 +289,19 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
+                              borderRadius: BorderRadius.circular(25.0.w),
                             ),
                           ),
                           child: loginController.isLoading.value
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
+                              ? SizedBox(
+                                  width: 20.w,
+                                  height: 20.h,
                                   child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    strokeWidth: 2,
+                                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                    strokeWidth: 2.0.w,
                                   ),
                                 )
-                              : const Row(
+                              : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
@@ -338,22 +310,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                         fontFamily: 'Montserrat',
-                                        fontSize: 15,
+                                        fontSize: 15.0.sp,
                                         letterSpacing: 0.5,
                                       ),
                                     ),
-                                    SizedBox(width: 8),
+                                    SizedBox(width: 8.0.w),
                                     Icon(
                                       Icons.arrow_forward_rounded,
                                       color: Colors.white,
-                                      size: 16,
+                                      size: 16.w,
                                     ),
                                   ],
                                 ),
                         ),
                       )),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.0.h),
 
                     // --- Bottom Links ---
                     _StaggeredEntrance(
@@ -365,12 +337,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             onTap: () {
                               Get.to(() => const ForgotPasswordScreen());
                             },
-                            child: const Text(
+                            child: Text(
                               'Forgot password?',
                               style: TextStyle(
-                                color: Color(0xFF7F8C8D),
+                                color: const Color(0xFF7F8C8D),
                                 fontFamily: 'Montserrat',
-                                fontSize: 13,
+                                fontSize: 13.0.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -379,13 +351,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             onTap: () {
                               Get.to(() => const SignUpScreen());
                             },
-                            child: const Text(
+                            child: Text(
                               'Create one',
                               style: TextStyle(
-                                color: Color(0xFF007BFF),
+                                color: const Color(0xFF007BFF),
                                 fontFamily: 'Montserrat',
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: 13.0.sp,
                               ),
                             ),
                           ),
@@ -421,85 +393,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       errorText: errorText,
     );
   }
-}
-
-// Re‑use the same logo painter for visual consistency.
-class LoginLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-
-    final Paint housePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFF3B82F6), // Vibrant Blue
-          Color(0xFF00D1FF), // Cyan Accent
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-
-    final Path housePath = Path()
-      ..moveTo(w * 0.5, h * 0.05)
-      ..lineTo(w * 0.95, h * 0.42)
-      ..lineTo(w * 0.83, h * 0.42)
-      ..lineTo(w * 0.83, h * 0.95)
-      ..lineTo(w * 0.17, h * 0.95)
-      ..lineTo(w * 0.17, h * 0.42)
-      ..lineTo(w * 0.05, h * 0.42)
-      ..close();
-
-    canvas.drawPath(housePath, housePaint);
-
-    final Paint cameraBodyPaint = Paint()..color = Colors.white;
-    final RRect cameraBody = RRect.fromRectAndRadius(
-      Rect.fromLTRB(w * 0.26, h * 0.52, w * 0.74, h * 0.88),
-      const Radius.circular(6.0),
-    );
-    canvas.drawRRect(cameraBody, cameraBodyPaint);
-
-    final Paint lensBorder = Paint()
-      ..color = const Color(0xFF1E293B)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    final center = Offset(w * 0.5, h * 0.70);
-    canvas.drawCircle(center, w * 0.14, lensBorder);
-
-    final Paint lensDark = Paint()..color = const Color(0xFF0F172A);
-    canvas.drawCircle(center, w * 0.13, lensDark);
-
-    final Paint lensReflection = Paint()..color = const Color(0xFF3B82F6);
-    canvas.drawCircle(center, w * 0.08, lensReflection);
-
-    final Paint shine = Paint()..color = Colors.white;
-    canvas.drawCircle(center + Offset(w * 0.03, -h * 0.03), w * 0.02, shine);
-
-    final Paint checkOutline = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(w * 0.82, h * 0.26), w * 0.15, checkOutline);
-
-    final Paint checkCircle = Paint()
-      ..color = const Color(0xFF10B981) // Emerald Green
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(w * 0.82, h * 0.26), w * 0.13, checkCircle);
-
-    final Paint checkMark = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round;
-    final Path checkPath = Path()
-      ..moveTo(w * 0.76, h * 0.26)
-      ..lineTo(w * 0.80, h * 0.30)
-      ..lineTo(w * 0.88, h * 0.20);
-    canvas.drawPath(checkPath, checkMark);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _StaggeredEntrance extends StatefulWidget {
@@ -615,13 +508,13 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
     final hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
 
     Color borderColor = const Color(0xFFE2E8F0);
-    double borderWidth = 1.0;
+    double borderWidth = 1.0.w;
     if (hasError) {
       borderColor = const Color(0xFFE74C3C);
-      borderWidth = 1.5;
+      borderWidth = 1.5.w;
     } else if (_isFocused) {
       borderColor = const Color(0xFF007BFF);
-      borderWidth = 1.5;
+      borderWidth = 1.5.w;
     }
 
     return Column(
@@ -632,7 +525,7 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(24.0.w),
             border: Border.all(
               color: borderColor,
               width: borderWidth,
@@ -640,16 +533,16 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
             boxShadow: [
               if (_isFocused && !hasError)
                 BoxShadow(
-                  color: const Color(0xFF007BFF).withOpacity(0.08),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 2),
+                  color: const Color(0xFF007BFF).withValues(alpha: 0.08),
+                  blurRadius: 8.0.w,
+                  spreadRadius: 1.0.w,
+                  offset: Offset(0, 2.0.h),
                 )
               else
                 BoxShadow(
-                  color: const Color(0xFF2C3E50).withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: const Color(0xFF2C3E50).withValues(alpha: 0.03),
+                  blurRadius: 10.0.w,
+                  offset: Offset(0, 4.0.h),
                 ),
             ],
           ),
@@ -658,45 +551,45 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
             controller: widget.controller,
             obscureText: widget.obscureText,
             keyboardType: widget.keyboardType,
-            style: const TextStyle(
-              color: Color(0xFF2C3E50),
+            style: TextStyle(
+              color: const Color(0xFF2C3E50),
               fontWeight: FontWeight.w600,
               fontFamily: 'Montserrat',
-              fontSize: 14,
+              fontSize: 14.0.sp,
             ),
             decoration: InputDecoration(
               hintText: widget.hintText,
-              hintStyle: const TextStyle(
-                color: Color(0xFF95A5A6),
-                fontSize: 13,
+              hintStyle: TextStyle(
+                color: const Color(0xFF95A5A6),
+                fontSize: 13.0.sp,
                 fontWeight: FontWeight.w500,
               ),
               prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 16, right: 12),
+                padding: EdgeInsets.only(left: 16.0.w, right: 12.0.w),
                 child: Icon(
                   widget.icon,
                   color: hasError
                       ? const Color(0xFFE74C3C)
                       : (_isFocused ? const Color(0xFF007BFF) : const Color(0xFF7F8C8D)),
-                  size: 18,
+                  size: 18.w,
                 ),
               ),
               suffixIcon: widget.suffixIcon,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              contentPadding: EdgeInsets.symmetric(vertical: 14.0.h, horizontal: 16.0.w),
             ),
           ),
         ),
         if (hasError) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: 4.0.h),
           Padding(
-            padding: const EdgeInsets.only(left: 16.0),
+            padding: EdgeInsets.only(left: 16.0.w),
             child: Text(
               widget.errorText!,
-              style: const TextStyle(
-                color: Color(0xFFE74C3C),
+              style: TextStyle(
+                color: const Color(0xFFE74C3C),
                 fontFamily: 'Montserrat',
-                fontSize: 11,
+                fontSize: 11.0.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 
-class PropertyDetailsController extends GetxController {
+class PropertyDetailsController extends BaseController {
   final selectedRole = 'tenant'.obs;
   final showPhoneInPdf = true.obs;
 
@@ -21,6 +21,13 @@ class PropertyDetailsController extends GetxController {
   late final TextEditingController countryController;
 
   final InspectionController _inspectionController = Get.find<InspectionController>();
+
+  Worker? _idWorker;
+  Worker? _nameWorker;
+  Worker? _phoneWorker;
+  Worker? _inspectIdWorker;
+  Worker? _inspectTenantWorker;
+  Worker? _inspectLandlordWorker;
 
   void initializeData({required String initialRole, String? initialUserName}) {
     selectedRole.value = initialRole;
@@ -70,10 +77,61 @@ class PropertyDetailsController extends GetxController {
         landlordController.text = initialUserName;
       }
     }
+
+    _idWorker = ever(BaseController.idCode, (String val) {
+      if (val.isNotEmpty && idCodeController.text.isEmpty) {
+        idCodeController.text = val;
+      }
+    });
+
+    _nameWorker = ever(BaseController.name, (String val) {
+      if (val.isNotEmpty) {
+        if (selectedRole.value == 'tenant' && tenantController.text.isEmpty) {
+          tenantController.text = val;
+        } else if (selectedRole.value == 'landlord' && landlordController.text.isEmpty) {
+          landlordController.text = val;
+        }
+      }
+    });
+
+    _phoneWorker = ever(BaseController.phone, (String val) {
+      if (val.isNotEmpty) {
+        if (selectedRole.value == 'tenant' && tenantPhoneController.text.isEmpty) {
+          tenantPhoneController.text = val;
+        } else if (selectedRole.value == 'landlord' && landlordPhoneController.text.isEmpty) {
+          landlordPhoneController.text = val;
+        }
+      }
+    });
+
+    _inspectIdWorker = ever(_inspectionController.idCode, (String val) {
+      if (val.isNotEmpty && idCodeController.text.isEmpty) {
+        idCodeController.text = val;
+      }
+    });
+
+    _inspectTenantWorker = ever(_inspectionController.tenantName, (String val) {
+      if (val.isNotEmpty && tenantController.text.isEmpty) {
+        tenantController.text = val;
+      }
+    });
+
+    _inspectLandlordWorker = ever(_inspectionController.landlordName, (String val) {
+      if (val.isNotEmpty && landlordController.text.isEmpty) {
+        landlordController.text = val;
+      }
+    });
   }
 
   @override
   void onClose() {
+    _idWorker?.dispose();
+    _nameWorker?.dispose();
+    _phoneWorker?.dispose();
+    _inspectIdWorker?.dispose();
+    _inspectTenantWorker?.dispose();
+    _inspectLandlordWorker?.dispose();
+
     idCodeController.dispose();
     tenantController.dispose();
     landlordController.dispose();
@@ -103,8 +161,7 @@ class PropertyDetailsController extends GetxController {
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Color(0xFF2C3E50),
-            ),
-            dialogBackgroundColor: Colors.white,
+            ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -152,7 +209,7 @@ class PropertyDetailsController extends GetxController {
     showPhoneInPdf.value = value;
   }
 
-  bool submitMetadata() {
+  Future<bool> submitMetadata() async {
     final String idCodeVal = idCodeController.text.trim();
     final String tenantNameVal = tenantController.text.trim();
     final String landlordNameVal = landlordController.text.trim();
@@ -170,6 +227,7 @@ class PropertyDetailsController extends GetxController {
       return false;
     }
 
+    isLoading.value = true;
     _inspectionController.updateMetadata(
       id: idCodeVal,
       tenant: tenantNameVal,
@@ -185,6 +243,26 @@ class PropertyDetailsController extends GetxController {
       landlordPh: landlordPhoneVal,
       showPhone: showPhoneInPdf.value,
     );
+
+    // POST property registration details to backend REST API
+    try {
+      await restClient.dio.post(
+        '/property/create',
+        data: {
+          'idCode': idCodeVal,
+          'registerAs': selectedRole.value == 'tenant' ? 'Tenant' : 'Landlord',
+          'tenantName': tenantNameVal,
+          'propertyAddress': addressVal,
+          'landName': landlordNameVal,
+          'possessionDate': possessionDateVal.isNotEmpty ? possessionDateVal : '06/20/2026',
+          'agreementDate': agreementDateVal.isNotEmpty ? agreementDateVal : '06/15/2026',
+        },
+      );
+    } catch (e) {
+      debugPrint("API Error saving property: $e");
+    } finally {
+      isLoading.value = false;
+    }
 
     return true;
   }

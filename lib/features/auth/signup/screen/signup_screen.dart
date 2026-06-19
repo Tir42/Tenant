@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/auth/signup/controller/signup_controller.dart';
 import 'package:tenantsnap/features/dashboard/screens/home_screen.dart';
@@ -15,26 +16,6 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final signUpController = Get.put(SignUpController());
-  Country _selectedCountry = Country(
-    phoneCode: '1',
-    countryCode: 'US',
-    e164Sc: 1,
-    geographic: true,
-    level: 1,
-    name: 'United States',
-    example: '2015550123',
-    displayName: 'United States (US) [+1]',
-    displayNameNoCountryCode: 'United States (US)',
-    e164Key: '1-US-0',
-  );
-
-  String? _firstNameError;
-  String? _lastNameError;
-  String? _emailError;
-  String? _phoneError;
-  String? _idCodeError;
-  String? _passwordError;
-  String? _confirmPasswordError;
 
   @override
   void initState() {
@@ -82,7 +63,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final text = _getPasswordStrengthText(strength);
 
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0, top: 6.0, right: 16.0),
+      padding: EdgeInsets.only(left: 16.0.w, top: 6.0.h, right: 16.0.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -94,7 +75,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 style: TextStyle(
                   color: color,
                   fontFamily: 'Montserrat',
-                  fontSize: 11,
+                  fontSize: 11.0.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -103,20 +84,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 style: TextStyle(
                   color: color,
                   fontFamily: 'Montserrat',
-                  fontSize: 11,
+                  fontSize: 11.0.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6.0.h),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(4.0.w),
             child: LinearProgressIndicator(
               value: strength,
               backgroundColor: const Color(0xFFE2E8F0),
               valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 4,
+              minHeight: 4.0.h,
             ),
           ),
         ],
@@ -125,95 +106,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _handlePrimaryAction() async {
+    if (!signUpController.validateInputs()) {
+      return;
+    }
+
     final firstName = signUpController.firstNameController.text.trim();
     final lastName = signUpController.lastNameController.text.trim();
     final email = signUpController.emailController.text.trim();
     final phone = signUpController.phoneController.text.trim();
-    final password = signUpController.passwordController.text;
-    final confirmPassword = signUpController.confirmPasswordController.text;
-    final idCode = signUpController.idCodeController.text.trim();
-
-    setState(() {
-      _firstNameError = null;
-      _lastNameError = null;
-      _emailError = null;
-      _phoneError = null;
-      _idCodeError = null;
-      _passwordError = null;
-      _confirmPasswordError = null;
-    });
-
-    bool hasValidationError = false;
-
-    // 1. First Name Validation
-    if (firstName.isEmpty) {
-      setState(() => _firstNameError = 'First name is required.');
-      hasValidationError = true;
-    } else if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(firstName)) {
-      setState(() => _firstNameError = 'First name must contain letters only.');
-      hasValidationError = true;
-    }
-
-    // 2. Last Name Validation
-    if (lastName.isEmpty) {
-      setState(() => _lastNameError = 'Last name is required.');
-      hasValidationError = true;
-    } else if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(lastName)) {
-      setState(() => _lastNameError = 'Last name must contain letters only.');
-      hasValidationError = true;
-    }
-
-    // 3. Email Validation
-    if (email.isEmpty) {
-      setState(() => _emailError = 'Email is required.');
-      hasValidationError = true;
-    } else if (!GetUtils.isEmail(email)) {
-      setState(() => _emailError = 'Please enter a valid email address.');
-      hasValidationError = true;
-    }
-
-    // 4. Phone Validation
-    if (phone.isEmpty) {
-      setState(() => _phoneError = 'Phone number is required.');
-      hasValidationError = true;
-    } else if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      setState(() => _phoneError = 'Phone number must contain digits only.');
-      hasValidationError = true;
-    } else if (phone.length < 8 || phone.length > 15) {
-      setState(() => _phoneError = 'Enter a valid phone number (8-15 digits).');
-      hasValidationError = true;
-    }
-
-    // 5. Tenant ID Code Validation
-    if (idCode.isEmpty) {
-      setState(() => _idCodeError = 'Tenant ID Code is required.');
-      hasValidationError = true;
-    }
-
-    // 6. Password Validation
-    if (password.isEmpty) {
-      setState(() => _passwordError = 'Password is required.');
-      hasValidationError = true;
-    } else if (password.length < 6) {
-      setState(() => _passwordError = 'Password must be at least 6 characters.');
-      hasValidationError = true;
-    } else if (!RegExp(r'[0-9]').hasMatch(password)) {
-      setState(() => _passwordError = 'Password must contain at least one number.');
-      hasValidationError = true;
-    }
-
-    // 7. Confirm Password Validation
-    if (confirmPassword.isEmpty) {
-      setState(() => _confirmPasswordError = 'Please confirm your password.');
-      hasValidationError = true;
-    } else if (password != confirmPassword) {
-      setState(() => _confirmPasswordError = 'Passwords do not match.');
-      hasValidationError = true;
-    }
-
-    if (hasValidationError) {
-      return;
-    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -223,7 +123,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     // Format phone number to append the country code prefix before api request
     final String rawPhoneInput = phone;
-    signUpController.phoneController.text = '+${_selectedCountry.phoneCode} $rawPhoneInput';
+    signUpController.phoneController.text = '+${signUpController.selectedCountry.value.phoneCode} $rawPhoneInput';
 
     final success = await signUpController.signUp();
 
@@ -254,7 +154,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Center(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 16.0.h),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -264,39 +164,41 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CustomPaint(
-                          size: const Size(80, 70),
-                          painter: SignUpLogoPainter(),
+                        Image.asset(
+                          'assets/app_icon.png',
+                          width: 80.0.w,
+                          height: 70.0.h,
+                          fit: BoxFit.contain,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.0.h),
                         RichText(
-                          text: const TextSpan(
+                          text: TextSpan(
                             style: TextStyle(
-                              color: Color(0xFF2C3E50),
-                              fontSize: 30,
+                              color: const Color(0xFF2C3E50),
+                              fontSize: 30.0.sp,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
                               fontFamily: 'Montserrat',
                             ),
-                            children: [
+                            children: const [
                               TextSpan(text: 'Tenant'),
                               TextSpan(
-                                text: 'Snap',
-                                style: TextStyle(
-                                  color: Color(0xFF2ECC71),
-                                  fontWeight: FontWeight.w900,
+                                  text: 'Snap',
+                                  style: TextStyle(
+                                    color: Color(0xFF2ECC71),
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        const Text(
+                        SizedBox(height: 6.0.h),
+                        Text(
                           'Create Secure Account',
                           style: TextStyle(
-                            color: Color(0xFF7F8C8D),
+                            color: const Color(0xFF7F8C8D),
                             fontFamily: 'Montserrat',
-                            fontSize: 13,
+                            fontSize: 13.0.sp,
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.5,
                           ),
@@ -304,17 +206,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: 28.0.h),
 
                   // --- 2. TOGGLE TABS ---
                   _StaggeredEntrance(
                     delayMs: 180,
                     child: Container(
                       width: double.infinity,
-                      height: 48,
+                      height: 48.0.h,
                       decoration: BoxDecoration(
                         color: const Color(0xFFEEF2F6),
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(24.0.w),
                       ),
                       child: Row(
                         children: [
@@ -325,14 +227,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               },
                               child: Container(
                                 color: Colors.transparent,
-                                child: const Center(
+                                child: Center(
                                   child: Text(
                                     'Sign in',
                                     style: TextStyle(
-                                      color: Color(0xFF7F8C8D),
+                                      color: const Color(0xFF7F8C8D),
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Montserrat',
-                                      fontSize: 13,
+                                      fontSize: 13.0.sp,
                                     ),
                                   ),
                                 ),
@@ -341,26 +243,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           Expanded(
                             child: Container(
-                              margin: const EdgeInsets.all(4),
+                              margin: EdgeInsets.all(4.0.w),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(20.0.w),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 4.0.w,
+                                    offset: Offset(0, 2.0.h),
                                   ),
                                 ],
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
                                   'Create account',
                                   style: TextStyle(
-                                    color: Color(0xFF2C3E50),
+                                    color: const Color(0xFF2C3E50),
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Montserrat',
-                                    fontSize: 13,
+                                    fontSize: 13.0.sp,
                                   ),
                                 ),
                               ),
@@ -370,143 +272,151 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24.0.h),
 
                   // --- 3. FIRST & LAST NAME (ROW) ---
                   _StaggeredEntrance(
                     delayMs: 260,
-                    child: isNarrow
-                        ? Column(
-                            children: [
-                              _buildCustomTextField(
-                                controller: signUpController.firstNameController,
-                                hintText: 'First Name',
-                                icon: Icons.person_outline,
-                                errorText: _firstNameError,
-                              ),
-                              const SizedBox(height: 14),
-                              _buildCustomTextField(
-                                controller: signUpController.lastNameController,
-                                hintText: 'Last Name',
-                                icon: Icons.person_outline,
-                                errorText: _lastNameError,
-                              ),
-                            ],
-                          )
-                        : Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: _buildCustomTextField(
+                    child: Obx(() {
+                      final fErr = signUpController.firstNameError.value;
+                      final lErr = signUpController.lastNameError.value;
+                      return isNarrow
+                          ? Column(
+                              children: [
+                                _buildCustomTextField(
                                   controller: signUpController.firstNameController,
                                   hintText: 'First Name',
                                   icon: Icons.person_outline,
-                                  errorText: _firstNameError,
+                                  errorText: fErr,
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildCustomTextField(
+                                SizedBox(height: 14.0.h),
+                                _buildCustomTextField(
                                   controller: signUpController.lastNameController,
                                   hintText: 'Last Name',
                                   icon: Icons.person_outline,
-                                  errorText: _lastNameError,
+                                  errorText: lErr,
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            )
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildCustomTextField(
+                                    controller: signUpController.firstNameController,
+                                    hintText: 'First Name',
+                                    icon: Icons.person_outline,
+                                    errorText: fErr,
+                                  ),
+                                ),
+                                SizedBox(width: 12.0.w),
+                                Expanded(
+                                  child: _buildCustomTextField(
+                                    controller: signUpController.lastNameController,
+                                    hintText: 'Last Name',
+                                    icon: Icons.person_outline,
+                                    errorText: lErr,
+                                  ),
+                                ),
+                              ],
+                            );
+                    }),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.0.h),
 
                   // --- 4. EMAIL ---
                   _StaggeredEntrance(
                     delayMs: 340,
-                    child: _buildCustomTextField(
+                    child: Obx(() => _buildCustomTextField(
                       controller: signUpController.emailController,
                       hintText: 'Email',
                       icon: Icons.mail_outline,
                       keyboardType: TextInputType.emailAddress,
-                      errorText: _emailError,
-                    ),
+                      errorText: signUpController.emailError.value,
+                    )),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.0.h),
 
                   // --- 5. COUNTRY PICKER & PHONE NUMBER ---
                   _StaggeredEntrance(
                     delayMs: 420,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: () => _showCountryPickerDialog(context),
-                          child: Container(
-                            height: 50,
-                            constraints: const BoxConstraints(minWidth: 70),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: (_phoneError != null && _phoneError!.isNotEmpty)
-                                    ? const Color(0xFFE74C3C)
-                                    : const Color(0xFFE2E8F0),
-                                width: (_phoneError != null && _phoneError!.isNotEmpty) ? 1.5 : 1.0,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF2C3E50).withOpacity(0.03),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                    child: Obx(() {
+                      final pErr = signUpController.phoneError.value;
+                      final country = signUpController.selectedCountry.value;
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: () => _showCountryPickerDialog(context),
+                            child: Container(
+                              height: 50.0.h,
+                              constraints: BoxConstraints(minWidth: 70.w),
+                              padding: EdgeInsets.symmetric(horizontal: 12.0.w),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24.0.w),
+                                border: Border.all(
+                                  color: (pErr != null && pErr.isNotEmpty)
+                                      ? const Color(0xFFE74C3C)
+                                      : const Color(0xFFE2E8F0),
+                                  width: (pErr != null && pErr.isNotEmpty) ? 1.5.w : 1.0.w,
                                 ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '+${_selectedCountry.phoneCode}',
-                                  style: const TextStyle(
-                                    color: Color(0xFF2C3E50),
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: 'Montserrat',
-                                    fontSize: 14,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF2C3E50).withValues(alpha: 0.03),
+                                    blurRadius: 10.0.w,
+                                    offset: Offset(0, 4.0.h),
                                   ),
-                                ),
-                                const Icon(
-                                  Icons.arrow_drop_down,
-                                  color: Color(0xFF7F8C8D),
-                                  size: 16,
-                                ),
-                              ],
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '+${country.phoneCode}',
+                                    style: TextStyle(
+                                      color: const Color(0xFF2C3E50),
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 14.0.sp,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    color: const Color(0xFF7F8C8D),
+                                    size: 16.w,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildCustomTextField(
-                            controller: signUpController.phoneController,
-                            hintText: 'Phone Number',
-                            icon: Icons.phone_outlined,
-                            keyboardType: TextInputType.phone,
-                            errorText: _phoneError,
+                          SizedBox(width: 8.0.w),
+                          Expanded(
+                            child: _buildCustomTextField(
+                              controller: signUpController.phoneController,
+                              hintText: 'Phone Number',
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              errorText: pErr,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      );
+                    }),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.0.h),
 
                   // --- 6. TENANT ID CODE ---
                   _StaggeredEntrance(
                     delayMs: 500,
-                    child: _buildCustomTextField(
+                    child: Obx(() => _buildCustomTextField(
                       controller: signUpController.idCodeController,
-                      hintText: 'Tenant ID Code',
+                      hintText: 'ID Code',
                       icon: Icons.qr_code_outlined,
-                      errorText: _idCodeError,
-                    ),
+                      errorText: signUpController.idCodeError.value,
+                    )),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.0.h),
 
                   // --- 7. PASSWORD & STRENGTH INDICATOR ---
                   _StaggeredEntrance(
@@ -519,14 +429,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           hintText: 'Password',
                           icon: Icons.lock_outline,
                           obscureText: signUpController.obscurePassword.value,
-                          errorText: _passwordError,
+                          errorText: signUpController.passwordError.value,
                           suffixIcon: IconButton(
                             icon: Icon(
                               signUpController.obscurePassword.value
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                               color: const Color(0xFF7F8C8D),
-                              size: 18,
+                              size: 18.w,
                             ),
                             onPressed: signUpController.toggleObscurePassword,
                           ),
@@ -535,7 +445,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.0.h),
 
                   // --- 8. CONFIRM PASSWORD ---
                   _StaggeredEntrance(
@@ -545,29 +455,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       hintText: 'Confirm Password',
                       icon: Icons.lock_outline,
                       obscureText: signUpController.obscurePassword.value,
-                      errorText: _confirmPasswordError,
+                      errorText: signUpController.confirmPasswordError.value,
                       suffixIcon: IconButton(
                         icon: Icon(
                           signUpController.obscurePassword.value
                               ? Icons.visibility_off
                               : Icons.visibility,
                           color: const Color(0xFF7F8C8D),
-                          size: 18,
+                          size: 18.w,
                         ),
                         onPressed: signUpController.toggleObscurePassword,
                       ),
                     )),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24.0.h),
 
                   // --- 9. PRIMARY BUTTON ---
                   _StaggeredEntrance(
                     delayMs: 740,
                     child: Obx(() => Container(
                       width: double.infinity,
-                      height: 50,
+                      height: 50.0.h,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(25.0.w),
                         gradient: const LinearGradient(
                           colors: [
                             Color(0xFF007BFF),
@@ -576,9 +486,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF007BFF).withOpacity(0.35),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
+                            color: const Color(0xFF007BFF).withValues(alpha: 0.35),
+                            blurRadius: 8.0.w,
+                            offset: Offset(0, 4.0.h),
                           ),
                         ],
                       ),
@@ -588,18 +498,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25)),
+                              borderRadius: BorderRadius.circular(25.0.w)),
                         ),
                         child: signUpController.isLoading.value
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
+                            ? SizedBox(
+                                width: 20.w,
+                                height: 20.h,
                                 child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  strokeWidth: 2,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                  strokeWidth: 2.0.w,
                                 ),
                               )
-                            : const Row(
+                            : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
@@ -608,12 +518,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Montserrat',
-                                      fontSize: 15,
+                                      fontSize: 15.0.sp,
                                       letterSpacing: 0.5,
                                     ),
                                   ),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                                  SizedBox(width: 8.0.w),
+                                  Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16.w),
                                 ],
                               ),
                       ),
@@ -654,83 +564,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _CountryPickerDialog(
-        selectedCountry: _selectedCountry,
+        selectedCountry: signUpController.selectedCountry.value,
         onSelect: (Country country) {
-          setState(() {
-            _selectedCountry = country;
-          });
+          signUpController.selectedCountry.value = country;
         },
       ),
     );
   }
 }
 
-class SignUpLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-
-    final Paint housePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFF007BFF),
-          Color(0xFF2ECC71),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-
-    final Path housePath = Path()
-      ..moveTo(w * 0.5, h * 0.05)
-      ..lineTo(w * 0.95, h * 0.42)
-      ..lineTo(w * 0.83, h * 0.42)
-      ..lineTo(w * 0.83, h * 0.95)
-      ..lineTo(w * 0.17, h * 0.95)
-      ..lineTo(w * 0.17, h * 0.42)
-      ..lineTo(w * 0.05, h * 0.42)
-      ..close();
-
-    canvas.drawPath(housePath, housePaint);
-
-    final Paint cameraPaint = Paint()..color = Colors.white;
-    final RRect cameraBody = RRect.fromRectAndRadius(
-      Rect.fromLTRB(w * 0.24, h * 0.50, w * 0.76, h * 0.88),
-      const Radius.circular(8.0),
-    );
-    canvas.drawRRect(cameraBody, cameraPaint);
-
-    final RRect cameraBump = RRect.fromRectAndRadius(
-      Rect.fromLTRB(w * 0.32, h * 0.44, w * 0.46, h * 0.50),
-      const Radius.circular(2.0),
-    );
-    canvas.drawRRect(cameraBump, cameraPaint);
-
-    final Paint lensOutlinePaint = Paint()
-      ..color = const Color(0xFF2C3E50)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
-    final center = Offset(w * 0.5, h * 0.69);
-    canvas.drawCircle(center, w * 0.16, lensOutlinePaint);
-
-    final Paint lensDarkPaint = Paint()..color = const Color(0xFF1B2A47);
-    canvas.drawCircle(center, w * 0.15, lensDarkPaint);
-
-    final Paint lensReflectionPaint = Paint()..color = const Color(0xFF007BFF);
-    canvas.drawCircle(center, w * 0.09, lensReflectionPaint);
-
-    final Paint lensPupilPaint = Paint()..color = const Color(0xFF0D1B2A);
-    canvas.drawCircle(center, w * 0.05, lensPupilPaint);
-
-    final Paint shinyPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(center + Offset(w * 0.04, -h * 0.04), w * 0.022, shinyPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class _CountryPickerDialog extends StatefulWidget {
   final Country selectedCountry;
@@ -767,11 +609,11 @@ class _CountryPickerDialogState extends State<_CountryPickerDialog> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
+          topLeft: Radius.circular(28.0.w),
+          topRight: Radius.circular(28.0.w),
         ),
       ),
       child: Padding(
@@ -782,95 +624,95 @@ class _CountryPickerDialogState extends State<_CountryPickerDialog> {
           children: [
             Center(
               child: Container(
-                margin: const EdgeInsets.only(top: 10),
-                width: 40,
-                height: 4,
+                margin: EdgeInsets.only(top: 10.0.h),
+                width: 40.w,
+                height: 4.h,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(2.0.w),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 16, 8),
+              padding: EdgeInsets.fromLTRB(24.0.w, 12.0.h, 16.0.w, 8.0.h),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Select Country',
                     style: TextStyle(
-                      color: Color(0xFF2C3E50),
-                      fontSize: 18,
+                      color: const Color(0xFF2C3E50),
+                      fontSize: 18.0.sp,
                       fontWeight: FontWeight.w800,
                       fontFamily: 'Montserrat',
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Color(0xFF7F8C8D), size: 22),
+                    icon: Icon(Icons.close, color: const Color(0xFF7F8C8D), size: 22.w),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 8.0.h),
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(24.0.w),
                   border: Border.all(
                     color: const Color(0xFFE2E8F0),
-                    width: 1.0,
+                    width: 1.0.w,
                   ),
                 ),
                 child: TextField(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
-                  style: const TextStyle(
-                    color: Color(0xFF2C3E50),
-                    fontSize: 14,
+                  style: TextStyle(
+                    color: const Color(0xFF2C3E50),
+                    fontSize: 14.0.sp,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Montserrat',
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search country...',
-                    hintStyle: const TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 13,
+                    hintStyle: TextStyle(
+                      color: const Color(0xFF94A3B8),
+                      fontSize: 13.0.sp,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'Montserrat',
                     ),
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B), size: 20),
+                    prefixIcon: Icon(Icons.search, color: const Color(0xFF64748B), size: 20.w),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? GestureDetector(
                             onTap: () {
                               _searchController.clear();
                               _onSearchChanged('');
                             },
-                            child: const Icon(Icons.clear, color: Color(0xFF64748B), size: 18),
+                            child: Icon(Icons.clear, color: const Color(0xFF64748B), size: 18.w),
                           )
                         : null,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    contentPadding: EdgeInsets.symmetric(vertical: 12.0.h, horizontal: 16.0.w),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.0.h),
             Flexible(
               child: Container(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.5,
                 ),
                 child: _filteredCountries.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(32.0),
+                    ? Padding(
+                        padding: EdgeInsets.all(32.0.w),
                         child: Text(
                           'No countries found',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Color(0xFF7F8C8D),
-                            fontSize: 14,
+                            color: const Color(0xFF7F8C8D),
+                            fontSize: 14.0.sp,
                             fontWeight: FontWeight.w500,
                             fontFamily: 'Montserrat',
                           ),
@@ -878,7 +720,7 @@ class _CountryPickerDialogState extends State<_CountryPickerDialog> {
                       )
                     : ListView.builder(
                         shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 8.0.h),
                         itemCount: _filteredCountries.length,
                         itemBuilder: (context, index) {
                           final country = _filteredCountries[index];
@@ -890,46 +732,46 @@ class _CountryPickerDialogState extends State<_CountryPickerDialog> {
                               Navigator.pop(context);
                             },
                             child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              margin: EdgeInsets.symmetric(vertical: 4.0.h),
+                              padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 12.0.h),
                               decoration: BoxDecoration(
                                 color: isSelected ? const Color(0xFFE0F2FE) : Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(16.0.w),
                               ),
                               child: Row(
                                 children: [
                                   Text(
                                     country.flagEmoji,
-                                    style: const TextStyle(fontSize: 22),
+                                    style: TextStyle(fontSize: 22.0.sp),
                                   ),
-                                  const SizedBox(width: 14),
+                                  SizedBox(width: 14.0.w),
                                   Text(
                                     '+${country.phoneCode}',
                                     style: TextStyle(
                                       color: isSelected ? const Color(0xFF0369A1) : const Color(0xFF2C3E50),
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 14,
+                                      fontSize: 14.0.sp,
                                       fontFamily: 'Montserrat',
                                     ),
                                   ),
-                                  const SizedBox(width: 14),
+                                  SizedBox(width: 14.0.w),
                                   Expanded(
                                     child: Text(
                                       country.name,
                                       style: TextStyle(
                                         color: isSelected ? const Color(0xFF0369A1) : const Color(0xFF64748B),
                                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                        fontSize: 14,
+                                        fontSize: 14.0.sp,
                                         fontFamily: 'Montserrat',
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ),
                                   if (isSelected)
-                                    const Icon(
+                                    Icon(
                                       Icons.check_circle,
-                                      color: Color(0xFF0284C7),
-                                      size: 20,
+                                      color: const Color(0xFF0284C7),
+                                      size: 20.w,
                                     ),
                                 ],
                               ),
@@ -1070,13 +912,13 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
     final hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
 
     Color borderColor = const Color(0xFFE2E8F0);
-    double borderWidth = 1.0;
+    double borderWidth = 1.0.w;
     if (hasError) {
       borderColor = const Color(0xFFE74C3C);
-      borderWidth = 1.5;
+      borderWidth = 1.5.w;
     } else if (_isFocused) {
       borderColor = const Color(0xFF007BFF);
-      borderWidth = 1.5;
+      borderWidth = 1.5.w;
     }
 
     return Column(
@@ -1087,7 +929,7 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(24.0.w),
             border: Border.all(
               color: borderColor,
               width: borderWidth,
@@ -1095,16 +937,16 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
             boxShadow: [
               if (_isFocused && !hasError)
                 BoxShadow(
-                  color: const Color(0xFF007BFF).withOpacity(0.08),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 2),
+                  color: const Color(0xFF007BFF).withValues(alpha: 0.08),
+                  blurRadius: 8.0.w,
+                  spreadRadius: 1.0.w,
+                  offset: Offset(0, 2.0.h),
                 )
               else
                 BoxShadow(
-                  color: const Color(0xFF2C3E50).withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: const Color(0xFF2C3E50).withValues(alpha: 0.03),
+                  blurRadius: 10.0.w,
+                  offset: Offset(0, 4.0.h),
                 ),
             ],
           ),
@@ -1113,45 +955,45 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
             controller: widget.controller,
             obscureText: widget.obscureText,
             keyboardType: widget.keyboardType,
-            style: const TextStyle(
-              color: Color(0xFF2C3E50),
+            style: TextStyle(
+              color: const Color(0xFF2C3E50),
               fontWeight: FontWeight.w600,
               fontFamily: 'Montserrat',
-              fontSize: 14,
+              fontSize: 14.0.sp,
             ),
             decoration: InputDecoration(
               hintText: widget.hintText,
-              hintStyle: const TextStyle(
-                color: Color(0xFF95A5A6),
-                fontSize: 13,
+              hintStyle: TextStyle(
+                color: const Color(0xFF95A5A6),
+                fontSize: 13.0.sp,
                 fontWeight: FontWeight.w500,
               ),
               prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 16, right: 12),
+                padding: EdgeInsets.only(left: 16.0.w, right: 12.0.w),
                 child: Icon(
                   widget.icon,
                   color: hasError
                       ? const Color(0xFFE74C3C)
                       : (_isFocused ? const Color(0xFF007BFF) : const Color(0xFF7F8C8D)),
-                  size: 18,
+                  size: 18.w,
                 ),
               ),
               suffixIcon: widget.suffixIcon,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              contentPadding: EdgeInsets.symmetric(vertical: 14.0.h, horizontal: 16.0.w),
             ),
           ),
         ),
         if (hasError) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: 4.0.h),
           Padding(
-            padding: const EdgeInsets.only(left: 16.0),
+            padding: EdgeInsets.only(left: 16.0.w),
             child: Text(
               widget.errorText!,
-              style: const TextStyle(
-                color: Color(0xFFE74C3C),
+              style: TextStyle(
+                color: const Color(0xFFE74C3C),
                 fontFamily: 'Montserrat',
-                fontSize: 11,
+                fontSize: 11.0.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1161,3 +1003,4 @@ class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
     );
   }
 }
+

@@ -65,9 +65,9 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF007BFF).withOpacity(0.1),
+                          color: const Color(0xFF007BFF).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFF007BFF).withOpacity(0.3), width: 0.5),
+                          border: Border.all(color: const Color(0xFF007BFF).withValues(alpha: 0.3), width: 0.5),
                         ),
                         child: Row(
                           children: [
@@ -137,7 +137,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: activeColor.withOpacity(0.15),
+                          color: activeColor.withValues(alpha: 0.15),
                           blurRadius: 6,
                         ),
                       ],
@@ -244,12 +244,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   color: Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFFBDC3C7).withOpacity(0.4),
+                    color: const Color(0xFFBDC3C7).withValues(alpha: 0.4),
                     width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -269,7 +269,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: activeColor.withOpacity(0.4),
+                      color: activeColor.withValues(alpha: 0.4),
                       blurRadius: 6,
                     ),
                   ],
@@ -299,12 +299,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: activeColor.withOpacity(0.15),
+          color: activeColor.withValues(alpha: 0.15),
           width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C3E50).withOpacity(0.06),
+            color: const Color(0xFF2C3E50).withValues(alpha: 0.06),
             blurRadius: 16,
             spreadRadius: 0,
             offset: const Offset(0, 6),
@@ -320,7 +320,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: activeColor.withOpacity(0.12),
+                  color: activeColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -403,7 +403,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   color: const Color(0xFFF2F4F7),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFBDC3C7).withOpacity(0.3),
+                    color: const Color(0xFFBDC3C7).withValues(alpha: 0.3),
                     width: 0.5,
                   ),
                 ),
@@ -576,14 +576,14 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: hasActiveGlow ? glowColor.withOpacity(0.35) : const Color(0xFFBDC3C7).withOpacity(0.2),
+              color: hasActiveGlow ? glowColor.withValues(alpha: 0.35) : const Color(0xFFBDC3C7).withValues(alpha: 0.2),
               width: hasActiveGlow ? 1.5 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
                 color: hasActiveGlow 
-                    ? glowColor.withOpacity(0.12)
-                    : const Color(0xFF2C3E50).withOpacity(0.04),
+                    ? glowColor.withValues(alpha: 0.12)
+                    : const Color(0xFF2C3E50).withValues(alpha: 0.04),
                 blurRadius: hasActiveGlow ? 16 : 8,
                 offset: const Offset(0, 4),
               ),
@@ -600,7 +600,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: glowColor.withOpacity(0.12),
+                      color: glowColor.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(

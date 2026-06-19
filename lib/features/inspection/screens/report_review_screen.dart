@@ -6,6 +6,8 @@ import 'package:tenantsnap/core/utils/download_helper/download_helper.dart';
 import 'package:tenantsnap/core/utils/pdf/pdf_generator.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
+import 'package:tenantsnap/core/services/rest_client.dart';
+import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 
 class ReportReviewScreen extends StatelessWidget {
   final RoomInspection? singleRoom;
@@ -54,27 +56,27 @@ class ReportReviewScreen extends StatelessWidget {
           child: Center(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 16.0.h),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Center-positioned premium mockup card container
                   Container(
                     width: size.width * 0.9,
-                    constraints: const BoxConstraints(maxWidth: 380),
+                    constraints: BoxConstraints(maxWidth: 380.0.w),
                     decoration: BoxDecoration(
                       gradient: AntigravityColors.bgGradient, // Match the scaffold gradient
-                      borderRadius: BorderRadius.circular(28.0),
+                      borderRadius: BorderRadius.circular(28.0.w),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2C3E50).withOpacity(0.08),
-                          blurRadius: 24,
-                          spreadRadius: 4,
-                          offset: const Offset(0, 10),
+                          color: const Color(0xFF2C3E50).withValues(alpha: 0.08),
+                          blurRadius: 24.0.w,
+                          spreadRadius: 4.0.w,
+                          offset: Offset(0, 10.0.h),
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 20.0),
+                    padding: EdgeInsets.symmetric(horizontal: 14.0.w, vertical: 20.0.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -83,29 +85,29 @@ class ReportReviewScreen extends StatelessWidget {
                           children: [
                             GestureDetector(
                               onTap: () => Navigator.of(context).pop(),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.arrow_back_ios_new_rounded,
-                                color: Color(0xFF007BFF), // Premium blue back arrow
-                                size: 24,
+                                color: const Color(0xFF007BFF), // Premium blue back arrow
+                                size: 24.w,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            const Expanded(
+                            SizedBox(width: 16.0.w),
+                            Expanded(
                               child: Text(
                                 'Review and Send Report',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: Color(0xFF2C3E50),
+                                  color: const Color(0xFF2C3E50),
                                   fontFamily: 'Montserrat',
                                   fontWeight: FontWeight.w800,
-                                  fontSize: 18,
+                                  fontSize: 18.0.sp,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20.0.h),
 
                         // Global Metadata Header Card (only shown once at the top of the review page)
                         _buildGlobalHeaderCard(
@@ -116,28 +118,28 @@ class ReportReviewScreen extends StatelessWidget {
                           propertyAddress: activePropertyAddress,
                           inspectionDate: activeInspectionDate,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.0.h),
 
                         // Render dynamic inspection report cards
                         if (activeRooms.isNotEmpty)
-                          ...activeRooms.expand((room) => _buildRoomReportSection(context, room)).toList()
+                          ...activeRooms.expand((room) => _buildRoomReportSection(context, room))
                         else
                           Center(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 30.0),
+                              padding: EdgeInsets.symmetric(vertical: 30.0.h),
                               child: Text(
                                 'No photo evidence captured for any rooms.',
                                 style: TextStyle(
-                                  color: const Color(0xFF7F8C8D).withOpacity(0.8),
+                                  color: const Color(0xFF7F8C8D).withValues(alpha: 0.8),
                                   fontFamily: 'Montserrat',
-                                  fontSize: 12,
+                                  fontSize: 12.0.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ),
 
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.0.h),
 
                         // Bottom PDF Button matching the screenshot design
                         _buildShareSendButton(
@@ -170,39 +172,39 @@ class ReportReviewScreen extends StatelessWidget {
   Widget _buildUnifiedRoomCard(BuildContext context, RoomInspection room) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16.0),
+      margin: EdgeInsets.only(bottom: 16.0.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.0.w),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C3E50).withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF2C3E50).withValues(alpha: 0.04),
+            blurRadius: 10.0.w,
+            offset: Offset(0, 4.0.h),
           ),
         ],
         border: Border.all(
           color: const Color(0xFFE2E8F0),
-          width: 0.5,
+          width: 0.5.w,
         ),
       ),
-      padding: const EdgeInsets.all(18.0),
+      padding: EdgeInsets.all(18.0.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Room Title
           Text(
             room.name,
-            style: const TextStyle(
-              color: Color(0xFF2C3E50),
+            style: TextStyle(
+              color: const Color(0xFF2C3E50),
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.w800,
-              fontSize: 16,
+              fontSize: 16.0.sp,
             ),
           ),
-          const SizedBox(height: 12),
-          const Divider(color: Color(0xFFE2E8F0), height: 1),
-          const SizedBox(height: 16),
+          SizedBox(height: 12.0.h),
+          Divider(color: const Color(0xFFE2E8F0), height: 1.0.h),
+          SizedBox(height: 16.0.h),
 
           // List all items in the checklist inside this card
           ...room.checklist.asMap().entries.map((entry) {
@@ -213,13 +215,13 @@ class ReportReviewScreen extends StatelessWidget {
               children: [
                 _buildUnifiedChecklistItem(context, item),
                 if (index < room.checklist.length - 1) ...[
-                  const SizedBox(height: 16),
-                  const Divider(color: Color(0xFFEEF2F6), height: 1, thickness: 1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.0.h),
+                  Divider(color: const Color(0xFFEEF2F6), height: 1.0.h, thickness: 1.0.h),
+                  SizedBox(height: 16.0.h),
                 ],
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -239,25 +241,25 @@ class ReportReviewScreen extends StatelessWidget {
             children: [
               Text(
                 wallsItem.name,
-                style: const TextStyle(
-                  color: Color(0xFF2C3E50),
+                style: TextStyle(
+                  color: const Color(0xFF2C3E50),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w800,
-                  fontSize: 14,
+                  fontSize: 14.0.sp,
                 ),
               ),
               Row(
                 children: [
                   _buildMutedCircle(Icons.grid_3x3, const Color(0xFF95A5A6)),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.0.w),
                   wallsItem.status == RoomItemStatus.happy
                       ? _buildColoredCircle(Icons.sentiment_satisfied_alt, const Color(0xFF2ECC71))
                       : _buildMutedCircle(Icons.sentiment_satisfied_alt, const Color(0xFF2ECC71)),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.0.w),
                   wallsItem.status == RoomItemStatus.sad
                       ? _buildColoredCircle(Icons.sentiment_very_dissatisfied, const Color(0xFFE74C3C))
                       : _buildMutedCircle(Icons.sentiment_very_dissatisfied, const Color(0xFFE74C3C)),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.0.w),
                   wallsItem.status == RoomItemStatus.neutral
                       ? _buildColoredCircle(Icons.remove, const Color(0xFF7F8C8D))
                       : _buildMutedCircle(Icons.remove, const Color(0xFF7F8C8D)),
@@ -277,15 +279,15 @@ class ReportReviewScreen extends StatelessWidget {
         children: [
           Text(
             floorItem.name,
-            style: const TextStyle(
-              color: Color(0xFF2C3E50),
+            style: TextStyle(
+              color: const Color(0xFF2C3E50),
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.w800,
-              fontSize: 14,
+              fontSize: 14.0.sp,
             ),
           ),
           if (floorItem.photos.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10.0.h),
             Row(
               children: floorItem.photos.map((p) => _buildImageThumbnail(context, p, '10:33 AM')).toList(),
             ),
@@ -329,7 +331,7 @@ class ReportReviewScreen extends StatelessWidget {
           File(imgUrl),
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.image_outlined, color: Color(0xFF7F8C8D), size: 16);
+            return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
           },
         );
       } else {
@@ -337,7 +339,7 @@ class ReportReviewScreen extends StatelessWidget {
           imgUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.image_outlined, color: Color(0xFF7F8C8D), size: 16);
+            return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
           },
         );
       }
@@ -348,14 +350,14 @@ class ReportReviewScreen extends StatelessWidget {
       children: [
         Text(
           item.name,
-          style: const TextStyle(
-            color: Color(0xFF2C3E50),
+          style: TextStyle(
+            color: const Color(0xFF2C3E50),
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.w800,
-            fontSize: 14,
+            fontSize: 14.0.sp,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.0.h),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -363,32 +365,32 @@ class ReportReviewScreen extends StatelessWidget {
               GestureDetector(
                 onTap: () => _showPhotoPreviewDialog(context, imgUrl),
                 child: Container(
-                  width: 58,
-                  height: 48,
+                  width: 58.w,
+                  height: 48.h,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.0.w),
                     color: const Color(0xFFEEF2F6),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.0.w),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
                         imageWidget,
                         Positioned(
-                          bottom: 2,
-                          right: 2,
+                          bottom: 2.0.h,
+                          right: 2.0.w,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            padding: EdgeInsets.symmetric(horizontal: 4.0.w, vertical: 1.0.h),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(4),
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(4.0.w),
                             ),
-                            child: const Text(
+                            child: Text(
                               '10:33 AM',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 7,
+                                fontSize: 7.0.sp,
                                 fontFamily: 'Montserrat',
                                 fontWeight: FontWeight.bold,
                               ),
@@ -400,7 +402,7 @@ class ReportReviewScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10.0.w),
             ],
             Expanded(
               child: Column(
@@ -410,8 +412,8 @@ class ReportReviewScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: 20,
-                        height: 20,
+                        width: 20.w,
+                        height: 20.h,
                         decoration: const BoxDecoration(
                           color: Color(0xFFEEF2F6),
                           shape: BoxShape.circle,
@@ -420,33 +422,33 @@ class ReportReviewScreen extends StatelessWidget {
                           child: Icon(
                             statusIcon,
                             color: statusColor,
-                            size: 14,
+                            size: 14.w,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.0.w),
                       Expanded(
                         child: Text(
                           commentText,
-                          style: const TextStyle(
-                            color: Color(0xFF7F8C8D),
+                          style: TextStyle(
+                            color: const Color(0xFF7F8C8D),
                             fontFamily: 'Montserrat',
-                            fontSize: 11,
+                            fontSize: 11.0.sp,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  const Align(
+                  SizedBox(height: 10.0.h),
+                  Align(
                     alignment: Alignment.bottomRight,
                     child: Text(
                       '10:33 AM',
                       style: TextStyle(
-                        color: Color(0xFFBDC3C7),
+                        color: const Color(0xFFBDC3C7),
                         fontFamily: 'Montserrat',
-                        fontSize: 9,
+                        fontSize: 9.0.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -459,8 +461,6 @@ class ReportReviewScreen extends StatelessWidget {
       ],
     );
   }
-
-
 
   void _showPhotoPreviewDialog(BuildContext context, String photoPath) {
     final bool isRealFile = !photoPath.startsWith('assets/') && !photoPath.startsWith('http') && !photoPath.startsWith('blob:');
@@ -500,57 +500,58 @@ class ReportReviewScreen extends StatelessWidget {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(24.0.w),
           ),
-          contentPadding: const EdgeInsets.all(12),
+          contentPadding: EdgeInsets.all(12.0.w),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.0.w),
                 child: Container(
-                  constraints: const BoxConstraints(maxHeight: 300),
+                  constraints: BoxConstraints(maxHeight: 300.0.h),
                   width: double.infinity,
                   color: const Color(0xFFF2F4F7),
                   child: imageWidget,
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16.0.h),
+              Text(
                 'Photo Evidence Review',
                 style: TextStyle(
-                  color: Color(0xFF2C3E50),
+                  color: const Color(0xFF2C3E50),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 16.0.sp,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
+              SizedBox(height: 4.0.h),
+              Text(
                 'GPS Active • Verified Condition Record',
                 style: TextStyle(
-                  color: Color(0xFF7F8C8D),
+                  color: const Color(0xFF7F8C8D),
                   fontFamily: 'Montserrat',
-                  fontSize: 12,
+                  fontSize: 12.0.sp,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.0.h),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 12.0.h),
                   backgroundColor: const Color(0xFFEEF2F6),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.0.w),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Close',
                   style: TextStyle(
-                    color: Color(0xFF7F8C8D),
+                    color: const Color(0xFF7F8C8D),
                     fontFamily: 'Montserrat',
                     fontWeight: FontWeight.bold,
+                    fontSize: 14.0.sp,
                   ),
                 ),
               ),
@@ -563,27 +564,27 @@ class ReportReviewScreen extends StatelessWidget {
 
   Widget _buildMetadataRow(String key, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
+      padding: EdgeInsets.only(bottom: 4.0.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '$key: ',
-            style: const TextStyle(
-              color: Color(0xFF7F8C8D),
+            style: TextStyle(
+              color: const Color(0xFF7F8C8D),
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.w600,
-              fontSize: 12,
+              fontSize: 12.0.sp,
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                color: Color(0xFF2C3E50),
+              style: TextStyle(
+                color: const Color(0xFF2C3E50),
                 fontFamily: 'Montserrat',
                 fontWeight: FontWeight.w600,
-                fontSize: 12,
+                fontSize: 12.0.sp,
               ),
             ),
           ),
@@ -594,32 +595,32 @@ class ReportReviewScreen extends StatelessWidget {
 
   Widget _buildMutedCircle(IconData icon, Color color) {
     return Container(
-      width: 24,
-      height: 24,
+      width: 24.w,
+      height: 24.h,
       decoration: const BoxDecoration(
         color: Color(0xFFEEF2F6),
         shape: BoxShape.circle,
       ),
       child: Icon(
         icon,
-        size: 13,
-        color: color.withOpacity(0.3),
+        size: 13.w,
+        color: color.withValues(alpha: 0.3),
       ),
     );
   }
 
   Widget _buildColoredCircle(IconData icon, Color color) {
     return Container(
-      width: 24,
-      height: 24,
+      width: 24.w,
+      height: 24.h,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         shape: BoxShape.circle,
-        border: Border.all(color: color, width: 1.0),
+        border: Border.all(color: color, width: 1.0.w),
       ),
       child: Icon(
         icon,
-        size: 13,
+        size: 13.w,
         color: color,
       ),
     );
@@ -633,7 +634,7 @@ class ReportReviewScreen extends StatelessWidget {
         File(photoPath),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.image_outlined, color: Color(0xFF7F8C8D), size: 16);
+          return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
         },
       );
     } else if (photoPath.startsWith('http')) {
@@ -641,7 +642,7 @@ class ReportReviewScreen extends StatelessWidget {
         photoPath,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.image_outlined, color: Color(0xFF7F8C8D), size: 16);
+          return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
         },
       );
     } else {
@@ -662,7 +663,7 @@ class ReportReviewScreen extends StatelessWidget {
         targetUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.image_outlined, color: Color(0xFF7F8C8D), size: 16);
+          return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
         },
       );
     }
@@ -674,30 +675,30 @@ class ReportReviewScreen extends StatelessWidget {
           onTap: () => _showPhotoPreviewDialog(context, photoPath),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10.0.w),
               color: const Color(0xFFEEF2F6),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5.w),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(9.0.w),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   imageWidget,
                   Positioned(
-                    bottom: 4,
-                    right: 4,
+                    bottom: 4.0.h,
+                    right: 4.0.w,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 4.0.w, vertical: 2.0.h),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(4.0.w),
                       ),
                       child: Text(
                         time,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 8,
+                          fontSize: 8.0.sp,
                           fontFamily: 'Montserrat',
                           fontWeight: FontWeight.bold,
                         ),
@@ -725,33 +726,33 @@ class ReportReviewScreen extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.0.w),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C3E50).withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF2C3E50).withValues(alpha: 0.04),
+            blurRadius: 10.0.w,
+            offset: Offset(0, 4.0.h),
           ),
         ],
         border: Border.all(
           color: const Color(0xFFE2E8F0),
-          width: 0.5,
+          width: 0.5.w,
         ),
       ),
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Inspection Report Overview',
             style: TextStyle(
-              color: Color(0xFF2C3E50),
+              color: const Color(0xFF2C3E50),
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.w800,
-              fontSize: 16,
+              fontSize: 16.0.sp,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.0.h),
           if (idCode.isNotEmpty) _buildMetadataRow('ID Code', idCode),
           _buildMetadataRow('Tenant', tenantName),
           _buildMetadataRow('Landlord', landlordName),
@@ -784,33 +785,33 @@ class ReportReviewScreen extends StatelessWidget {
             inspectionDate: inspectionDate,
             allRooms: allRooms,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.0.w),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 10.0.h),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.all(4.0.w),
                   decoration: BoxDecoration(
                     color: const Color(0xFF007BFF),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(6.0.w),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add,
                     color: Colors.white,
-                    size: 16,
+                    size: 16.w,
                   ),
                 ),
-                const SizedBox(width: 10),
-                const Text(
+                SizedBox(width: 10.0.w),
+                Text(
                   'Share & Send Full PDF',
                   style: TextStyle(
-                    color: Color(0xFF2C3E50),
+                    color: const Color(0xFF2C3E50),
                     fontFamily: 'Montserrat',
                     fontWeight: FontWeight.w800,
-                    fontSize: 15,
+                    fontSize: 15.0.sp,
                   ),
                 ),
               ],
@@ -831,6 +832,9 @@ class ReportReviewScreen extends StatelessWidget {
     required List<RoomInspection>? allRooms,
   }) {
     final controller = Get.find<InspectionController>();
+    final isDownloading = false.obs;
+    final isUploading = false.obs;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -841,16 +845,16 @@ class ReportReviewScreen extends StatelessWidget {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(24.0.w),
           ),
-          contentPadding: const EdgeInsets.all(16),
-          title: const Text(
+          contentPadding: EdgeInsets.all(16.0.w),
+          title: Text(
             'PDF Document Preview',
             style: TextStyle(
-              color: Color(0xFF2C3E50),
+              color: const Color(0xFF2C3E50),
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 18.0.sp,
             ),
           ),
           content: Column(
@@ -858,20 +862,20 @@ class ReportReviewScreen extends StatelessWidget {
             children: [
               Container(
                 width: double.infinity,
-                height: 280,
+                height: 280.h,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFBDC3C7).withOpacity(0.5)),
+                  borderRadius: BorderRadius.circular(12.0.w),
+                  border: Border.all(color: const Color(0xFFBDC3C7).withValues(alpha: 0.5)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 8.0.w,
+                      offset: Offset(0, 3.0.h),
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12.0.w),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -880,55 +884,55 @@ class ReportReviewScreen extends StatelessWidget {
                         child: Text(
                           'TenantSnap Report',
                           style: TextStyle(
-                            color: const Color(0xFF2C3E50).withOpacity(0.8),
+                            color: const Color(0xFF2C3E50).withValues(alpha: 0.8),
                             fontFamily: 'Montserrat',
                             fontWeight: FontWeight.w900,
-                            fontSize: 16,
+                            fontSize: 16.0.sp,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.0.h),
                       Container(
-                        height: 1.5,
+                        height: 1.5.h,
                         color: const Color(0xFF007BFF),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.0.h),
                       Text(
                         'ID Code: ${idCode.isNotEmpty ? idCode : "TS-402-URBL"}',
-                        style: const TextStyle(fontSize: 10, fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: const Color(0xFF2C3E50)),
                       ),
                       Text(
                         'Tenant: $tenantName',
-                        style: const TextStyle(fontSize: 10, fontFamily: 'Montserrat', color: Color(0xFF2C3E50)),
+                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
                       ),
                       Text(
                         'Landlord: $landlordName',
-                        style: const TextStyle(fontSize: 10, fontFamily: 'Montserrat', color: Color(0xFF2C3E50)),
+                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
                       ),
                       Text(
                         'Address: $propertyAddress',
-                        style: const TextStyle(fontSize: 9, fontFamily: 'Montserrat', color: Color(0xFF2C3E50)),
+                        style: TextStyle(fontSize: 9.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
                       ),
                       Text(
                         'Date: $inspectionDate',
-                        style: const TextStyle(fontSize: 10, fontFamily: 'Montserrat', color: Color(0xFF2C3E50)),
+                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
                       ),
-                      const Divider(height: 16),
-                      const Text(
+                      Divider(height: 16.0.h),
+                      Text(
                         'DETAILED INSPECTION ITEMS',
-                        style: TextStyle(fontSize: 10, fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: const Color(0xFF2C3E50)),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6.0.h),
 
                       if (previewRooms.isNotEmpty)
-                        ...previewRooms.map((room) => _buildPdfPreviewRoomSection(context, room)).toList()
+                        ...previewRooms.map((room) => _buildPdfPreviewRoomSection(context, room))
                       else
-                        const Center(
+                        Center(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
+                            padding: EdgeInsets.symmetric(vertical: 20.0.h),
                             child: Text(
                               'No rooms with photo evidence to display.',
-                              style: TextStyle(fontSize: 10, fontFamily: 'Montserrat', color: Color(0xFF7F8C8D)),
+                              style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF7F8C8D)),
                             ),
                           ),
                         ),
@@ -936,13 +940,13 @@ class ReportReviewScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16.0.h),
+              Text(
                 'Ready to share with landlord and save records.',
                 style: TextStyle(
-                  color: Color(0xFF7F8C8D),
+                  color: const Color(0xFF7F8C8D),
                   fontFamily: 'Montserrat',
-                  fontSize: 12,
+                  fontSize: 12.0.sp,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
@@ -950,19 +954,21 @@ class ReportReviewScreen extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
+            Obx(() => TextButton(
+              onPressed: (isDownloading.value || isUploading.value) ? null : () => Navigator.pop(context),
+              child: Text(
                 'Close',
                 style: TextStyle(
-                  color: Color(0xFF95A5A6),
+                  color: const Color(0xFF95A5A6),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
+                  fontSize: 14.0.sp,
                 ),
               ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () async {
+            )),
+            Obx(() => ElevatedButton.icon(
+              onPressed: (isDownloading.value || isUploading.value) ? null : () async {
+                isDownloading.value = true;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     duration: Duration(seconds: 1),
@@ -1029,32 +1035,41 @@ class ReportReviewScreen extends StatelessWidget {
                       ),
                     );
                   }
+                } finally {
+                  isDownloading.value = false;
                 }
               },
-              icon: const Icon(Icons.download_rounded, size: 16, color: Colors.white),
-              label: const Text(
-                'Download',
+              icon: isDownloading.value
+                  ? SizedBox(
+                      width: 14.w,
+                      height: 14.h,
+                      child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 1.5),
+                    )
+                  : Icon(Icons.download_rounded, size: 16.w, color: Colors.white),
+              label: Text(
+                isDownloading.value ? 'Downloading...' : 'Download',
                 style: TextStyle(
                   color: Colors.white,
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
+                  fontSize: 14.0.sp,
                 ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2ECC71),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10.0.w),
                 ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
+            )),
+            Obx(() => ElevatedButton(
+              onPressed: (isDownloading.value || isUploading.value) ? null : () async {
+                isUploading.value = true;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     backgroundColor: Color(0xFF2C3E50),
                     content: Text(
-                      'Generating PDF Report Certificate with cryptographic signature...',
+                      'Uploading inspection report to secure node database...',
                       style: TextStyle(
                         color: Colors.white,
                         fontFamily: 'Montserrat',
@@ -1063,22 +1078,108 @@ class ReportReviewScreen extends StatelessWidget {
                     ),
                   ),
                 );
+
+                final List<RoomInspection> sourceRooms = allRooms ?? getMockInspectionData();
+                final formattedRooms = sourceRooms.map((room) {
+                  return {
+                    'roomName': room.name,
+                    'photosCount': room.checklist.fold<int>(0, (sum, item) => sum + item.photos.length),
+                    'features': room.checklist.map((item) {
+                      return {
+                        'name': item.name,
+                        'status': item.status == RoomItemStatus.happy ? 'good' : 'bad',
+                        'photos': item.photos,
+                      };
+                    }).toList(),
+                  };
+                }).toList();
+
+                final restClient = Get.find<RestClient>();
+                try {
+                  final response = await restClient.dio.post(
+                    '/inspection/create',
+                    data: {
+                      'rooms': formattedRooms,
+                    },
+                  );
+                  if (response.statusCode == 200 || response.statusCode == 201) {
+                    final data = response.data['data'];
+                    final inspectionId = data != null ? (data['inspectionId'] ?? '') : '';
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFF2ECC71),
+                          content: Text(
+                            'Inspection report uploaded successfully! ID: $inspectionId',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFFE74C3C),
+                          content: Text(
+                            'Failed to upload report. Status: ${response.statusCode}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFFE74C3C),
+                        content: Text(
+                          'Connection error. Failed to save report: $e',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                } finally {
+                  isUploading.value = false;
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF007BFF),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10.0.w),
                 ),
               ),
-              child: const Text(
-                'Share & Send',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
+              child: isUploading.value
+                  ? SizedBox(
+                      width: 18.w,
+                      height: 18.h,
+                      child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : Text(
+                      'Share & Send',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Montserrat',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.0.sp,
+                      ),
+                    ),
+            )),
           ],
         );
       },
@@ -1089,19 +1190,19 @@ class ReportReviewScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
+        SizedBox(height: 8.0.h),
         Text(
           room.name,
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: 11.0.sp,
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.bold,
-            color: Color(0xFF2C3E50),
+            color: const Color(0xFF2C3E50),
           ),
         ),
-        const SizedBox(height: 4),
-        Container(height: 1, color: const Color(0xFFEEF2F6)),
-        const SizedBox(height: 6),
+        SizedBox(height: 4.0.h),
+        Container(height: 1.0.h, color: const Color(0xFFEEF2F6)),
+        SizedBox(height: 6.0.h),
         ...room.checklist.map((item) {
           String statusEmoji = '➖';
           if (item.status == RoomItemStatus.happy) {
@@ -1128,36 +1229,36 @@ class ReportReviewScreen extends StatelessWidget {
               imageWidget = Image.file(
                 File(imgUrl),
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_outlined, size: 12),
+                errorBuilder: (context, error, stackTrace) => Icon(Icons.image_outlined, size: 12.w),
               );
             } else {
               imageWidget = Image.network(
                 imgUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_outlined, size: 12),
+                errorBuilder: (context, error, stackTrace) => Icon(Icons.image_outlined, size: 12.w),
               );
             }
           }
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 10.0),
+            padding: EdgeInsets.only(bottom: 10.0.h),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (hasPhoto && imageWidget != null) ...[
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 32.w,
+                    height: 32.h,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(4.0.w),
                       color: const Color(0xFFEEF2F6),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(4.0.w),
                       child: imageWidget,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.0.w),
                 ],
                 Expanded(
                   child: Column(
@@ -1168,26 +1269,26 @@ class ReportReviewScreen extends StatelessWidget {
                         children: [
                           Text(
                             item.name,
-                            style: const TextStyle(
-                              fontSize: 9,
+                            style: TextStyle(
+                              fontSize: 9.0.sp,
                               fontFamily: 'Montserrat',
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF2C3E50),
+                              color: const Color(0xFF2C3E50),
                             ),
                           ),
                           Text(
                             statusEmoji,
-                            style: const TextStyle(fontSize: 10),
+                            style: TextStyle(fontSize: 10.0.sp),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2.0.h),
                       Text(
                         commentText,
-                        style: const TextStyle(
-                          fontSize: 8,
+                        style: TextStyle(
+                          fontSize: 8.0.sp,
                           fontFamily: 'Montserrat',
-                          color: Color(0xFF7F8C8D),
+                          color: const Color(0xFF7F8C8D),
                         ),
                       ),
                     ],
@@ -1196,8 +1297,9 @@ class ReportReviewScreen extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
 }
+

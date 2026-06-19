@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 // --- Neo-Futuristic Antigravity Theme Constants ---
@@ -112,16 +111,16 @@ class AntigravityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: hasActiveGlow
-              ? glowColor.withOpacity(0.35)
-              : const Color(0xFFBDC3C7).withOpacity(0.2),
+              ? glowColor.withValues(alpha: 0.35)
+              : const Color(0xFFBDC3C7).withValues(alpha: 0.2),
           width: hasActiveGlow ? 1.5 : 1.0,
         ),
         boxShadow: [
           // Subtle elegant soft glow or soft card drop shadow
           BoxShadow(
             color: hasActiveGlow 
-                ? glowColor.withOpacity(0.12)
-                : const Color(0xFF2C3E50).withOpacity(0.06),
+                ? glowColor.withValues(alpha: 0.12)
+                : const Color(0xFF2C3E50).withValues(alpha: 0.06),
             blurRadius: hasActiveGlow ? 16 : 10,
             spreadRadius: hasActiveGlow ? 1 : 0,
             offset: const Offset(0, 4),
@@ -244,8 +243,8 @@ class _NeonProgressPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
         colors: [
-          activeColor.withOpacity(0.01),
-          activeColor.withOpacity(0.6),
+          activeColor.withValues(alpha: 0.01),
+          activeColor.withValues(alpha: 0.6),
           activeColor,
         ],
         stops: const [0.0, 0.5, 1.0],
@@ -268,7 +267,7 @@ class _NeonProgressPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
         colors: [
-          activeColor.withOpacity(0.4),
+          activeColor.withValues(alpha: 0.4),
           activeColor,
         ],
         stops: const [0.0, 1.0],

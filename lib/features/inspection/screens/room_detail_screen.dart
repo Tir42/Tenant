@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
+
 
 class RoomDetailScreen extends StatefulWidget {
   final int roomId;
@@ -54,6 +56,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       if (pickedFile != null) {
         controller.addPhotoToItem(widget.roomId, targetItem.name, pickedFile.path);
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFF2C3E50),
@@ -71,6 +74,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error capturing picture: $e'),
@@ -92,20 +96,20 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       builder: (BuildContext context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+            padding: EdgeInsets.symmetric(vertical: 20.0.h, horizontal: 16.0.w),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Add Photo for ${targetItem.name}',
-                  style: const TextStyle(
-                    color: Color(0xFF2C3E50),
+                  style: TextStyle(
+                    color: const Color(0xFF2C3E50),
                     fontFamily: 'Montserrat',
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 16.0.sp,
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20.0.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -118,26 +122,26 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(16.0.w),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEEF2F6),
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFBDC3C7).withOpacity(0.3)),
+                              border: Border.all(color: const Color(0xFFBDC3C7).withValues(alpha: 0.3)),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.camera_alt_rounded,
-                              color: Color(0xFF007BFF),
-                              size: 28,
+                              color: const Color(0xFF007BFF),
+                              size: 28.w,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
+                          SizedBox(height: 8.0.h),
+                          Text(
                             'Take Photo',
                             style: TextStyle(
-                              color: Color(0xFF2C3E50),
+                              color: const Color(0xFF2C3E50),
                               fontFamily: 'Montserrat',
                               fontWeight: FontWeight.w700,
-                              fontSize: 13,
+                              fontSize: 13.0.sp,
                             ),
                           ),
                         ],
@@ -152,26 +156,26 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(16.0.w),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEEF2F6),
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFBDC3C7).withOpacity(0.3)),
+                              border: Border.all(color: const Color(0xFFBDC3C7).withValues(alpha: 0.3)),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.photo_library_rounded,
-                              color: Color(0xFF007BFF),
-                              size: 28,
+                              color: const Color(0xFF007BFF),
+                              size: 28.w,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
+                          SizedBox(height: 8.0.h),
+                          Text(
                             'From Gallery',
                             style: TextStyle(
-                              color: Color(0xFF2C3E50),
+                              color: const Color(0xFF2C3E50),
                               fontFamily: 'Montserrat',
                               fontWeight: FontWeight.w700,
-                              fontSize: 13,
+                              fontSize: 13.0.sp,
                             ),
                           ),
                         ],
@@ -196,15 +200,15 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20.0.w),
           ),
-          title: const Text(
+          title: Text(
             'Add Custom Feature',
             style: TextStyle(
-              color: Color(0xFF2C3E50),
+              color: const Color(0xFF2C3E50),
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 18.0.sp,
             ),
           ),
           content: Column(
@@ -213,26 +217,27 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             children: [
               TextField(
                 controller: nameController,
-                style: const TextStyle(
-                  color: Color(0xFF2C3E50),
+                style: TextStyle(
+                  color: const Color(0xFF2C3E50),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 14.0.sp,
                 ),
                 decoration: InputDecoration(
                   hintText: 'e.g. Air Conditioning, Heater',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF95A5A6),
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF95A5A6),
                     fontFamily: 'Montserrat',
                     fontWeight: FontWeight.w500,
+                    fontSize: 13.0.sp,
                   ),
                   filled: true,
                   fillColor: const Color(0xFFF2F4F7),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.0.w),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 14.0.h),
                 ),
               ),
             ],
@@ -240,12 +245,13 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Color(0xFF95A5A6),
+                  color: const Color(0xFF95A5A6),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
+                  fontSize: 14.0.sp,
                 ),
               ),
             ),
@@ -268,16 +274,17 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 backgroundColor: const Color(0xFF007BFF),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10.0.w),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 10.0.h),
               ),
-              child: const Text(
+              child: Text(
                 'Add Feature',
                 style: TextStyle(
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
+                  fontSize: 14.0.sp,
                 ),
               ),
             ),
@@ -287,10 +294,135 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     );
   }
 
+  Widget _buildHeader(BuildContext context, String roomName) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            width: 44.w,
+            height: 44.h,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6.0.w,
+                  offset: Offset(0, 2.0.h),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: const Color(0xFF2C3E50),
+                size: 20.w,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 14.0.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$roomName Inspection',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: const Color(0xFF2C3E50),
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18.0.sp,
+                ),
+              ),
+              SizedBox(height: 2.0.h),
+              Text(
+                'Verify features & capture condition',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: const Color(0xFF7F8C8D),
+                  fontFamily: 'Montserrat',
+                  fontSize: 12.0.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommentCard() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.0.w),
+        border: Border.all(
+          color: const Color(0xFFBDC3C7).withValues(alpha: 0.2),
+          width: 1.0.w,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2C3E50).withValues(alpha: 0.04),
+            blurRadius: 8.0.w,
+            offset: Offset(0, 4.0.h),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(16.0.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'INSPECTION NOTES',
+            style: TextStyle(
+              color: const Color(0xFF7F8C8D),
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w700,
+              fontSize: 10.0.sp,
+              letterSpacing: 1.2,
+            ),
+          ),
+          SizedBox(height: 12.0.h),
+          TextField(
+            controller: _commentController,
+            maxLines: 4,
+            style: TextStyle(
+              color: const Color(0xFF2C3E50),
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w500,
+              fontSize: 14.0.sp,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Add comments or special notes about the room condition...',
+              hintStyle: TextStyle(
+                color: const Color(0xFF95A5A6),
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w400,
+                fontSize: 13.0.sp,
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF2F4F7),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0.w),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 14.0.h),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -299,149 +431,86 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           gradient: AntigravityColors.bgGradient,
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 16.0.h),
+            child: Obx(() {
+              final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
+              final checklist = room.checklist;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: size.width * 0.9,
-                    constraints: const BoxConstraints(maxWidth: 380),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF2C3E50).withOpacity(0.08),
-                          blurRadius: 24,
-                          spreadRadius: 4,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
-                    child: Obx(() {
-                      final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
-                      final checklist = room.checklist;
-                      return Column(
+                  _buildHeader(context, room.name),
+                  SizedBox(height: 24.0.h),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${room.name} Inspection',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF2C3E50),
-                                    fontFamily: 'Montserrat',
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 21,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              GestureDetector(
-                                onTap: () => Navigator.of(context).pop(),
-                                child: const Icon(
-                                  Icons.arrow_back_ios_rounded,
-                                  color: Color(0xFF007BFF),
-                                  size: 24,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-
                           if (room.name.toLowerCase() == 'utils') ...[
-                            const Text(
+                            Text(
                               'LANDLORD PROVIDED UTILITIES',
                               style: TextStyle(
-                                color: Color(0xFF95A5A6),
+                                color: const Color(0xFF95A5A6),
                                 fontFamily: 'Montserrat',
                                 fontWeight: FontWeight.w700,
-                                fontSize: 10,
+                                fontSize: 10.0.sp,
                                 letterSpacing: 1.2,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            SizedBox(height: 10.0.h),
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(16),
+                              padding: EdgeInsets.all(16.0.w),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEBF2F7),
-                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20.0.w),
+                                border: Border.all(
+                                  color: const Color(0xFFBDC3C7).withValues(alpha: 0.2),
+                                  width: 1.0.w,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF2C3E50).withValues(alpha: 0.04),
+                                    blurRadius: 8.0.w,
+                                    offset: Offset(0, 4.0.h),
+                                  ),
+                                ],
                               ),
                               child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
+                                spacing: 8.0.w,
+                                runSpacing: 8.0.h,
                                 children: controller.availableUtilities.map((utility) => _buildChipItem(utility, checklist)).toList(),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20.0.h),
                           ],
-
-                          const Text(
+                          Text(
                             'VERIFY STATUS NODES',
                             style: TextStyle(
-                              color: Color(0xFF95A5A6),
+                              color: const Color(0xFF95A5A6),
                               fontFamily: 'Montserrat',
                               fontWeight: FontWeight.w700,
-                              fontSize: 10,
+                              fontSize: 10.0.sp,
                               letterSpacing: 1.2,
                             ),
                           ),
-                          const SizedBox(height: 12),
-
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEBF2F7),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Column(
-                              children: checklist.map((item) => _buildChecklistRow(item)).toList(),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          _buildAddFeatureButton(),
-                          const SizedBox(height: 12),
-
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF007BFF),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                              child: const Text(
-                                'Save',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'Montserrat',
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ),
+                          SizedBox(height: 12.0.h),
+                          ...checklist.map((item) => _buildChecklistRow(item)),
+                          SizedBox(height: 8.0.h),
+                          _buildCommentCard(),
+                          SizedBox(height: 20.0.h),
                         ],
-                      );
-                    }),
+                      ),
+                    ),
                   ),
+                  SizedBox(height: 20.0.h),
+                  _buildAddFeatureButton(),
+                  SizedBox(height: 12.0.h),
+                  _buildSaveButton(),
                 ],
-              ),
-            ),
+              );
+            }),
           ),
         ),
       ),
@@ -458,10 +527,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           controller.addUtilityItem(utility);
         }
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.0.w),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 14.0.w, vertical: 8.0.h),
         decoration: BoxDecoration(
           gradient: isSel
               ? const LinearGradient(
@@ -471,17 +540,17 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 )
               : null,
           color: isSel ? null : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.0.w),
           border: Border.all(
-            color: isSel ? Colors.transparent : const Color(0xFFBDC3C7).withOpacity(0.5),
-            width: 1.5,
+            color: isSel ? Colors.transparent : const Color(0xFFBDC3C7).withValues(alpha: 0.5),
+            width: 1.5.w,
           ),
           boxShadow: isSel
               ? [
                   BoxShadow(
-                    color: const Color(0xFF007BFF).withOpacity(0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+                    color: const Color(0xFF007BFF).withValues(alpha: 0.25),
+                    blurRadius: 6.0.w,
+                    offset: Offset(0, 2.0.h),
                   ),
                 ]
               : [],
@@ -490,12 +559,12 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isSel) ...[
-              const Icon(
+              Icon(
                 Icons.check_circle_rounded,
                 color: Colors.white,
-                size: 14,
+                size: 14.w,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6.0.w),
             ],
             Text(
               utility,
@@ -503,7 +572,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 color: isSel ? Colors.white : const Color(0xFF2C3E50),
                 fontFamily: 'Montserrat',
                 fontWeight: FontWeight.w700,
-                fontSize: 12,
+                fontSize: 12.0.sp,
               ),
             ),
           ],
@@ -542,115 +611,171 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          contentPadding: const EdgeInsets.all(12),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 300),
-                  width: double.infinity,
-                  color: const Color(0xFFF2F4F7),
-                  child: isRealFile && File(photoPath).existsSync()
-                      ? Image.file(
-                          File(photoPath),
-                          fit: BoxFit.contain,
-                        )
-                      : Image.network(
-                          photoPath.contains("door")
-                              ? (photoPath.contains("1")
-                                  ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600"
-                                  : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600")
-                              : (photoPath.contains("1")
-                                  ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600"
-                                  : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=600"),
-                          fit: BoxFit.contain,
-                        ),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 40.0.h),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28.0.w),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 24.0.w,
+                  offset: Offset(0, 10.0.h),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Photo Evidence Capture',
-                style: TextStyle(
-                  color: Color(0xFF2C3E50),
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'GPS Active • Verified Condition Record',
-                style: TextStyle(
-                  color: Color(0xFF7F8C8D),
-                  fontFamily: 'Montserrat',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Close',
-                      style: TextStyle(
-                        color: Color(0xFF7F8C8D),
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w700,
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(28.0.w),
+                        topRight: Radius.circular(28.0.w),
+                      ),
+                      child: Container(
+                        constraints: BoxConstraints(maxHeight: 320.0.h),
+                        width: double.infinity,
+                        color: const Color(0xFFF2F4F7),
+                        child: isRealFile && File(photoPath).existsSync()
+                            ? Image.file(
+                                File(photoPath),
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                photoPath.contains("door")
+                                    ? (photoPath.contains("1")
+                                        ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600"
+                                        : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600")
+                                    : (photoPath.contains("1")
+                                        ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600"
+                                        : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=600"),
+                                fit: BoxFit.cover,
+                              ),
                       ),
                     ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
-                      item.photos.remove(photoPath);
-                      room.recalculateProgress();
-                      controller.roomsList.refresh();
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          backgroundColor: Color(0xFF2C3E50),
-                          content: Text(
-                            'Photo evidence deleted successfully.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w600,
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        margin: EdgeInsets.all(16.0.w),
+                        width: 36.w,
+                        height: 36.h,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                          size: 20.w,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 20.0.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${item.name} Evidence Capture',
+                        style: TextStyle(
+                          color: const Color(0xFF2C3E50),
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.0.sp,
+                        ),
+                      ),
+                      SizedBox(height: 4.0.h),
+                      Text(
+                        'GPS Active • Verified Condition Record',
+                        style: TextStyle(
+                          color: const Color(0xFF7F8C8D),
+                          fontFamily: 'Montserrat',
+                          fontSize: 12.0.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 24.0.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: const Color(0xFFBDC3C7), width: 1.0.w),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0.w),
+                                ),
+                                padding: EdgeInsets.symmetric(vertical: 14.0.h),
+                              ),
+                              child: Text(
+                                'Close',
+                                style: TextStyle(
+                                  color: const Color(0xFF7F8C8D),
+                                  fontFamily: 'Montserrat',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14.0.sp,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE74C3C),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                          SizedBox(width: 12.0.w),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                final room = controller.roomsList.firstWhere((r) => r.id == widget.roomId);
+                                item.photos.remove(photoPath);
+                                room.recalculateProgress();
+                                controller.roomsList.refresh();
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Color(0xFF2C3E50),
+                                    content: Text(
+                                      'Photo evidence deleted successfully.',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: 'Montserrat',
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE74C3C),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0.w),
+                                ),
+                                padding: EdgeInsets.symmetric(vertical: 14.0.h),
+                              ),
+                              icon: Icon(Icons.delete_outline, color: Colors.white, size: 18.w),
+                              label: Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontSize: 14.0.sp,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    ),
-                    icon: const Icon(Icons.delete_outline, color: Colors.white, size: 16),
-                    label: const Text(
-                      'Delete Photo',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -668,35 +793,35 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           fit: BoxFit.cover,
         );
       } else {
-        imageWidget = const Center(
+        imageWidget = Center(
           child: Icon(
             Icons.image_outlined,
-            size: 14,
-            color: Color(0xFF7F8C8D),
+            size: 24.w,
+            color: const Color(0xFF7F8C8D),
           ),
         );
       }
     } else {
-      String imageUrl = "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=150";
+      String imageUrl = "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=300";
       if (photoPath.contains("door")) {
         imageUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=150"
-            : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=150";
+            ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=300"
+            : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=300";
       } else if (photoPath.contains("outlet")) {
         imageUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150"
-            : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=150";
+            ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300"
+            : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=300";
       }
       
       imageWidget = Image.network(
         imageUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return const Center(
+          return Center(
             child: Icon(
               Icons.image_outlined,
-              size: 14,
-              color: Color(0xFF7F8C8D),
+              size: 24.w,
+              color: const Color(0xFF7F8C8D),
             ),
           );
         },
@@ -706,16 +831,16 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     return GestureDetector(
       onTap: () => _showPhotoPreviewDialog(item, photoPath),
       child: Container(
-        width: 44,
-        height: 32,
-        margin: const EdgeInsets.only(left: 4),
+        width: 72.w,
+        height: 72.h,
+        margin: EdgeInsets.only(right: 10.0.w),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(12.0.w),
           color: const Color(0xFFEEF2F6),
-          border: Border.all(color: const Color(0xFFBDC3C7).withOpacity(0.3), width: 0.5),
+          border: Border.all(color: const Color(0xFFBDC3C7).withValues(alpha: 0.4), width: 1.0.w),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(11.0.w),
           child: imageWidget,
         ),
       ),
@@ -727,39 +852,97 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: _showAddFeatureDialog,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
+        borderRadius: BorderRadius.circular(25.0.w),
+        child: Container(
+          height: 50.h,
+          width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF007BFF),
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(25.0.w),
+            border: Border.all(
+              color: const Color(0xFF007BFF),
+              width: 1.5.w,
+            ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF007BFF).withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: const Color(0xFF007BFF).withValues(alpha: 0.05),
+                blurRadius: 8.0.w,
+                offset: Offset(0, 3.0.h),
               ),
             ],
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 16,
+              Container(
+                padding: EdgeInsets.all(4.0.w),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF007BFF),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 12.w,
+                ),
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 10.0.w),
               Text(
                 'Add Custom Feature',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF007BFF),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 14.0.sp,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50.h,
+      child: ElevatedButton(
+        onPressed: () => Navigator.of(context).pop(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF007BFF),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25.0.w),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF007BFF), Color(0xFF0056B3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(25.0.w),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF007BFF).withValues(alpha: 0.3),
+                blurRadius: 12.0.w,
+                offset: Offset(0, 4.0.h),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              'Save',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w700,
+                fontSize: 14.0.sp,
+              ),
+            ),
           ),
         ),
       ),
@@ -790,19 +973,23 @@ class InspectionChecklistRow extends StatelessWidget {
     final bool hasPhotos = item.photos.isNotEmpty;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.only(bottom: 12.0.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16.0.w),
+        border: Border.all(
+          color: const Color(0xFFBDC3C7).withValues(alpha: 0.2),
+          width: 1.0.w,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 3,
-            offset: const Offset(0, 1.5),
+            color: const Color(0xFF2C3E50).withValues(alpha: 0.04),
+            blurRadius: 8.0.w,
+            offset: Offset(0, 4.0.h),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+      padding: EdgeInsets.symmetric(horizontal: 14.0.w, vertical: 12.0.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -814,15 +1001,15 @@ class InspectionChecklistRow extends StatelessWidget {
                   item.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF2C3E50),
+                  style: TextStyle(
+                    color: const Color(0xFF2C3E50),
                     fontFamily: 'Montserrat',
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                    fontSize: 14.0.sp,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.0.w),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -832,34 +1019,34 @@ class InspectionChecklistRow extends StatelessWidget {
                     icon: Icons.sentiment_satisfied_alt,
                     onTap: onHappyTap,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.0.w),
                   _buildMockupToggle(
                     isSelected: item.status == RoomItemStatus.sad,
                     activeColor: const Color(0xFFE74C3C),
                     icon: Icons.sentiment_very_dissatisfied,
                     onTap: onSadTap,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.0.w),
                   _buildMockupToggle(
                     isSelected: item.status == RoomItemStatus.neutral,
                     activeColor: const Color(0xFF95A5A6),
                     icon: Icons.remove,
                     onTap: onNeutralTap,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.0.w),
                   GestureDetector(
                     onTap: onCameraTap,
                     child: Container(
-                      width: 28,
-                      height: 28,
+                      width: 28.w,
+                      height: 28.h,
                       decoration: const BoxDecoration(
                         color: Color(0xFF2C3E50),
                         shape: BoxShape.circle,
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.camera_alt,
-                          size: 13,
+                          size: 13.w,
                           color: Colors.white,
                         ),
                       ),
@@ -870,7 +1057,7 @@ class InspectionChecklistRow extends StatelessWidget {
             ],
           ),
           if (hasPhotos) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 12.0.h),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -894,24 +1081,25 @@ class InspectionChecklistRow extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        width: 28,
-        height: 28,
+        width: 28.w,
+        height: 28.h,
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withOpacity(0.15) : const Color(0xFFEEF2F6),
+          color: isSelected ? activeColor.withValues(alpha: 0.15) : const Color(0xFFEEF2F6),
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? activeColor : const Color(0xFFBDC3C7).withOpacity(0.3),
-            width: isSelected ? 1.5 : 1.0,
+            color: isSelected ? activeColor : const Color(0xFFBDC3C7).withValues(alpha: 0.3),
+            width: isSelected ? 1.5.w : 1.0.w,
           ),
         ),
         child: Center(
           child: Icon(
             icon,
-            size: 16,
-            color: isSelected ? activeColor : const Color(0xFF7F8C8D).withOpacity(0.6),
+            size: 16.w,
+            color: isSelected ? activeColor : const Color(0xFF7F8C8D).withValues(alpha: 0.6),
           ),
         ),
       ),
     );
   }
 }
+

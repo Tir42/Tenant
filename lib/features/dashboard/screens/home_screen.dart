@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:tenantsnap/features/property/screens/property_details_screen.dart';
 import 'package:tenantsnap/features/inspection/screens/report_review_screen.dart';
@@ -100,9 +101,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Left: Logo & App Name
                     Row(
                       children: [
-                        CustomPaint(
-                          size: const Size(32, 28),
-                          painter: HomeLogoPainter(),
+                        Image.asset(
+                          'assets/app_icon.png',
+                          width: 32.0.w,
+                          height: 28.0.h,
+                          fit: BoxFit.contain,
                         ),
                         const SizedBox(width: 8),
                         RichText(
@@ -145,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
+                                  color: Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
@@ -176,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -195,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF007BFF).withOpacity(0.15),
+                                  color: const Color(0xFF007BFF).withValues(alpha: 0.15),
                                   blurRadius: 6,
                                 ),
                               ],
@@ -355,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -409,8 +412,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                     colors: [
-                                      Colors.black.withOpacity(0.15),
-                                      Colors.black.withOpacity(0.7),
+                                      Colors.black.withValues(alpha: 0.15),
+                                      Colors.black.withValues(alpha: 0.7),
                                     ],
                                     stops: const [0.2, 1.0],
                                   ),
@@ -542,7 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -600,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         'Tap to review',
                         style: TextStyle(
-                          color: const Color(0xFF7F8C8D).withOpacity(0.8),
+                          color: const Color(0xFF7F8C8D).withValues(alpha: 0.8),
                           fontFamily: 'Montserrat',
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -617,7 +620,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -673,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -902,7 +905,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: activeColor.withOpacity(0.1),
+                        color: activeColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -939,33 +942,3 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Logo painter local class
-class HomeLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-    final Paint paint = Paint()
-      ..style = PaintingStyle.fill
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF007BFF), Color(0xFF2ECC71)],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-
-    final Path path = Path()
-      ..moveTo(w * 0.5, h * 0.1)
-      ..lineTo(w * 0.9, h * 0.45)
-      ..lineTo(w * 0.8, h * 0.45)
-      ..lineTo(w * 0.8, h * 0.9)
-      ..lineTo(w * 0.2, h * 0.9)
-      ..lineTo(w * 0.2, h * 0.45)
-      ..lineTo(w * 0.1, h * 0.45)
-      ..close();
-    canvas.drawPath(path, paint);
-
-    final Paint circlePaint = Paint()..color = Colors.white;
-    canvas.drawCircle(Offset(w * 0.5, h * 0.65), w * 0.15, circlePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

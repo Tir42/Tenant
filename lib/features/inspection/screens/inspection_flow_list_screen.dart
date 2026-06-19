@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
+import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+import 'package:tenantsnap/features/dashboard/screens/tenant_dashboard_screen.dart';
 import 'room_detail_screen.dart';
 import 'report_review_screen.dart';
 
@@ -48,15 +50,15 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.0.w),
               ),
-              title: const Text(
+              title: Text(
                 'Add Custom Room',
                 style: TextStyle(
-                  color: Color(0xFF2C3E50),
+                  color: const Color(0xFF2C3E50),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 18.0.sp,
                 ),
               ),
               content: SingleChildScrollView(
@@ -66,43 +68,44 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                   children: [
                     TextField(
                       controller: nameController,
-                      style: const TextStyle(
-                        color: Color(0xFF2C3E50),
+                      style: TextStyle(
+                        color: const Color(0xFF2C3E50),
                         fontFamily: 'Montserrat',
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: 14.0.sp,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Enter room name...',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF95A5A6),
+                        hintStyle: TextStyle(
+                          color: const Color(0xFF95A5A6),
                           fontFamily: 'Montserrat',
                           fontWeight: FontWeight.w500,
+                          fontSize: 13.0.sp,
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF2F4F7),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.0.w),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 14.0.h),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
+                    SizedBox(height: 20.0.h),
+                    Text(
                       'SELECT ICON',
                       style: TextStyle(
-                        color: Color(0xFF95A5A6),
+                        color: const Color(0xFF95A5A6),
                         fontFamily: 'Montserrat',
                         fontWeight: FontWeight.w700,
-                        fontSize: 10,
+                        fontSize: 10.0.sp,
                         letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.0.h),
                     Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                      spacing: 10.0.w,
+                      runSpacing: 10.0.h,
                       children: iconsList.map((iconMap) {
                         final bool isSel = selectedIcon == iconMap['icon'];
                         return GestureDetector(
@@ -112,19 +115,19 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                             });
                           },
                           child: Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: EdgeInsets.all(10.0.w),
                             decoration: BoxDecoration(
-                              color: isSel ? const Color(0xFF007BFF).withOpacity(0.08) : const Color(0xFFF2F4F7),
+                              color: isSel ? const Color(0xFF007BFF).withValues(alpha: 0.08) : const Color(0xFFF2F4F7),
                               border: Border.all(
                                 color: isSel ? const Color(0xFF007BFF) : Colors.transparent,
-                                width: 1.5,
+                                width: 1.5.w,
                               ),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.0.w),
                             ),
                             child: Icon(
                               iconMap['icon'],
                               color: isSel ? const Color(0xFF007BFF) : const Color(0xFF2C3E50),
-                              size: 24,
+                              size: 24.w,
                             ),
                           ),
                         );
@@ -136,12 +139,13 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
+                  child: Text(
                     'Cancel',
                     style: TextStyle(
-                      color: Color(0xFF95A5A6),
+                      color: const Color(0xFF95A5A6),
                       fontFamily: 'Montserrat',
                       fontWeight: FontWeight.w700,
+                      fontSize: 14.0.sp,
                     ),
                   ),
                 ),
@@ -157,16 +161,17 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                     backgroundColor: const Color(0xFF007BFF),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.0.w),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 10.0.h),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Add Room',
                     style: TextStyle(
                       fontFamily: 'Montserrat',
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
+                      fontSize: 14.0.sp,
                     ),
                   ),
                 ),
@@ -178,10 +183,135 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
     );
   }
 
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Get.offAll(() => const TenantDashboardScreen());
+            }
+          },
+          child: Container(
+            width: 44.w,
+            height: 44.h,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6.0.w,
+                  offset: Offset(0, 2.0.h),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: const Color(0xFF2C3E50),
+                size: 20.w,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 14.0.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tell Us About Your Home',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: const Color(0xFF2C3E50),
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18.0.sp,
+                ),
+              ),
+              SizedBox(height: 2.0.h),
+              Text(
+                'Configure room checklist structures',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: const Color(0xFF7F8C8D),
+                  fontFamily: 'Montserrat',
+                  fontSize: 12.0.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 40.0.h, horizontal: 16.0.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(16.0.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFBDC3C7).withValues(alpha: 0.2),
+                  width: 1.0.w,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 6.0.w,
+                    offset: Offset(0, 2.0.h),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.holiday_village_outlined,
+                color: const Color(0xFF8F9CA9),
+                size: 40.w,
+              ),
+            ),
+            SizedBox(height: 16.0.h),
+            Text(
+              'No Spaces Added Yet',
+              style: TextStyle(
+                color: const Color(0xFF2C3E50),
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w800,
+                fontSize: 16.0.sp,
+              ),
+            ),
+            SizedBox(height: 8.0.h),
+            Text(
+              'Begin your property inspection by adding rooms or checklist areas.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: const Color(0xFF7F8C8D),
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w500,
+                fontSize: 12.0.sp,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -190,132 +320,46 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
           gradient: AntigravityColors.bgGradient,
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 16.0.h),
+            child: Obx(() {
+              final roomsList = controller.roomsList;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: size.width * 0.9,
-                    constraints: const BoxConstraints(maxWidth: 380),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF2C3E50).withOpacity(0.08),
-                          blurRadius: 24,
-                          spreadRadius: 4,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+                  _buildHeader(context),
+                  SizedBox(height: 24.0.h),
+                  Text(
+                    'PROPERTY SPACES',
+                    style: TextStyle(
+                      color: const Color(0xFF7F8C8D),
+                      fontFamily: 'Montserrat',
+                      fontSize: 11.0.sp,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2.0,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
-                    child: Obx(() {
-                      final roomsList = controller.roomsList;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Tell Us About Your\nNew Home',
-                            style: TextStyle(
-                              color: Color(0xFF2C3E50),
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w800,
-                              fontSize: 22,
-                              height: 1.25,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          if (roomsList.isEmpty)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 16.0),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF2F4F7),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: const Color(0xFFBDC3C7).withOpacity(0.2),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.holiday_village_outlined,
-                                        color: Color(0xFF8F9CA9),
-                                        size: 40,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'No Spaces Added Yet',
-                                      style: TextStyle(
-                                        color: Color(0xFF2C3E50),
-                                        fontFamily: 'Montserrat',
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Begin your property inspection by adding rooms or checklist areas.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: Color(0xFF7F8C8D),
-                                        fontFamily: 'Montserrat',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 12,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          else
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxHeight: size.height * 0.42,
-                              ),
-                              child: Scrollbar(
-                                controller: _listScrollController,
-                                thumbVisibility: true,
-                                trackVisibility: true,
-                                thickness: 5.0,
-                                radius: const Radius.circular(10),
-                                child: SingleChildScrollView(
-                                  controller: _listScrollController,
-                                  physics: const BouncingScrollPhysics(),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
-                                    child: Column(
-                                      children: roomsList.map((room) => _buildRoomTile(context, room)).toList(),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          
-                          const SizedBox(height: 20),
-                          _buildAddRoomButton(),
-
-                          if (roomsList.isNotEmpty) ...[
-                            const SizedBox(height: 12),
-                            _buildReviewReportButton(context),
-                          ],
-                        ],
-                      );
-                    }),
                   ),
+                  SizedBox(height: 16.0.h),
+                  Expanded(
+                    child: roomsList.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: roomsList.length,
+                            itemBuilder: (context, index) {
+                              return _buildRoomTile(context, roomsList[index]);
+                            },
+                          ),
+                  ),
+                  SizedBox(height: 20.0.h),
+                  _buildAddRoomButton(),
+                  if (roomsList.isNotEmpty) ...[
+                    SizedBox(height: 12.0.h),
+                    _buildReviewReportButton(context),
+                  ],
                 ],
-              ),
-            ),
+              );
+            }),
           ),
         ),
       ),
@@ -351,27 +395,38 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: EdgeInsets.only(bottom: 12.0.h),
       child: Ink(
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F4F7), 
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.0.w),
+          border: Border.all(
+            color: const Color(0xFFBDC3C7).withValues(alpha: 0.2),
+            width: 1.0.w,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2C3E50).withValues(alpha: 0.04),
+              blurRadius: 8.0.w,
+              offset: Offset(0, 4.0.h),
+            ),
+          ],
         ),
         child: InkWell(
           onTap: () {
             Get.to(() => RoomDetailScreen(roomId: room.id));
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.0.w),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 14.0.h),
             child: Row(
               children: [
                 Icon(
                   room.icon,
                   color: const Color(0xFF2C3E50),
-                  size: 22,
+                  size: 22.w,
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.0.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,32 +434,32 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                     children: [
                       Text(
                         displayLeftName,
-                        style: const TextStyle(
-                          color: Color(0xFF2C3E50),
+                        style: TextStyle(
+                          color: const Color(0xFF2C3E50),
                           fontFamily: 'Montserrat',
                           fontWeight: FontWeight.w800,
-                          fontSize: 14,
+                          fontSize: 14.0.sp,
                         ),
                       ),
                       if (subtitleText.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4.0.h),
                         Text(
                           subtitleText,
-                          style: const TextStyle(
-                            color: Color(0xFF8F9CA9),
+                          style: TextStyle(
+                            color: const Color(0xFF8F9CA9),
                             fontFamily: 'Montserrat',
                             fontWeight: FontWeight.w600,
-                            fontSize: 11,
+                            fontSize: 11.0.sp,
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
-                  color: Color(0xFF8F9CA9),
-                  size: 20,
+                  color: const Color(0xFF8F9CA9),
+                  size: 20.w,
                 ),
               ],
             ),
@@ -419,42 +474,54 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: _showAddRoomDialog,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
+        borderRadius: BorderRadius.circular(25.0.w),
+        child: Container(
+          height: 50.0.h,
+          width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFFF2F4F7), 
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(25.0.w),
+            border: Border.all(
+              color: const Color(0xFF007BFF),
+              width: 1.5.w,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF007BFF).withValues(alpha: 0.05),
+                blurRadius: 8.0.w,
+                offset: Offset(0, 3.0.h),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: EdgeInsets.all(4.0.w),
                 decoration: const BoxDecoration(
                   color: Color(0xFF007BFF),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.add,
                   color: Colors.white,
-                  size: 14,
+                  size: 12.w,
                 ),
               ),
-              const SizedBox(width: 10),
-              const Text(
+              SizedBox(width: 10.0.w),
+              Text(
                 'Add Custom Room',
                 style: TextStyle(
-                  color: Color(0xFF2C3E50),
+                  color: const Color(0xFF007BFF),
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 14.0.sp,
                 ),
               ),
             ],
           ),
         ),
-      )
+      ),
     );
   }
 
@@ -473,36 +540,41 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
             idCode: controller.idCode.value,
           ));
         },
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
+        borderRadius: BorderRadius.circular(25.0.w),
+        child: Container(
+          height: 50.0.h,
+          width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF007BFF), 
-            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF007BFF), Color(0xFF0056B3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(25.0.w),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF007BFF).withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: const Color(0xFF007BFF).withValues(alpha: 0.3),
+                blurRadius: 12.0.w,
+                offset: Offset(0, 4.0.h),
               ),
             ],
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.assignment_turned_in_outlined,
                 color: Colors.white,
-                size: 16,
+                size: 18.w,
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 8.0.w),
               Text(
                 'Review & Send Report',
                 style: TextStyle(
                   color: Colors.white,
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 14.0.sp,
                 ),
               ),
             ],

@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
-enum Method { POST, GET, PUT, DELETE, PATCH }
+enum Method { post, get, put, delete, patch }
 
 class RestClient extends GetxService {
   late final Dio _dio;
 
   RestClient() {
     _dio = Dio(BaseOptions(
-      baseUrl: 'http://192.168.1.20:5000/api',
+      baseUrl: 'http://192.168.1.8:5000/api',
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 5),
     ));
@@ -38,15 +38,15 @@ class RestClient extends GetxService {
     );
 
     switch (method) {
-      case Method.POST:
+      case Method.post:
         return await _dio.post(url, data: data, queryParameters: queryParameters, options: defaultOptions);
-      case Method.GET:
+      case Method.get:
         return await _dio.get(url, queryParameters: queryParameters, options: defaultOptions);
-      case Method.PUT:
+      case Method.put:
         return await _dio.put(url, data: data, queryParameters: queryParameters, options: defaultOptions);
-      case Method.DELETE:
+      case Method.delete:
         return await _dio.delete(url, data: data, queryParameters: queryParameters, options: defaultOptions);
-      case Method.PATCH:
+      case Method.patch:
         return await _dio.patch(url, data: data, queryParameters: queryParameters, options: defaultOptions);
     }
   }
