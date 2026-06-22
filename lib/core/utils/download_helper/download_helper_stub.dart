@@ -1,36 +1,54 @@
-import 'dart:io';
+ import 'dart:io';
 import 'dart:typed_data';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 void downloadPdf(String filename, Uint8List bytes) async {
+  String? savedPath;
+
   try {
     if (Platform.isAndroid) {
-      // Try to save directly to the public Download folder on Android
-      final downloadDir = Directory('/storage/emulated/0/Download');
-      if (await downloadDir.exists()) {
-        final path = '${downloadDir.path}/$filename';
-        final file = File(path);
-        await file.writeAsBytes(bytes);
-      } else {
-        // Fallback to app's external storage directory
-        final extDir = await getExternalStorageDirectory();
-        if (extDir != null) {
-          final path = '${extDir.path}/$filename';
-          final file = File(path);
-          await file.writeAsBytes(bytes);
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
+
+      if (sdkInt <= 29) {
+        final status = await Permission.storage.request();
+        if (status.isGranted) {
+          try {
+            final downloadDir = Directory('/storage/emulated/0/Download');
+            if (!await downloadDir.exists()) {
+              await downloadDir.create(recursive: true);
+            }
+            final path = '${downloadDir.path}/$filename';
+            final file = File(path);
+            await file.writeAsBytes(bytes);
+            savedPath = file.path;
+          } catch (e) {
+            // Fallback to app directory
+          }
         }
       }
+
+      if (savedPath == null) {
+        // Fallback to app's external storage directory
+        final extDir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+        final path = '${extDir.path}/$filename';
+        final file = File(path);
+        await file.writeAsBytes(bytes);
+        savedPath = file.path;
+      }
     } else if (Platform.isIOS) {
-      // Save directly to the Application Documents Directory on iOS.
-      // With UISupportsDocumentBrowser enabled in Info.plist, this folder is fully browseable in the Files app.
+      // Save directly to the Application Documents Directory on iOS
       final directory = await getApplicationDocumentsDirectory();
       final path = '${directory.path}/$filename';
       final file = File(path);
       await file.writeAsBytes(bytes);
+      savedPath = file.path;
     }
   } catch (e) {
-    // Direct save failed (e.g. storage permissions or system directory constraints)
+    // Fail silently
   }
 
   // Always save to temp and present the share sheet as a fallback and additional user action

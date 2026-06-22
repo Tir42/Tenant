@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/download_helper/download_helper.dart';
 import 'package:tenantsnap/core/utils/pdf/pdf_generator.dart';
-import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
-import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/core/services/rest_client.dart';
 import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
+import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 
 class ReportReviewScreen extends StatelessWidget {
   final RoomInspection? singleRoom;
@@ -37,11 +38,22 @@ class ReportReviewScreen extends StatelessWidget {
     final controller = Get.find<InspectionController>();
 
     final String activeTenantName = tenantName ?? controller.tenantName.value;
-    final String activeLandlordName = landlordName ?? controller.landlordName.value;
-    final String activePropertyAddress = propertyAddress ?? controller.propertyAddress.value;
-    final String activeInspectionDate = inspectionDate ?? (controller.agreementDate.value.isNotEmpty ? controller.agreementDate.value : controller.possessionDate.value);
+    final String activeLandlordName =
+        landlordName ?? controller.landlordName.value;
+    final String activePropertyAddress =
+        propertyAddress ?? controller.propertyAddress.value;
+
+    final String activeInspectionDate = inspectionDate ??
+        (controller.agreementDate.value.isNotEmpty
+            ? controller.agreementDate.value
+            : controller.possessionDate.value);
+
     final String activeIdCode = idCode ?? controller.idCode.value;
-    final List<RoomInspection> activeRooms = (allRooms ?? getMockInspectionData())
+
+    final List<RoomInspection> sourceRooms =
+        allRooms ?? controller.roomsList.toList();
+
+    final List<RoomInspection> activeRooms = sourceRooms
         .where((room) => room.checklist.any((item) => item.photos.isNotEmpty))
         .toList();
 
@@ -56,38 +68,41 @@ class ReportReviewScreen extends StatelessWidget {
           child: Center(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 16.0.h),
+              padding:
+              EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 16.0.h),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Center-positioned premium mockup card container
                   Container(
                     width: size.width * 0.9,
                     constraints: BoxConstraints(maxWidth: 380.0.w),
                     decoration: BoxDecoration(
-                      gradient: AntigravityColors.bgGradient, // Match the scaffold gradient
+                      gradient: AntigravityColors.bgGradient,
                       borderRadius: BorderRadius.circular(28.0.w),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2C3E50).withValues(alpha: 0.08),
+                          color:
+                          const Color(0xFF2C3E50).withValues(alpha: 0.08),
                           blurRadius: 24.0.w,
                           spreadRadius: 4.0.w,
                           offset: Offset(0, 10.0.h),
                         ),
                       ],
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 14.0.w, vertical: 20.0.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.0.w,
+                      vertical: 20.0.h,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header Bar: Navigation back arrow + page title
                         Row(
                           children: [
                             GestureDetector(
                               onTap: () => Navigator.of(context).pop(),
                               child: Icon(
                                 Icons.arrow_back_ios_new_rounded,
-                                color: const Color(0xFF007BFF), // Premium blue back arrow
+                                color: const Color(0xFF007BFF),
                                 size: 24.w,
                               ),
                             ),
@@ -107,9 +122,9 @@ class ReportReviewScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+
                         SizedBox(height: 20.0.h),
 
-                        // Global Metadata Header Card (only shown once at the top of the review page)
                         _buildGlobalHeaderCard(
                           context,
                           idCode: activeIdCode,
@@ -118,19 +133,23 @@ class ReportReviewScreen extends StatelessWidget {
                           propertyAddress: activePropertyAddress,
                           inspectionDate: activeInspectionDate,
                         ),
+
                         SizedBox(height: 16.0.h),
 
-                        // Render dynamic inspection report cards
                         if (activeRooms.isNotEmpty)
-                          ...activeRooms.expand((room) => _buildRoomReportSection(context, room))
+                          ...activeRooms
+                              .map((room) => _buildUnifiedRoomCard(context, room))
                         else
                           Center(
                             child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 30.0.h),
+                              padding:
+                              EdgeInsets.symmetric(vertical: 30.0.h),
                               child: Text(
                                 'No photo evidence captured for any rooms.',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: const Color(0xFF7F8C8D).withValues(alpha: 0.8),
+                                  color: const Color(0xFF7F8C8D)
+                                      .withValues(alpha: 0.8),
                                   fontFamily: 'Montserrat',
                                   fontSize: 12.0.sp,
                                   fontWeight: FontWeight.bold,
@@ -141,7 +160,6 @@ class ReportReviewScreen extends StatelessWidget {
 
                         SizedBox(height: 16.0.h),
 
-                        // Bottom PDF Button matching the screenshot design
                         _buildShareSendButton(
                           context,
                           idCode: activeIdCode,
@@ -149,7 +167,7 @@ class ReportReviewScreen extends StatelessWidget {
                           landlordName: activeLandlordName,
                           propertyAddress: activePropertyAddress,
                           inspectionDate: activeInspectionDate,
-                          allRooms: allRooms,
+                          allRooms: sourceRooms,
                         ),
                       ],
                     ),
@@ -161,12 +179,6 @@ class ReportReviewScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  List<Widget> _buildRoomReportSection(BuildContext context, RoomInspection room) {
-    return [
-      _buildUnifiedRoomCard(context, room),
-    ];
   }
 
   Widget _buildUnifiedRoomCard(BuildContext context, RoomInspection room) {
@@ -192,7 +204,6 @@ class ReportReviewScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Room Title
           Text(
             room.name,
             style: TextStyle(
@@ -205,18 +216,21 @@ class ReportReviewScreen extends StatelessWidget {
           SizedBox(height: 12.0.h),
           Divider(color: const Color(0xFFE2E8F0), height: 1.0.h),
           SizedBox(height: 16.0.h),
-
-          // List all items in the checklist inside this card
           ...room.checklist.asMap().entries.map((entry) {
             final int index = entry.key;
             final item = entry.value;
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildUnifiedChecklistItem(context, item),
                 if (index < room.checklist.length - 1) ...[
                   SizedBox(height: 16.0.h),
-                  Divider(color: const Color(0xFFEEF2F6), height: 1.0.h, thickness: 1.0.h),
+                  Divider(
+                    color: const Color(0xFFEEF2F6),
+                    height: 1.0.h,
+                    thickness: 1.0.h,
+                  ),
                   SizedBox(height: 16.0.h),
                 ],
               ],
@@ -229,56 +243,67 @@ class ReportReviewScreen extends StatelessWidget {
 
   Widget _buildUnifiedChecklistItem(BuildContext context, InspectionItem item) {
     final nameLower = item.name.toLowerCase();
-    
-    // 1. If Walls, render Walls layout
+
     if (nameLower.contains('wall')) {
-      final wallsItem = item;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                wallsItem.name,
-                style: TextStyle(
-                  color: const Color(0xFF2C3E50),
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14.0.sp,
-                ),
+          Expanded(
+            child: Text(
+              item.name,
+              style: TextStyle(
+                color: const Color(0xFF2C3E50),
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.w800,
+                fontSize: 14.0.sp,
               ),
-              Row(
-                children: [
-                  _buildMutedCircle(Icons.grid_3x3, const Color(0xFF95A5A6)),
-                  SizedBox(width: 6.0.w),
-                  wallsItem.status == RoomItemStatus.happy
-                      ? _buildColoredCircle(Icons.sentiment_satisfied_alt, const Color(0xFF2ECC71))
-                      : _buildMutedCircle(Icons.sentiment_satisfied_alt, const Color(0xFF2ECC71)),
-                  SizedBox(width: 6.0.w),
-                  wallsItem.status == RoomItemStatus.sad
-                      ? _buildColoredCircle(Icons.sentiment_very_dissatisfied, const Color(0xFFE74C3C))
-                      : _buildMutedCircle(Icons.sentiment_very_dissatisfied, const Color(0xFFE74C3C)),
-                  SizedBox(width: 6.0.w),
-                  wallsItem.status == RoomItemStatus.neutral
-                      ? _buildColoredCircle(Icons.remove, const Color(0xFF7F8C8D))
-                      : _buildMutedCircle(Icons.remove, const Color(0xFF7F8C8D)),
-                ],
+            ),
+          ),
+          Row(
+            children: [
+              item.status == RoomItemStatus.happy
+                  ? _buildColoredCircle(
+                Icons.sentiment_satisfied_alt,
+                const Color(0xFF2ECC71),
+              )
+                  : _buildMutedCircle(
+                Icons.sentiment_satisfied_alt,
+                const Color(0xFF2ECC71),
+              ),
+              SizedBox(width: 6.0.w),
+              item.status == RoomItemStatus.sad
+                  ? _buildColoredCircle(
+                Icons.sentiment_very_dissatisfied,
+                const Color(0xFFE74C3C),
+              )
+                  : _buildMutedCircle(
+                Icons.sentiment_very_dissatisfied,
+                const Color(0xFFE74C3C),
+              ),
+              SizedBox(width: 6.0.w),
+              item.status == RoomItemStatus.neutral
+                  ? _buildColoredCircle(
+                Icons.remove,
+                const Color(0xFF7F8C8D),
+              )
+                  : _buildMutedCircle(
+                Icons.remove,
+                const Color(0xFF7F8C8D),
               ),
             ],
           ),
         ],
       );
     }
-    
-    // 2. If Floor, render Floor layout
-    if (nameLower.contains('floor') || nameLower.contains('carpet') || nameLower.contains('tile')) {
-      final floorItem = item;
+
+    if (nameLower.contains('floor') ||
+        nameLower.contains('carpet') ||
+        nameLower.contains('tile')) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            floorItem.name,
+            item.name,
             style: TextStyle(
               color: const Color(0xFF2C3E50),
               fontFamily: 'Montserrat',
@@ -286,23 +311,25 @@ class ReportReviewScreen extends StatelessWidget {
               fontSize: 14.0.sp,
             ),
           ),
-          if (floorItem.photos.isNotEmpty) ...[
+          if (item.photos.isNotEmpty) ...[
             SizedBox(height: 10.0.h),
             Row(
-              children: floorItem.photos.map((p) => _buildImageThumbnail(context, p, '10:33 AM')).toList(),
+              children: item.photos
+                  .map((p) => _buildImageThumbnail(context, p, '10:33 AM'))
+                  .toList(),
             ),
           ],
         ],
       );
     }
 
-    // 3. For any other item (Ceiling, Doors / Windows, etc.), render inner commented item layout
     return _buildInnerCommentedItem(context, item);
   }
 
   Widget _buildInnerCommentedItem(BuildContext context, InspectionItem item) {
     IconData statusIcon = Icons.sentiment_satisfied_alt;
     Color statusColor = const Color(0xFF2ECC71);
+
     if (item.status == RoomItemStatus.sad) {
       statusIcon = Icons.sentiment_very_dissatisfied;
       statusColor = const Color(0xFFE74C3C);
@@ -311,13 +338,13 @@ class ReportReviewScreen extends StatelessWidget {
       statusColor = const Color(0xFF7F8C8D);
     }
 
-    final String commentText = item.comment.isNotEmpty 
-        ? item.comment 
-        : (item.status == RoomItemStatus.happy 
-            ? 'Condition verified; fully functional and clean.' 
-            : (item.status == RoomItemStatus.sad 
-                ? 'Defect noted: minor repair required.' 
-                : 'Standard condition; no major issues observed.'));
+    final String commentText = item.comment.isNotEmpty
+        ? item.comment
+        : item.status == RoomItemStatus.happy
+        ? 'Condition verified; fully functional and clean.'
+        : item.status == RoomItemStatus.sad
+        ? 'Defect noted: minor repair required.'
+        : 'Standard condition; no major issues observed.';
 
     final bool hasPhotos = item.photos.isNotEmpty;
     String imgUrl = '';
@@ -325,13 +352,23 @@ class ReportReviewScreen extends StatelessWidget {
 
     if (hasPhotos) {
       imgUrl = item.photos.first;
-      final bool isRealFile = !imgUrl.startsWith('assets/') && !imgUrl.startsWith('http') && !imgUrl.startsWith('blob:');
+
+      final bool isRealFile = !imgUrl.startsWith('assets/') &&
+          !imgUrl.startsWith('http') &&
+          !imgUrl.startsWith('blob:');
+
       if (isRealFile) {
         imageWidget = Image.file(
           File(imgUrl),
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
+            return Center(
+              child: Icon(
+                Icons.image_outlined,
+                color: const Color(0xFF7F8C8D),
+                size: 16.w,
+              ),
+            );
           },
         );
       } else {
@@ -339,7 +376,13 @@ class ReportReviewScreen extends StatelessWidget {
           imgUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
+            return Center(
+              child: Icon(
+                Icons.image_outlined,
+                color: const Color(0xFF7F8C8D),
+                size: 16.w,
+              ),
+            );
           },
         );
       }
@@ -363,7 +406,9 @@ class ReportReviewScreen extends StatelessWidget {
           children: [
             if (hasPhotos && imageWidget != null) ...[
               GestureDetector(
-                onTap: () => _showPhotoPreviewDialog(context, imgUrl),
+                onTap: () {
+                  _showPhotoPreviewDialog(context, imgUrl);
+                },
                 child: Container(
                   width: 58.w,
                   height: 48.h,
@@ -373,32 +418,7 @@ class ReportReviewScreen extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8.0.w),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        imageWidget,
-                        Positioned(
-                          bottom: 2.0.h,
-                          right: 2.0.w,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 4.0.w, vertical: 1.0.h),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(4.0.w),
-                            ),
-                            child: Text(
-                              '10:33 AM',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 7.0.sp,
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: imageWidget,
                   ),
                 ),
               ),
@@ -409,7 +429,6 @@ class ReportReviewScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         width: 20.w,
@@ -418,12 +437,10 @@ class ReportReviewScreen extends StatelessWidget {
                           color: Color(0xFFEEF2F6),
                           shape: BoxShape.circle,
                         ),
-                        child: Center(
-                          child: Icon(
-                            statusIcon,
-                            color: statusColor,
-                            size: 14.w,
-                          ),
+                        child: Icon(
+                          statusIcon,
+                          color: statusColor,
+                          size: 14.w,
                         ),
                       ),
                       SizedBox(width: 8.0.w),
@@ -440,19 +457,6 @@ class ReportReviewScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 10.0.h),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      '10:33 AM',
-                      style: TextStyle(
-                        color: const Color(0xFFBDC3C7),
-                        fontFamily: 'Montserrat',
-                        fontSize: 9.0.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -463,40 +467,32 @@ class ReportReviewScreen extends StatelessWidget {
   }
 
   void _showPhotoPreviewDialog(BuildContext context, String photoPath) {
-    final bool isRealFile = !photoPath.startsWith('assets/') && !photoPath.startsWith('http') && !photoPath.startsWith('blob:');
+    final bool isRealFile = !photoPath.startsWith('assets/') &&
+        !photoPath.startsWith('http') &&
+        !photoPath.startsWith('blob:');
+
     Widget imageWidget;
+
     if (isRealFile) {
       imageWidget = Image.file(
         File(photoPath),
         fit: BoxFit.contain,
       );
-    } else if (photoPath.startsWith('http')) {
+    } else {
       imageWidget = Image.network(
         photoPath,
         fit: BoxFit.contain,
-      );
-    } else {
-      String targetUrl = "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600";
-      if (photoPath.contains("door")) {
-        targetUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600"
-            : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600";
-      } else if (photoPath.contains("outlet")) {
-        targetUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600"
-            : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=600";
-      } else if (photoPath.contains("cabinet")) {
-        targetUrl = "https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=600";
-      }
-      imageWidget = Image.network(
-        targetUrl,
-        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(Icons.image_not_supported_outlined),
+          );
+        },
       );
     }
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -506,14 +502,11 @@ class ReportReviewScreen extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16.0.w),
-                child: Container(
-                  constraints: BoxConstraints(maxHeight: 300.0.h),
-                  width: double.infinity,
-                  color: const Color(0xFFF2F4F7),
-                  child: imageWidget,
-                ),
+              Container(
+                constraints: BoxConstraints(maxHeight: 300.0.h),
+                width: double.infinity,
+                color: const Color(0xFFF2F4F7),
+                child: imageWidget,
               ),
               SizedBox(height: 16.0.h),
               Text(
@@ -525,26 +518,9 @@ class ReportReviewScreen extends StatelessWidget {
                   fontSize: 16.0.sp,
                 ),
               ),
-              SizedBox(height: 4.0.h),
-              Text(
-                'GPS Active • Verified Condition Record',
-                style: TextStyle(
-                  color: const Color(0xFF7F8C8D),
-                  fontFamily: 'Montserrat',
-                  fontSize: 12.0.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
               SizedBox(height: 20.0.h),
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 12.0.h),
-                  backgroundColor: const Color(0xFFEEF2F6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0.w),
-                  ),
-                ),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: Text(
                   'Close',
                   style: TextStyle(
@@ -626,44 +602,43 @@ class ReportReviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageThumbnail(BuildContext context, String photoPath, String time) {
-    final bool isRealFile = !photoPath.startsWith('assets/') && !photoPath.startsWith('http') && !photoPath.startsWith('blob:');
+  Widget _buildImageThumbnail(
+      BuildContext context,
+      String photoPath,
+      String time,
+      ) {
+    final bool isRealFile = !photoPath.startsWith('assets/') &&
+        !photoPath.startsWith('http') &&
+        !photoPath.startsWith('blob:');
+
     Widget imageWidget;
+
     if (isRealFile) {
       imageWidget = Image.file(
         File(photoPath),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
+          return Center(
+            child: Icon(
+              Icons.image_outlined,
+              color: const Color(0xFF7F8C8D),
+              size: 16.w,
+            ),
+          );
         },
       );
-    } else if (photoPath.startsWith('http')) {
+    } else {
       imageWidget = Image.network(
         photoPath,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
-        },
-      );
-    } else {
-      String targetUrl = "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=150";
-      if (photoPath.contains("door")) {
-        targetUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=150"
-            : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=150";
-      } else if (photoPath.contains("outlet")) {
-        targetUrl = photoPath.contains("1")
-            ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150"
-            : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=150";
-      } else if (photoPath.contains("cabinet")) {
-        targetUrl = "https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=150";
-      }
-
-      imageWidget = Image.network(
-        targetUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Center(child: Icon(Icons.image_outlined, color: const Color(0xFF7F8C8D), size: 16.w));
+          return Center(
+            child: Icon(
+              Icons.image_outlined,
+              color: const Color(0xFF7F8C8D),
+              size: 16.w,
+            ),
+          );
         },
       );
     }
@@ -672,41 +647,21 @@ class ReportReviewScreen extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: 1.3,
         child: GestureDetector(
-          onTap: () => _showPhotoPreviewDialog(context, photoPath),
+          onTap: () {
+            _showPhotoPreviewDialog(context, photoPath);
+          },
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10.0.w),
               color: const Color(0xFFEEF2F6),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5.w),
+              border: Border.all(
+                color: const Color(0xFFE2E8F0),
+                width: 0.5.w,
+              ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(9.0.w),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  imageWidget,
-                  Positioned(
-                    bottom: 4.0.h,
-                    right: 4.0.w,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4.0.w, vertical: 2.0.h),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(4.0.w),
-                      ),
-                      child: Text(
-                        time,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.0.sp,
-                          fontFamily: 'Montserrat',
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: imageWidget,
             ),
           ),
         ),
@@ -715,13 +670,13 @@ class ReportReviewScreen extends StatelessWidget {
   }
 
   Widget _buildGlobalHeaderCard(
-    BuildContext context, {
-    required String idCode,
-    required String tenantName,
-    required String landlordName,
-    required String propertyAddress,
-    required String inspectionDate,
-  }) {
+      BuildContext context, {
+        required String idCode,
+        required String tenantName,
+        required String landlordName,
+        required String propertyAddress,
+        required String inspectionDate,
+      }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -764,14 +719,14 @@ class ReportReviewScreen extends StatelessWidget {
   }
 
   Widget _buildShareSendButton(
-    BuildContext context, {
-    required String idCode,
-    required String tenantName,
-    required String landlordName,
-    required String propertyAddress,
-    required String inspectionDate,
-    required List<RoomInspection>? allRooms,
-  }) {
+      BuildContext context, {
+        required String idCode,
+        required String tenantName,
+        required String landlordName,
+        required String propertyAddress,
+        required String inspectionDate,
+        required List<RoomInspection> allRooms,
+      }) {
     return Center(
       child: Material(
         color: Colors.transparent,
@@ -787,10 +742,10 @@ class ReportReviewScreen extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(12.0.w),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 10.0.h),
+            padding:
+            EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 10.0.h),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
                   padding: EdgeInsets.all(4.0.w),
@@ -823,22 +778,22 @@ class ReportReviewScreen extends StatelessWidget {
   }
 
   void _showPdfPreviewDialog(
-    BuildContext context, {
-    required String idCode,
-    required String tenantName,
-    required String landlordName,
-    required String propertyAddress,
-    required String inspectionDate,
-    required List<RoomInspection>? allRooms,
-  }) {
+      BuildContext context, {
+        required String idCode,
+        required String tenantName,
+        required String landlordName,
+        required String propertyAddress,
+        required String inspectionDate,
+        required List<RoomInspection> allRooms,
+      }) {
     final controller = Get.find<InspectionController>();
     final isDownloading = false.obs;
     final isUploading = false.obs;
 
     showDialog(
       context: context,
-      builder: (context) {
-        final List<RoomInspection> previewRooms = (allRooms ?? getMockInspectionData())
+      builder: (dialogContext) {
+        final List<RoomInspection> previewRooms = allRooms
             .where((room) => room.checklist.any((item) => item.photos.isNotEmpty))
             .toList();
 
@@ -860,257 +815,134 @@ class ReportReviewScreen extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Text(
+                'Click Download to save PDF file.',
+                style: TextStyle(
+                  color: const Color(0xFF7F8C8D),
+                  fontFamily: 'Montserrat',
+                  fontSize: 12.0.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 12.0.h),
               Container(
                 width: double.infinity,
-                height: 280.h,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12.0.w),
-                  border: Border.all(color: const Color(0xFFBDC3C7).withValues(alpha: 0.5)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8.0.w,
-                      offset: Offset(0, 3.0.h),
-                    ),
-                  ],
-                ),
+                height: 220.h,
                 padding: EdgeInsets.all(12.0.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12.0.w),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Center(
                         child: Text(
-                          'TenantSnap Report',
+                          'TenantSnap Property Inspection Report',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: const Color(0xFF2C3E50).withValues(alpha: 0.8),
+                            color: const Color(0xFF2C3E50),
                             fontFamily: 'Montserrat',
                             fontWeight: FontWeight.w900,
-                            fontSize: 16.0.sp,
+                            fontSize: 14.0.sp,
                           ),
                         ),
                       ),
-                      SizedBox(height: 8.0.h),
-                      Container(
-                        height: 1.5.h,
-                        color: const Color(0xFF007BFF),
-                      ),
-                      SizedBox(height: 12.0.h),
-                      Text(
-                        'ID Code: ${idCode.isNotEmpty ? idCode : "TS-402-URBL"}',
-                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: const Color(0xFF2C3E50)),
-                      ),
-                      Text(
-                        'Tenant: $tenantName',
-                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
-                      ),
-                      Text(
-                        'Landlord: $landlordName',
-                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
-                      ),
-                      Text(
-                        'Address: $propertyAddress',
-                        style: TextStyle(fontSize: 9.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
-                      ),
-                      Text(
-                        'Date: $inspectionDate',
-                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF2C3E50)),
-                      ),
-                      Divider(height: 16.0.h),
-                      Text(
-                        'DETAILED INSPECTION ITEMS',
-                        style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: const Color(0xFF2C3E50)),
-                      ),
-                      SizedBox(height: 6.0.h),
-
-                      if (previewRooms.isNotEmpty)
-                        ...previewRooms.map((room) => _buildPdfPreviewRoomSection(context, room))
-                      else
-                        Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20.0.h),
-                            child: Text(
-                              'No rooms with photo evidence to display.',
-                              style: TextStyle(fontSize: 10.0.sp, fontFamily: 'Montserrat', color: const Color(0xFF7F8C8D)),
-                            ),
-                          ),
-                        ),
+                      SizedBox(height: 10.0.h),
+                      const Divider(),
+                      Text('ID Code: ${idCode.isNotEmpty ? idCode : "-"}'),
+                      Text('Tenant: $tenantName'),
+                      Text('Landlord: $landlordName'),
+                      Text('Address: $propertyAddress'),
+                      Text('Date: $inspectionDate'),
+                      SizedBox(height: 10.0.h),
+                      const Divider(),
+                      Text('Rooms with evidence: ${previewRooms.length}'),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: 16.0.h),
-              Text(
-                'Ready to share with landlord and save records.',
-                style: TextStyle(
-                  color: const Color(0xFF7F8C8D),
-                  fontFamily: 'Montserrat',
-                  fontSize: 12.0.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
             ],
           ),
           actions: [
-            Obx(() => TextButton(
-              onPressed: (isDownloading.value || isUploading.value) ? null : () => Navigator.pop(context),
-              child: Text(
-                'Close',
-                style: TextStyle(
-                  color: const Color(0xFF95A5A6),
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14.0.sp,
+            Obx(
+                  () => TextButton(
+                onPressed: (isDownloading.value || isUploading.value)
+                    ? null
+                    : () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Close',
+                  style: TextStyle(
+                    color: const Color(0xFF95A5A6),
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14.0.sp,
+                  ),
                 ),
               ),
-            )),
-            Obx(() => ElevatedButton.icon(
-              onPressed: (isDownloading.value || isUploading.value) ? null : () async {
-                isDownloading.value = true;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    duration: Duration(seconds: 1),
-                    backgroundColor: Color(0xFF007BFF),
-                    content: Text(
-                      'Generating PDF report with images...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w600,
+            ),
+            Obx(
+                  () => ElevatedButton.icon(
+                onPressed: (isDownloading.value || isUploading.value)
+                    ? null
+                    : () async {
+                  isDownloading.value = true;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      duration: Duration(seconds: 1),
+                      backgroundColor: Color(0xFF007BFF),
+                      content: Text(
+                        'Generating PDF report...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                );
-
-                try {
-                  final List<RoomInspection> pdfRooms = (allRooms ?? getMockInspectionData())
-                      .where((room) => room.checklist.any((item) => item.photos.isNotEmpty))
-                      .toList();
-
-                  final pdfBytes = await generateInspectionReportPdf(
-                    idCode: idCode,
-                    tenantName: tenantName,
-                    landlordName: landlordName,
-                    propertyAddress: propertyAddress,
-                    inspectionDate: inspectionDate,
-                    rooms: pdfRooms,
-                    tenantPhone: controller.tenantPhone.value,
-                    landlordPhone: controller.landlordPhone.value,
-                    showPhone: controller.showPhoneInPdf.value,
                   );
 
-                  downloadPdf('TenantSnap_Report.pdf', pdfBytes);
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: Color(0xFF2ECC71),
-                        content: Text(
-                          'Downloaded PDF successfully!',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                  try {
+                    final List<RoomInspection> pdfRooms = allRooms
+                        .where(
+                          (room) => room.checklist.any(
+                            (item) => item.photos.isNotEmpty,
                       ),
-                    );
-                  }
-                } catch (e) {
-                  debugPrint("Error generating PDF: $e");
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: const Color(0xFFE74C3C),
-                        content: Text(
-                          'Failed to generate PDF: $e',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                } finally {
-                  isDownloading.value = false;
-                }
-              },
-              icon: isDownloading.value
-                  ? SizedBox(
-                      width: 14.w,
-                      height: 14.h,
-                      child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 1.5),
                     )
-                  : Icon(Icons.download_rounded, size: 16.w, color: Colors.white),
-              label: Text(
-                isDownloading.value ? 'Downloading...' : 'Download',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14.0.sp,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2ECC71),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0.w),
-                ),
-              ),
-            )),
-            Obx(() => ElevatedButton(
-              onPressed: (isDownloading.value || isUploading.value) ? null : () async {
-                isUploading.value = true;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Color(0xFF2C3E50),
-                    content: Text(
-                      'Uploading inspection report to secure node database...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                );
+                        .toList();
 
-                final List<RoomInspection> sourceRooms = allRooms ?? getMockInspectionData();
-                final formattedRooms = sourceRooms.map((room) {
-                  return {
-                    'roomName': room.name,
-                    'photosCount': room.checklist.fold<int>(0, (sum, item) => sum + item.photos.length),
-                    'features': room.checklist.map((item) {
-                      return {
-                        'name': item.name,
-                        'status': item.status == RoomItemStatus.happy ? 'good' : 'bad',
-                        'photos': item.photos,
-                      };
-                    }).toList(),
-                  };
-                }).toList();
+                    final pdfBytes = await generateInspectionReportPdf(
+                      idCode: idCode,
+                      tenantName: tenantName,
+                      landlordName: landlordName,
+                      propertyAddress: propertyAddress,
+                      inspectionDate: inspectionDate,
+                      rooms: pdfRooms,
+                      tenantPhone: controller.tenantPhone.value,
+                      landlordPhone: controller.landlordPhone.value,
+                      showPhone: controller.showPhoneInPdf.value,
+                    );
 
-                final restClient = Get.find<RestClient>();
-                try {
-                  final response = await restClient.dio.post(
-                    '/inspection/create',
-                    data: {
-                      'rooms': formattedRooms,
-                    },
-                  );
-                  if (response.statusCode == 200 || response.statusCode == 201) {
-                    final data = response.data['data'];
-                    final inspectionId = data != null ? (data['inspectionId'] ?? '') : '';
+                    final savedPath = await DownloadHelper.downloadPdf(
+                      bytes: pdfBytes,
+                      fileName:
+                      'TenantSnap_Inspection_Report_${idCode.isNotEmpty ? idCode : DateTime.now().millisecondsSinceEpoch}.pdf',
+                    );
+
+                    if (savedPath == null) {
+                      throw Exception('PDF download failed.');
+                    }
+
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
+                          duration: const Duration(seconds: 8),
                           backgroundColor: const Color(0xFF2ECC71),
                           content: Text(
-                            'Inspection report uploaded successfully! ID: $inspectionId',
+                            'PDF saved here: $savedPath',
                             style: const TextStyle(
                               color: Colors.white,
                               fontFamily: 'Montserrat',
@@ -1119,15 +951,16 @@ class ReportReviewScreen extends StatelessWidget {
                           ),
                         ),
                       );
-                      Navigator.pop(context);
                     }
-                  } else {
+                  } catch (e) {
+                    debugPrint("Error generating PDF: $e");
+
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: const Color(0xFFE74C3C),
                           content: Text(
-                            'Failed to upload report. Status: ${response.statusCode}',
+                            'Failed to generate PDF: $e',
                             style: const TextStyle(
                               color: Colors.white,
                               fontFamily: 'Montserrat',
@@ -1137,169 +970,171 @@ class ReportReviewScreen extends StatelessWidget {
                         ),
                       );
                     }
+                  } finally {
+                    isDownloading.value = false;
                   }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: const Color(0xFFE74C3C),
-                        content: Text(
-                          'Connection error. Failed to save report: $e',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                } finally {
-                  isUploading.value = false;
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF007BFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0.w),
+                },
+                icon: isDownloading.value
+                    ? SizedBox(
+                  width: 14.w,
+                  height: 14.h,
+                  child: const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 1.5,
+                  ),
+                )
+                    : Icon(
+                  Icons.download_rounded,
+                  size: 16.w,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  isDownloading.value ? 'Downloading...' : 'Download',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14.0.sp,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2ECC71),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0.w),
+                  ),
                 ),
               ),
-              child: isUploading.value
-                  ? SizedBox(
-                      width: 18.w,
-                      height: 18.h,
-                      child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Text(
-                      'Share & Send',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14.0.sp,
+            ),
+            Obx(
+                  () => ElevatedButton(
+                onPressed: (isDownloading.value || isUploading.value)
+                    ? null
+                    : () async {
+                  isUploading.value = true;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Color(0xFF2C3E50),
+                      content: Text(
+                        'Uploading inspection report...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-            )),
+                  );
+
+                  final formattedRooms = allRooms.map((room) {
+                    return {
+                      'roomName': room.name,
+                      'photosCount': room.checklist.fold<int>(
+                        0,
+                            (sum, item) => sum + item.photos.length,
+                      ),
+                      'features': room.checklist.map((item) {
+                        return {
+                          'name': item.name,
+                          'status': item.status == RoomItemStatus.happy
+                              ? 'good'
+                              : item.status == RoomItemStatus.sad
+                              ? 'bad'
+                              : 'neutral',
+                          'photos': item.photos,
+                        };
+                      }).toList(),
+                    };
+                  }).toList();
+
+                  final restClient = Get.find<RestClient>();
+
+                  try {
+                    final response = await restClient.dio.post(
+                      '/inspection/create',
+                      data: {
+                        'idCode': idCode,
+                        'tenantName': tenantName,
+                        'landlordName': landlordName,
+                        'propertyAddress': propertyAddress,
+                        'inspectionDate': inspectionDate,
+                        'rooms': formattedRooms,
+                      },
+                    );
+
+                    if (response.statusCode == 200 ||
+                        response.statusCode == 201) {
+                      final data = response.data['data'];
+                      final inspectionId =
+                      data != null ? (data['inspectionId'] ?? '') : '';
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: const Color(0xFF2ECC71),
+                            content: Text(
+                              'Inspection report uploaded successfully! ID: $inspectionId',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        );
+
+                        Navigator.pop(dialogContext);
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFFE74C3C),
+                          content: Text(
+                            'Connection error. Failed to save report: $e',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  } finally {
+                    isUploading.value = false;
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF007BFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0.w),
+                  ),
+                ),
+                child: isUploading.value
+                    ? SizedBox(
+                  width: 18.w,
+                  height: 18.h,
+                  child: const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                    : Text(
+                  'Share & Send',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14.0.sp,
+                  ),
+                ),
+              ),
+            ),
           ],
         );
       },
     );
   }
-
-  Widget _buildPdfPreviewRoomSection(BuildContext context, RoomInspection room) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 8.0.h),
-        Text(
-          room.name,
-          style: TextStyle(
-            fontSize: 11.0.sp,
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF2C3E50),
-          ),
-        ),
-        SizedBox(height: 4.0.h),
-        Container(height: 1.0.h, color: const Color(0xFFEEF2F6)),
-        SizedBox(height: 6.0.h),
-        ...room.checklist.map((item) {
-          String statusEmoji = '➖';
-          if (item.status == RoomItemStatus.happy) {
-            statusEmoji = '😊';
-          } else if (item.status == RoomItemStatus.sad) {
-            statusEmoji = '😟';
-          }
-
-          final commentText = item.comment.isNotEmpty 
-              ? item.comment 
-              : (item.status == RoomItemStatus.happy 
-                  ? 'Verified functional.' 
-                  : (item.status == RoomItemStatus.sad 
-                      ? 'Defect noted.' 
-                      : 'Standard condition.'));
-
-          final bool hasPhoto = item.photos.isNotEmpty;
-          Widget? imageWidget;
-
-          if (hasPhoto) {
-            final imgUrl = item.photos.first;
-            final bool isRealFile = !imgUrl.startsWith('assets/') && !imgUrl.startsWith('http') && !imgUrl.startsWith('blob:');
-            if (isRealFile) {
-              imageWidget = Image.file(
-                File(imgUrl),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Icon(Icons.image_outlined, size: 12.w),
-              );
-            } else {
-              imageWidget = Image.network(
-                imgUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Icon(Icons.image_outlined, size: 12.w),
-              );
-            }
-          }
-
-          return Padding(
-            padding: EdgeInsets.only(bottom: 10.0.h),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (hasPhoto && imageWidget != null) ...[
-                  Container(
-                    width: 32.w,
-                    height: 32.h,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4.0.w),
-                      color: const Color(0xFFEEF2F6),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4.0.w),
-                      child: imageWidget,
-                    ),
-                  ),
-                  SizedBox(width: 8.0.w),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            item.name,
-                            style: TextStyle(
-                              fontSize: 9.0.sp,
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF2C3E50),
-                            ),
-                          ),
-                          Text(
-                            statusEmoji,
-                            style: TextStyle(fontSize: 10.0.sp),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 2.0.h),
-                      Text(
-                        commentText,
-                        style: TextStyle(
-                          fontSize: 8.0.sp,
-                          fontFamily: 'Montserrat',
-                          color: const Color(0xFF7F8C8D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
 }
-

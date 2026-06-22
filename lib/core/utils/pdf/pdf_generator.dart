@@ -2,31 +2,91 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart' show debugPrint;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/core/utils/image_loader/image_byte_loader.dart';
 
-// Helper to build a metadata detail row in PDF
-pw.Widget _buildPdfMetadataRow(String key, String value) {
+class PdfTheme {
+  static final black = PdfColor.fromInt(0xFF111827);
+  static final dark = PdfColor.fromInt(0xFF1F2937);
+  static final grey = PdfColor.fromInt(0xFF6B7280);
+  static final lightGrey = PdfColor.fromInt(0xFFE5E7EB);
+  static final bgGrey = PdfColor.fromInt(0xFFF9FAFB);
+  static final blue = PdfColor.fromInt(0xFF2563EB);
+  static final green = PdfColor.fromInt(0xFF16A34A);
+  static final red = PdfColor.fromInt(0xFFDC2626);
+  static final orange = PdfColor.fromInt(0xFFF59E0B);
+}
+
+String _statusText(RoomItemStatus status) {
+  if (status == RoomItemStatus.happy) return 'GOOD CONDITION';
+  if (status == RoomItemStatus.sad) return 'NEEDS REPAIR';
+  return 'NOT APPLICABLE';
+}
+
+PdfColor _statusColor(RoomItemStatus status) {
+  if (status == RoomItemStatus.happy) return PdfTheme.green;
+  if (status == RoomItemStatus.sad) return PdfTheme.red;
+  return PdfTheme.orange;
+}
+
+String _defaultComment(InspectionItem item) {
+  if (item.comment.trim().isNotEmpty) return item.comment.trim();
+
+  if (item.status == RoomItemStatus.happy) {
+    return 'Condition verified. No visible issue observed.';
+  }
+
+  if (item.status == RoomItemStatus.sad) {
+    return 'Issue observed. Repair or further review may be required.';
+  }
+
+  return 'No major issue observed.';
+}
+
+pw.Widget _sectionTitle(String title) {
+  return pw.Container(
+    width: double.infinity,
+    margin: const pw.EdgeInsets.only(top: 18, bottom: 10),
+    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+    decoration: pw.BoxDecoration(
+      color: PdfTheme.dark,
+    ),
+    child: pw.Text(
+      title.toUpperCase(),
+      style: pw.TextStyle(
+        color: PdfColors.white,
+        fontSize: 13,
+        fontWeight: pw.FontWeight.bold,
+        letterSpacing: 0.8,
+      ),
+    ),
+  );
+}
+
+pw.Widget _metadataRow(String label, String value) {
   return pw.Padding(
-    padding: const pw.EdgeInsets.only(bottom: 4),
+    padding: const pw.EdgeInsets.only(bottom: 6),
     child: pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          '$key: ',
-          style: pw.TextStyle(
-            color: PdfColor.fromInt(0xFF7F8C8D),
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 12.0,
+        pw.Container(
+          width: 120,
+          child: pw.Text(
+            label,
+            style: pw.TextStyle(
+              color: PdfTheme.grey,
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
         ),
         pw.Expanded(
           child: pw.Text(
-            value,
+            value.trim().isEmpty ? '-' : value.trim(),
             style: pw.TextStyle(
-              color: PdfColor.fromInt(0xFF2C3E50),
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 12.0,
+              color: PdfTheme.black,
+              fontSize: 10.5,
             ),
           ),
         ),
@@ -35,36 +95,185 @@ pw.Widget _buildPdfMetadataRow(String key, String value) {
   );
 }
 
-// Helper to build status badges in PDF without emoji font issues
-pw.Widget _buildPdfStatusBadge(RoomItemStatus status) {
-  PdfColor bgColor;
-  String text;
-  if (status == RoomItemStatus.happy) {
-    bgColor = PdfColor.fromInt(0xFF2ECC71); // Green
-    text = 'GOOD';
-  } else if (status == RoomItemStatus.sad) {
-    bgColor = PdfColor.fromInt(0xFFE74C3C); // Red
-    text = 'DEFECT';
-  } else {
-    bgColor = PdfColor.fromInt(0xFF95A5A6); // Grey
-    text = 'N/A';
+pw.Widget _statusBadge(RoomItemStatus status) {
+  return pw.Container(
+    padding: const pw.EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+    decoration: pw.BoxDecoration(
+      color: _statusColor(status),
+      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+    ),
+    child: pw.Text(
+      _statusText(status),
+      style: pw.TextStyle(
+        color: PdfColors.white,
+        fontSize: 8.5,
+        fontWeight: pw.FontWeight.bold,
+      ),
+    ),
+  );
+}
+
+pw.Widget _imageBlock(Uint8List? bytes) {
+  if (bytes != null && bytes.isNotEmpty) {
+    try {
+      return pw.Container(
+        width: 240,
+        height: 170,
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+        ),
+        child: pw.Image(
+          pw.MemoryImage(bytes),
+          fit: pw.BoxFit.cover,
+        ),
+      );
+    } catch (e) {
+      debugPrint('PDF Image Error: $e');
+    }
   }
 
   return pw.Container(
-    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: pw.BoxDecoration(
-      color: bgColor,
-      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-    ),
-    width: 48,
+    width: 240,
+    height: 170,
     alignment: pw.Alignment.center,
+    decoration: pw.BoxDecoration(
+      color: PdfTheme.bgGrey,
+      border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+    ),
     child: pw.Text(
-      text,
+      'Image not available',
       style: pw.TextStyle(
-        color: PdfColor.fromInt(0xFFFFFFFF),
-        fontSize: 9.0,
-        fontWeight: pw.FontWeight.bold,
+        color: PdfTheme.grey,
+        fontSize: 9,
       ),
+    ),
+  );
+}
+
+pw.Widget _featureBlock({
+  required InspectionItem item,
+  required Map<String, Uint8List> loadedImages,
+}) {
+  return pw.Container(
+    margin: const pw.EdgeInsets.only(bottom: 16),
+    padding: const pw.EdgeInsets.all(12),
+    decoration: pw.BoxDecoration(
+      border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+      color: PdfColors.white,
+    ),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Expanded(
+              child: pw.Text(
+                item.name,
+                style: pw.TextStyle(
+                  fontSize: 13,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfTheme.black,
+                ),
+              ),
+            ),
+            _statusBadge(item.status),
+          ],
+        ),
+
+        pw.SizedBox(height: 8),
+
+        pw.Text(
+          'Observation',
+          style: pw.TextStyle(
+            fontSize: 9,
+            color: PdfTheme.grey,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+        pw.SizedBox(height: 3),
+        pw.Text(
+          _defaultComment(item),
+          style: pw.TextStyle(
+            fontSize: 10.5,
+            color: PdfTheme.black,
+            lineSpacing: 2,
+          ),
+        ),
+
+        if (item.photos.isNotEmpty) ...[
+          pw.SizedBox(height: 12),
+          pw.Text(
+            'Photo Evidence',
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: PdfTheme.grey,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: item.photos.map((photoPath) {
+              return _imageBlock(loadedImages[photoPath]);
+            }).toList(),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+pw.TableRow _summaryRow(String label, String value) {
+  return pw.TableRow(
+    children: [
+      pw.Padding(
+        padding: const pw.EdgeInsets.all(8),
+        child: pw.Text(
+          label,
+          style: pw.TextStyle(
+            color: PdfTheme.black,
+            fontSize: 10.5,
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: const pw.EdgeInsets.all(8),
+        child: pw.Text(
+          value,
+          style: pw.TextStyle(
+            color: PdfTheme.black,
+            fontSize: 10.5,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+pw.Widget _signatureBox(String title) {
+  return pw.Container(
+    height: 75,
+    padding: const pw.EdgeInsets.all(8),
+    decoration: pw.BoxDecoration(
+      border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+    ),
+    child: pw.Column(
+      mainAxisAlignment: pw.MainAxisAlignment.end,
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Divider(color: PdfTheme.grey),
+        pw.Text(
+          title,
+          style: pw.TextStyle(
+            fontSize: 10,
+            color: PdfTheme.grey,
+          ),
+        ),
+      ],
     ),
   );
 }
@@ -82,11 +291,11 @@ Future<Uint8List> generateInspectionReportPdf({
 }) async {
   final pdf = pw.Document();
 
-  // Asynchronously fetch all photo bytes beforehand
   final Map<String, Uint8List> loadedImages = {};
-  for (var room in rooms) {
-    for (var item in room.checklist) {
-      for (var photoPath in item.photos) {
+
+  for (final room in rooms) {
+    for (final item in room.checklist) {
+      for (final photoPath in item.photos) {
         if (photoPath.isNotEmpty && !loadedImages.containsKey(photoPath)) {
           final bytes = await fetchImageBytes(photoPath);
           if (bytes.isNotEmpty) {
@@ -97,74 +306,61 @@ Future<Uint8List> generateInspectionReportPdf({
     }
   }
 
-  // Fetch app icon logo bytes
-  final logoBytes = await fetchImageBytes('assets/app_icon.png');
+  final int totalRooms = rooms.length;
 
-  // Create layout page
+  final int totalItems = rooms.fold<int>(
+    0,
+        (sum, room) => sum + room.checklist.length,
+  );
+
+  final int goodItems = rooms.fold<int>(
+    0,
+        (sum, room) =>
+    sum + room.checklist.where((i) => i.status == RoomItemStatus.happy).length,
+  );
+
+  final int repairItems = rooms.fold<int>(
+    0,
+        (sum, room) =>
+    sum + room.checklist.where((i) => i.status == RoomItemStatus.sad).length,
+  );
+
+  final int photoCount = rooms.fold<int>(
+    0,
+        (sum, room) =>
+    sum + room.checklist.fold<int>(0, (s, item) => s + item.photos.length),
+  );
+
   pdf.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4,
-      margin: const pw.EdgeInsets.all(36),
-      header: (pw.Context context) {
-        if (context.pageNumber == 1) {
-          return pw.Container();
-        }
+      margin: const pw.EdgeInsets.fromLTRB(34, 30, 34, 30),
+      footer: (context) {
         return pw.Container(
-          alignment: pw.Alignment.centerRight,
-          margin: const pw.EdgeInsets.only(bottom: 12),
-          padding: const pw.EdgeInsets.only(bottom: 4),
-          decoration: const pw.BoxDecoration(
+          padding: const pw.EdgeInsets.only(top: 8),
+          decoration: pw.BoxDecoration(
             border: pw.Border(
-              bottom: pw.BorderSide(color: PdfColor.fromInt(0xFFE2E8F0), width: 0.5),
+              top: pw.BorderSide(
+                color: PdfTheme.lightGrey,
+                width: 0.7,
+              ),
             ),
           ),
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'TenantSnap Inspection Report',
+                'TenantSnap Property Inspection Report',
                 style: pw.TextStyle(
-                  color: PdfColor.fromInt(0xFF94A3B8),
-                  fontSize: 9.5,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Text(
-                'ID: ${idCode.isNotEmpty ? idCode : "TS-402-URBL"}',
-                style: pw.TextStyle(
-                  color: PdfColor.fromInt(0xFF94A3B8),
-                  fontSize: 9.5,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      footer: (pw.Context context) {
-        return pw.Container(
-          alignment: pw.Alignment.centerRight,
-          margin: const pw.EdgeInsets.only(top: 12),
-          padding: const pw.EdgeInsets.only(top: 4),
-          decoration: const pw.BoxDecoration(
-            border: pw.Border(
-              top: pw.BorderSide(color: PdfColor.fromInt(0xFFE2E8F0), width: 0.5),
-            ),
-          ),
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'Confidential Document • Generated via TenantSnap',
-                style: pw.TextStyle(
-                  color: PdfColor.fromInt(0xFF94A3B8),
-                  fontSize: 9.5,
+                  color: PdfTheme.grey,
+                  fontSize: 8.5,
                 ),
               ),
               pw.Text(
                 'Page ${context.pageNumber} of ${context.pagesCount}',
                 style: pw.TextStyle(
-                  color: PdfColor.fromInt(0xFF64748B),
-                  fontSize: 9.5,
+                  color: PdfTheme.grey,
+                  fontSize: 8.5,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
@@ -172,184 +368,140 @@ Future<Uint8List> generateInspectionReportPdf({
           ),
         );
       },
-      build: (pw.Context context) {
+      build: (context) {
         final List<pw.Widget> content = [];
 
-        // 1. Header with Logo styling
-        content.add(
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Row(
-                children: [
-                  if (logoBytes.isNotEmpty) ...[
-                    pw.Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const pw.BoxDecoration(
-                        borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
-                      ),
-                      child: pw.ClipRRect(
-                        horizontalRadius: 8,
-                        verticalRadius: 8,
-                        child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.cover),
-                      ),
-                    ),
-                    pw.SizedBox(width: 10),
-                  ] else ...[
-                    pw.Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const pw.BoxDecoration(
-                        color: PdfColor.fromInt(0xFF007BFF),
-                        shape: pw.BoxShape.circle,
-                      ),
-                      alignment: pw.Alignment.center,
-                      child: pw.Text(
-                        'TS',
-                        style: pw.TextStyle(
-                          color: PdfColor.fromInt(0xFFFFFFFF),
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    pw.SizedBox(width: 10),
-                  ],
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'TenantSnap',
-                        style: pw.TextStyle(
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromInt(0xFF007BFF),
-                        ),
-                      ),
-                      pw.Text(
-                        'STREAMLINED PROPERTY INSPECTION',
-                        style: pw.TextStyle(
-                          fontSize: 9.0,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromInt(0xFF64748B),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  pw.Text(
-                    'INSPECTION REPORT',
-                    style: pw.TextStyle(
-                      fontSize: 13,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColor.fromInt(0xFF1E293B),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  pw.Text(
-                    'CONFIDENTIAL',
-                    style: pw.TextStyle(
-                      fontSize: 9.0,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColor.fromInt(0xFFE74C3C),
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-        content.add(pw.SizedBox(height: 8));
-        content.add(pw.Divider(color: PdfColor.fromInt(0xFFE2E8F0), thickness: 1.0));
-        content.add(pw.SizedBox(height: 12));
-
-        // 2. Metadata Card
         content.add(
           pw.Container(
-            padding: const pw.EdgeInsets.all(12),
+            width: double.infinity,
+            padding: const pw.EdgeInsets.only(bottom: 14),
             decoration: pw.BoxDecoration(
-              color: PdfColor.fromInt(0xFFF8FAFC),
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-              border: pw.Border.all(color: PdfColor.fromInt(0xFFE2E8F0), width: 0.5),
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfTheme.black, width: 1),
+              ),
             ),
             child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Report ID: ${idCode.isNotEmpty ? idCode : "TS-402-URBL"}',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12.5, color: PdfColor.fromInt(0xFF1E293B)),
-                    ),
-                    pw.Text(
-                      'Date: $inspectionDate',
-                      style: const pw.TextStyle(fontSize: 12.5, color: PdfColor.fromInt(0xFF1E293B)),
-                    ),
-                  ],
+                pw.Text(
+                  'TENANTSNAP',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfTheme.blue,
+                    letterSpacing: 1,
+                  ),
                 ),
-                pw.SizedBox(height: 6),
-                pw.Divider(color: PdfColor.fromInt(0xFFE2E8F0), thickness: 0.5),
-                pw.SizedBox(height: 6),
-                _buildPdfMetadataRow('Tenant', showPhone && tenantPhone != null && tenantPhone.isNotEmpty ? '$tenantName ($tenantPhone)' : tenantName),
-                _buildPdfMetadataRow('Landlord', showPhone && landlordPhone != null && landlordPhone.isNotEmpty ? '$landlordName ($landlordPhone)' : landlordName),
-                _buildPdfMetadataRow('Property Address', propertyAddress),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'PROPERTY INSPECTION REPORT',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfTheme.black,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Professional Move-In / Move-Out Condition Documentation',
+                  style: pw.TextStyle(
+                    fontSize: 9.5,
+                    color: PdfTheme.grey,
+                  ),
+                ),
               ],
             ),
           ),
         );
-        content.add(pw.SizedBox(height: 20));
 
-        // 3. Section Title
+        content.add(_sectionTitle('Property Information'));
+
         content.add(
-          pw.Text(
-            'SPATIAL INSPECTION DETAILS',
-            style: pw.TextStyle(
-              fontSize: 15.0,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromInt(0xFF1E293B),
-              letterSpacing: 1.0,
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfTheme.bgGrey,
+              border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                _metadataRow('Report ID', idCode),
+                _metadataRow(
+                  'Tenant Name',
+                  showPhone && tenantPhone != null && tenantPhone.isNotEmpty
+                      ? '$tenantName | $tenantPhone'
+                      : tenantName,
+                ),
+                _metadataRow(
+                  'Landlord Name',
+                  showPhone && landlordPhone != null && landlordPhone.isNotEmpty
+                      ? '$landlordName | $landlordPhone'
+                      : landlordName,
+                ),
+                _metadataRow('Property Address', propertyAddress),
+                _metadataRow('Inspection Date', inspectionDate),
+              ],
             ),
           ),
         );
-        content.add(pw.SizedBox(height: 10));
 
-        // 4. Rooms and checklist mapping
-        for (var room in rooms) {
-          // Room Header Card
+        content.add(_sectionTitle('Inspection Summary'));
+
+        content.add(
+          pw.Table(
+            border: pw.TableBorder.all(
+              color: PdfTheme.lightGrey,
+              width: 0.7,
+            ),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(2),
+              1: const pw.FlexColumnWidth(1),
+            },
+            children: [
+              _summaryRow('Total Rooms', '$totalRooms'),
+              _summaryRow('Total Checklist Features', '$totalItems'),
+              _summaryRow('Good Condition Features', '$goodItems'),
+              _summaryRow('Features Needing Repair', '$repairItems'),
+              _summaryRow('Total Photos Attached', '$photoCount'),
+            ],
+          ),
+        );
+
+        content.add(_sectionTitle('Room Wise Inspection'));
+
+        for (final room in rooms) {
           content.add(
             pw.Container(
-              margin: const pw.EdgeInsets.only(top: 12, bottom: 8),
-              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              width: double.infinity,
+              margin: const pw.EdgeInsets.only(top: 10, bottom: 8),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: pw.BoxDecoration(
-                color: PdfColor.fromInt(0xFFF1F5F9),
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                border: pw.Border.all(color: PdfColor.fromInt(0xFFE2E8F0), width: 0.5),
+                color: PdfColor.fromInt(0xFFEFF6FF),
+                border: pw.Border.all(
+                  color: PdfColor.fromInt(0xFFBFDBFE),
+                  width: 0.8,
+                ),
               ),
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    room.name,
+                    room.name.toUpperCase(),
                     style: pw.TextStyle(
-                      fontSize: 14.0,
+                      color: PdfTheme.blue,
+                      fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
-                      color: PdfColor.fromInt(0xFF1E293B),
                     ),
                   ),
                   pw.Text(
                     '${room.progress.toStringAsFixed(0)}% Completed',
                     style: pw.TextStyle(
-                      fontSize: 12.5,
+                      color: PdfTheme.grey,
+                      fontSize: 10,
                       fontWeight: pw.FontWeight.bold,
-                      color: PdfColor.fromInt(0xFF007BFF),
                     ),
                   ),
                 ],
@@ -357,122 +509,66 @@ Future<Uint8List> generateInspectionReportPdf({
             ),
           );
 
-          if (room.comment.isNotEmpty) {
+          if (room.comment.trim().isNotEmpty) {
             content.add(
-              pw.Padding(
-                padding: const pw.EdgeInsets.only(left: 8, bottom: 8),
+              pw.Container(
+                width: double.infinity,
+                margin: const pw.EdgeInsets.only(bottom: 10),
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: PdfTheme.bgGrey,
+                  border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.7),
+                ),
                 child: pw.Text(
-                  'Comment: ${room.comment}',
+                  'Room Notes: ${room.comment.trim()}',
                   style: pw.TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 10,
+                    color: PdfTheme.grey,
                     fontStyle: pw.FontStyle.italic,
-                    color: PdfColor.fromInt(0xFF64748B),
                   ),
                 ),
               ),
             );
           }
 
-          // Individual checklist items
-          for (var item in room.checklist) {
+          for (final item in room.checklist) {
             content.add(
               pw.Inseparable(
-                child: pw.Container(
-                  margin: const pw.EdgeInsets.only(bottom: 10),
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColor.fromInt(0xFFFFFFFF),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-                    border: pw.Border.all(color: PdfColor.fromInt(0xFFE2E8F0), width: 0.5),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Row(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          _buildPdfStatusBadge(item.status),
-                          pw.SizedBox(width: 10),
-                          pw.Expanded(
-                            child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                  item.name,
-                                  style: pw.TextStyle(
-                                    fontSize: 13.0,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: PdfColor.fromInt(0xFF1E293B),
-                                  ),
-                                ),
-                                pw.SizedBox(height: 3),
-                                pw.Text(
-                                  item.comment.isNotEmpty
-                                      ? item.comment
-                                      : (item.status == RoomItemStatus.happy
-                                          ? 'Condition verified; fully functional and clean.'
-                                          : (item.status == RoomItemStatus.sad
-                                              ? 'Defect noted; repair required.'
-                                              : 'Standard condition; no major issues observed.')),
-                                  style: pw.TextStyle(
-                                    fontSize: 11.5,
-                                    color: PdfColor.fromInt(0xFF64748B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (item.photos.isNotEmpty) ...[
-                        pw.SizedBox(height: 10),
-                        pw.Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: item.photos.map((photoPath) {
-                            final bytes = loadedImages[photoPath];
-                            if (bytes != null && bytes.isNotEmpty) {
-                              try {
-                                final pdfImage = pw.MemoryImage(bytes);
-                                return pw.Container(
-                                  width: 230,
-                                  height: 172,
-                                  decoration: pw.BoxDecoration(
-                                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                                    border: pw.Border.all(color: PdfColor.fromInt(0xFFE2E8F0), width: 1.0),
-                                  ),
-                                  child: pw.ClipRRect(
-                                    horizontalRadius: 6,
-                                    verticalRadius: 6,
-                                    child: pw.Image(pdfImage, fit: pw.BoxFit.cover),
-                                  ),
-                                );
-                              } catch (e) {
-                                debugPrint("Error creating PDF MemoryImage: $e");
-                              }
-                            }
-                            return pw.Container(
-                              width: 230,
-                              height: 172,
-                              decoration: pw.BoxDecoration(
-                                color: PdfColor.fromInt(0xFFF1F5F9),
-                                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                                border: pw.Border.all(color: PdfColor.fromInt(0xFFE2E8F0), width: 1.0),
-                              ),
-                              child: pw.Center(
-                                child: pw.Text('[IMAGE]', style: const pw.TextStyle(fontSize: 10)),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ],
-                  ),
+                child: _featureBlock(
+                  item: item,
+                  loadedImages: loadedImages,
                 ),
               ),
             );
           }
+
+          content.add(pw.SizedBox(height: 8));
         }
+
+        content.add(_sectionTitle('Signatures'));
+
+        content.add(
+          pw.Row(
+            children: [
+              pw.Expanded(child: _signatureBox('Tenant Signature')),
+              pw.SizedBox(width: 18),
+              pw.Expanded(child: _signatureBox('Landlord Signature')),
+            ],
+          ),
+        );
+
+        content.add(pw.SizedBox(height: 14));
+
+        content.add(
+          pw.Text(
+            'This inspection report documents the visible condition of the property and attached photo evidence at the time of inspection.',
+            style: pw.TextStyle(
+              color: PdfTheme.grey,
+              fontSize: 9.5,
+              fontStyle: pw.FontStyle.italic,
+            ),
+          ),
+        );
 
         return content;
       },
