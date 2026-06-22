@@ -168,7 +168,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               const Divider(color: Color(0xFFE2E8F0), height: 24),
               _buildTelemetryRow('Registered Phone', activePhone),
               const Divider(color: Color(0xFFE2E8F0), height: 24),
-              _buildTelemetryRow('Unique ID Code', BaseController.idCode.value.isNotEmpty ? BaseController.idCode.value : 'TS-402-URBL'),
+              _buildTelemetryRow('Unique ID Code', BaseController.idCode.value.isNotEmpty ? BaseController.idCode.value : ''),
               const Divider(color: Color(0xFFE2E8F0), height: 24),
               _buildTelemetryRow('Workspace Node ID', 'WSN-0294-SF82'),
               const Divider(color: Color(0xFFE2E8F0), height: 24),
