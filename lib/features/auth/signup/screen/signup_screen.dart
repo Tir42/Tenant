@@ -15,7 +15,9 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final signUpController = Get.put(SignUpController());
+  final signUpController = Get.isRegistered<SignUpController>()
+      ? Get.find<SignUpController>()
+      : Get.put(SignUpController());
 
   @override
   void initState() {
@@ -35,110 +37,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  double _getPasswordStrength(String password) {
-    if (password.isEmpty) return 0.0;
-    if (password.length < 6) return 0.3;
-    if (!RegExp(r'[0-9]').hasMatch(password)) return 0.6;
-    return 1.0;
-  }
 
-  Color _getPasswordStrengthColor(double strength) {
-    if (strength <= 0.3) return const Color(0xFFE74C3C); // Red
-    if (strength <= 0.6) return const Color(0xFFF1C40F); // Yellow
-    return const Color(0xFF2ECC71); // Green
-  }
-
-  String _getPasswordStrengthText(double strength) {
-    if (strength <= 0.3) return 'Weak';
-    if (strength <= 0.6) return 'Medium';
-    return 'Strong';
-  }
-
-  Widget _buildPasswordStrengthBar() {
-    final password = signUpController.passwordController.text;
-    if (password.isEmpty) return const SizedBox.shrink();
-
-    final strength = _getPasswordStrength(password);
-    final color = _getPasswordStrengthColor(strength);
-    final text = _getPasswordStrengthText(strength);
-
-    return Padding(
-      padding: EdgeInsets.only(left: 16.0.w, top: 6.0.h, right: 16.0.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Password Strength: $text',
-                style: TextStyle(
-                  color: color,
-                  fontFamily: 'Montserrat',
-                  fontSize: 11.0.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                '${(strength * 100).toInt()}%',
-                style: TextStyle(
-                  color: color,
-                  fontFamily: 'Montserrat',
-                  fontSize: 11.0.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 6.0.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4.0.w),
-            child: LinearProgressIndicator(
-              value: strength,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 4.0.h,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handlePrimaryAction() async {
-    if (!signUpController.validateInputs()) {
-      return;
-    }
-
-    final firstName = signUpController.firstNameController.text.trim();
-    final lastName = signUpController.lastNameController.text.trim();
-    final email = signUpController.emailController.text.trim();
-    final phone = signUpController.phoneController.text.trim();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Generating new secure tenant profile...'),
-      ),
-    );
-
-    // Format phone number to append the country code prefix before api request
-    final String rawPhoneInput = phone;
-    signUpController.phoneController.text = '+${signUpController.selectedCountry.value.phoneCode} $rawPhoneInput';
-
-    final success = await signUpController.signUp();
-
-    if (success && mounted) {
-      final idCodeLower = BaseController.idCode.value.toLowerCase();
-      final role = (idCodeLower.startsWith('ll') || email.toLowerCase().contains('sterling') || email.toLowerCase().contains('landlord')) ? 'landlord' : 'tenant';
-      Get.off(() => HomeScreen(
-        role: role,
-        userName: BaseController.name.value.isNotEmpty ? BaseController.name.value : '$firstName $lastName',
-      ));
-    } else {
-      // Restore the raw phone number if registration failed so user can edit it
-      signUpController.phoneController.text = rawPhoneInput;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -288,6 +187,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   hintText: 'First Name',
                                   icon: Icons.person_outline,
                                   errorText: fErr,
+                                  onChanged: (_) {
+                                    signUpController.firstNameError.value = null;
+                                  },
+
                                 ),
                                 SizedBox(height: 14.0.h),
                                 _buildCustomTextField(
@@ -295,6 +198,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   hintText: 'Last Name',
                                   icon: Icons.person_outline,
                                   errorText: lErr,
+                                  onChanged: (_) {
+                                    signUpController.lastNameError.value = null;
+                                  },
                                 ),
                               ],
                             )
@@ -307,6 +213,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     hintText: 'First Name',
                                     icon: Icons.person_outline,
                                     errorText: fErr,
+                                    onChanged: (_) {
+                                      signUpController.firstNameError.value = null;
+                                    },
+
+
                                   ),
                                 ),
                                 SizedBox(width: 12.0.w),
@@ -316,6 +227,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     hintText: 'Last Name',
                                     icon: Icons.person_outline,
                                     errorText: lErr,
+                                    onChanged: (_) {
+                                      signUpController.lastNameError.value = null;
+                                    },
+
                                   ),
                                 ),
                               ],
@@ -333,6 +248,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       icon: Icons.mail_outline,
                       keyboardType: TextInputType.emailAddress,
                       errorText: signUpController.emailError.value,
+                      onChanged: (value) {
+                        signUpController.emailError.value = null;
+                        signUpController.emailText.value = value;
+
+                      },
                     )),
                   ),
                   SizedBox(height: 14.0.h),
@@ -398,6 +318,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               icon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
                               errorText: pErr,
+                              onChanged: (value) {
+                                signUpController.phoneError.value = null;
+                                signUpController.phoneText.value = value;
+                              },
                             ),
                           ),
                         ],
@@ -414,6 +338,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       hintText: 'ID Code',
                       icon: Icons.qr_code_outlined,
                       errorText: signUpController.idCodeError.value,
+                      onChanged: (value) {
+                        signUpController.idCodeError.value = null;
+                        signUpController.idCodeText.value = value;
+                      },
                     )),
                   ),
                   SizedBox(height: 14.0.h),
@@ -430,6 +358,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           icon: Icons.lock_outline,
                           obscureText: signUpController.obscurePassword.value,
                           errorText: signUpController.passwordError.value,
+                          onChanged: (_) {
+                            signUpController.passwordError.value = null;
+
+                          },
                           suffixIcon: IconButton(
                             icon: Icon(
                               signUpController.obscurePassword.value
@@ -456,6 +388,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       icon: Icons.lock_outline,
                       obscureText: signUpController.obscurePassword.value,
                       errorText: signUpController.confirmPasswordError.value,
+                      onChanged: (_) {
+
+
+                        signUpController.confirmPasswordError.value = null;
+                      },
                       suffixIcon: IconButton(
                         icon: Icon(
                           signUpController.obscurePassword.value
@@ -546,15 +483,87 @@ class _SignUpScreenState extends State<SignUpScreen> {
     TextInputType keyboardType = TextInputType.text,
     Widget? suffixIcon,
     String? errorText,
+    ValueChanged<String>? onChanged,
   }) {
-    return _CustomFocusTextField(
-      controller: controller,
-      hintText: hintText,
-      icon: icon,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      suffixIcon: suffixIcon,
-      errorText: errorText,
+    final hasError = errorText != null && errorText.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24.0.w),
+            border: Border.all(
+              color: hasError
+                  ? const Color(0xFFE74C3C)
+                  : const Color(0xFFE2E8F0),
+              width: hasError ? 1.5.w : 1.0.w,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2C3E50).withValues(alpha: 0.03),
+                blurRadius: 10.0.w,
+                offset: Offset(0, 4.0.h),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            style: TextStyle(
+              color: const Color(0xFF2C3E50),
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Montserrat',
+              fontSize: 14.0.sp,
+            ),
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: TextStyle(
+                color: const Color(0xFF95A5A6),
+                fontSize: 13.0.sp,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Montserrat',
+              ),
+              prefixIcon: Padding(
+                padding: EdgeInsets.only(left: 16.0.w, right: 12.0.w),
+                child: Icon(
+                  icon,
+                  color: hasError
+                      ? const Color(0xFFE74C3C)
+                      : const Color(0xFF7F8C8D),
+                  size: 18.w,
+                ),
+              ),
+              suffixIcon: suffixIcon,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 14.0.h,
+                horizontal: 16.0.w,
+              ),
+            ),
+          ),
+        ),
+
+        if (hasError) ...[
+          SizedBox(height: 4.0.h),
+          Padding(
+            padding: EdgeInsets.only(left: 16.0.w),
+            child: Text(
+              errorText,
+              style: TextStyle(
+                color: const Color(0xFFE74C3C),
+                fontFamily: 'Montserrat',
+                fontSize: 11.0.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -571,7 +580,120 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
+
+  double _getPasswordStrength(String password) {
+    if (password.isEmpty) return 0.0;
+    if (password.length < 6) return 0.3;
+    if (!RegExp(r'[0-9]').hasMatch(password)) return 0.6;
+    return 1.0;
+  }
+
+  Color _getPasswordStrengthColor(double strength) {
+    if (strength <= 0.3) return const Color(0xFFE74C3C); // Red
+    if (strength <= 0.6) return const Color(0xFFF1C40F); // Yellow
+    return const Color(0xFF2ECC71); // Green
+  }
+
+  String _getPasswordStrengthText(double strength) {
+    if (strength <= 0.3) return 'Weak';
+    if (strength <= 0.6) return 'Medium';
+    return 'Strong';
+  }
+
+  Widget _buildPasswordStrengthBar() {
+    final password = signUpController.passwordController.text;
+    if (password.isEmpty) return const SizedBox.shrink();
+
+    final strength = _getPasswordStrength(password);
+    final color = _getPasswordStrengthColor(strength);
+    final text = _getPasswordStrengthText(strength);
+
+    return Padding(
+      padding: EdgeInsets.only(left: 16.0.w, top: 6.0.h, right: 16.0.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Password Strength: $text',
+                style: TextStyle(
+                  color: color,
+                  fontFamily: 'Montserrat',
+                  fontSize: 11.0.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                '${(strength * 100).toInt()}%',
+                style: TextStyle(
+                  color: color,
+                  fontFamily: 'Montserrat',
+                  fontSize: 11.0.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.0.h),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.0.w),
+            child: LinearProgressIndicator(
+              value: strength,
+              backgroundColor: const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: 4.0.h,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handlePrimaryAction() async {
+    if (!signUpController.validateInputs()) return;
+
+    final firstName = signUpController.firstNameController.text.trim();
+    final lastName = signUpController.lastNameController.text.trim();
+    final email = signUpController.emailController.text.trim();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generating new secure tenant profile...'),
+      ),
+    );
+
+    final errorMsg = await signUpController.signUp();
+
+    if (!mounted) return;
+
+    if (errorMsg == null) {
+      final idCodeLower = BaseController.idCode.value.toLowerCase();
+
+      final role = (idCodeLower.startsWith('ll') ||
+          email.toLowerCase().contains('sterling') ||
+          email.toLowerCase().contains('landlord'))
+          ? 'landlord'
+          : 'tenant';
+
+      Get.off(
+            () => HomeScreen(
+          role: role,
+          userName: BaseController.name.value.isNotEmpty
+              ? BaseController.name.value
+              : '$firstName $lastName',
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg)),
+      );
+    }
+  }
 }
+
+
 
 
 class _CountryPickerDialog extends StatefulWidget {
@@ -725,7 +847,7 @@ class _CountryPickerDialogState extends State<_CountryPickerDialog> {
                         itemBuilder: (context, index) {
                           final country = _filteredCountries[index];
                           final isSelected = country.countryCode == widget.selectedCountry.countryCode;
-                          
+
                           return GestureDetector(
                             onTap: () {
                               widget.onSelect(country);
@@ -862,145 +984,5 @@ class _StaggeredEntranceState extends State<_StaggeredEntrance> with SingleTicke
   }
 }
 
-class _CustomFocusTextField extends StatefulWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final IconData icon;
-  final bool obscureText;
-  final TextInputType keyboardType;
-  final Widget? suffixIcon;
-  final String? errorText;
 
-  const _CustomFocusTextField({
-    required this.controller,
-    required this.hintText,
-    required this.icon,
-    this.obscureText = false,
-    this.keyboardType = TextInputType.text,
-    this.suffixIcon,
-    this.errorText,
-  });
-
-  @override
-  State<_CustomFocusTextField> createState() => _CustomFocusTextFieldState();
-}
-
-class _CustomFocusTextFieldState extends State<_CustomFocusTextField> {
-  final FocusNode _focusNode = FocusNode();
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      if (mounted) {
-        setState(() {
-          _isFocused = _focusNode.hasFocus;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
-
-    Color borderColor = const Color(0xFFE2E8F0);
-    double borderWidth = 1.0.w;
-    if (hasError) {
-      borderColor = const Color(0xFFE74C3C);
-      borderWidth = 1.5.w;
-    } else if (_isFocused) {
-      borderColor = const Color(0xFF007BFF);
-      borderWidth = 1.5.w;
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24.0.w),
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
-            boxShadow: [
-              if (_isFocused && !hasError)
-                BoxShadow(
-                  color: const Color(0xFF007BFF).withValues(alpha: 0.08),
-                  blurRadius: 8.0.w,
-                  spreadRadius: 1.0.w,
-                  offset: Offset(0, 2.0.h),
-                )
-              else
-                BoxShadow(
-                  color: const Color(0xFF2C3E50).withValues(alpha: 0.03),
-                  blurRadius: 10.0.w,
-                  offset: Offset(0, 4.0.h),
-                ),
-            ],
-          ),
-          child: TextField(
-            focusNode: _focusNode,
-            controller: widget.controller,
-            obscureText: widget.obscureText,
-            keyboardType: widget.keyboardType,
-            style: TextStyle(
-              color: const Color(0xFF2C3E50),
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Montserrat',
-              fontSize: 14.0.sp,
-            ),
-            decoration: InputDecoration(
-              hintText: widget.hintText,
-              hintStyle: TextStyle(
-                color: const Color(0xFF95A5A6),
-                fontSize: 13.0.sp,
-                fontWeight: FontWeight.w500,
-              ),
-              prefixIcon: Padding(
-                padding: EdgeInsets.only(left: 16.0.w, right: 12.0.w),
-                child: Icon(
-                  widget.icon,
-                  color: hasError
-                      ? const Color(0xFFE74C3C)
-                      : (_isFocused ? const Color(0xFF007BFF) : const Color(0xFF7F8C8D)),
-                  size: 18.w,
-                ),
-              ),
-              suffixIcon: widget.suffixIcon,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 14.0.h, horizontal: 16.0.w),
-            ),
-          ),
-        ),
-        if (hasError) ...[
-          SizedBox(height: 4.0.h),
-          Padding(
-            padding: EdgeInsets.only(left: 16.0.w),
-            child: Text(
-              widget.errorText!,
-              style: TextStyle(
-                color: const Color(0xFFE74C3C),
-                fontFamily: 'Montserrat',
-                fontSize: 11.0.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
 

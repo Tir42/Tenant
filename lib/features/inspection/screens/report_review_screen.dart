@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/download_helper/download_helper.dart';
@@ -9,6 +11,9 @@ import 'package:tenantsnap/core/services/rest_client.dart';
 import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
+
+import '../../../core/controllers/base_controller.dart';
+import '../../dashboard/screens/home_screen.dart';
 
 class ReportReviewScreen extends StatelessWidget {
   final RoomInspection? singleRoom;
@@ -19,6 +24,7 @@ class ReportReviewScreen extends StatelessWidget {
   final String? propertyAddress;
   final String? inspectionDate;
   final String? idCode;
+  final String? agreementDate;
 
   const ReportReviewScreen({
     super.key,
@@ -30,6 +36,7 @@ class ReportReviewScreen extends StatelessWidget {
     this.propertyAddress,
     this.inspectionDate,
     this.idCode,
+    this.agreementDate
   });
 
   @override
@@ -43,10 +50,9 @@ class ReportReviewScreen extends StatelessWidget {
     final String activePropertyAddress =
         propertyAddress ?? controller.propertyAddress.value;
 
-    final String activeInspectionDate = inspectionDate ??
-        (controller.agreementDate.value.isNotEmpty
-            ? controller.agreementDate.value
-            : controller.possessionDate.value);
+    final String activeInspectionDate = controller.possessionDate.value;
+    final String activeAgreementDate =
+        controller.agreementDate.value;
 
     final String activeIdCode = idCode ?? controller.idCode.value;
 
@@ -130,6 +136,7 @@ class ReportReviewScreen extends StatelessWidget {
                           landlordName: activeLandlordName,
                           propertyAddress: activePropertyAddress,
                           inspectionDate: activeInspectionDate,
+                            agreementDate: activeAgreementDate
                         ),
 
                         SizedBox(height: 16.0.h),
@@ -165,6 +172,7 @@ class ReportReviewScreen extends StatelessWidget {
                           landlordName: activeLandlordName,
                           propertyAddress: activePropertyAddress,
                           inspectionDate: activeInspectionDate,
+                          agreementDate: activeAgreementDate,
                           allRooms: sourceRooms,
                         ),
                       ],
@@ -674,6 +682,8 @@ class ReportReviewScreen extends StatelessWidget {
         required String landlordName,
         required String propertyAddress,
         required String inspectionDate,
+        required String agreementDate
+
       }) {
     return Container(
       width: double.infinity,
@@ -710,7 +720,8 @@ class ReportReviewScreen extends StatelessWidget {
           _buildMetadataRow('Tenant', tenantName),
           _buildMetadataRow('Landlord', landlordName),
           _buildMetadataRow('Address', propertyAddress),
-          _buildMetadataRow('Date', inspectionDate),
+          _buildMetadataRow('InspectionDate', inspectionDate),
+          _buildMetadataRow('AgreementDate', agreementDate),
         ],
       ),
     );
@@ -723,7 +734,7 @@ class ReportReviewScreen extends StatelessWidget {
         required String landlordName,
         required String propertyAddress,
         required String inspectionDate,
-        required List<RoomInspection> allRooms,
+        required List<RoomInspection> allRooms, required String agreementDate,
       }) {
     return Center(
       child: Material(
@@ -736,6 +747,7 @@ class ReportReviewScreen extends StatelessWidget {
             landlordName: landlordName,
             propertyAddress: propertyAddress,
             inspectionDate: inspectionDate,
+            agreementDate:agreementDate,
             allRooms: allRooms,
           ),
           borderRadius: BorderRadius.circular(12.0.w),
@@ -782,7 +794,7 @@ class ReportReviewScreen extends StatelessWidget {
         required String landlordName,
         required String propertyAddress,
         required String inspectionDate,
-        required List<RoomInspection> allRooms,
+        required List<RoomInspection> allRooms, required String agreementDate,
       }) {
     final controller = Get.find<InspectionController>();
     final isDownloading = false.obs;
@@ -791,7 +803,7 @@ class ReportReviewScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        final List<RoomInspection> previewRooms = allRooms
+        final previewRooms = allRooms
             .where((room) => room.checklist.any((item) => item.photos.isNotEmpty))
             .toList();
 
@@ -814,7 +826,7 @@ class ReportReviewScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Click Download to save PDF file.',
+                'Click Download to save PDF file or Share & Send to select email/share app.',
                 style: TextStyle(
                   color: const Color(0xFF7F8C8D),
                   fontFamily: 'Montserrat',
@@ -854,7 +866,8 @@ class ReportReviewScreen extends StatelessWidget {
                       Text('Tenant: $tenantName'),
                       Text('Landlord: $landlordName'),
                       Text('Address: $propertyAddress'),
-                      Text('Date: $inspectionDate'),
+                      Text('inspectionDate: $inspectionDate'),
+                      Text('agreementDate: $agreementDate'),
                       SizedBox(height: 10.0.h),
                       const Divider(),
                       Text('Rooms with evidence: ${previewRooms.length}'),
@@ -881,6 +894,7 @@ class ReportReviewScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             Obx(
                   () => ElevatedButton.icon(
                 onPressed: (isDownloading.value || isUploading.value)
@@ -888,34 +902,18 @@ class ReportReviewScreen extends StatelessWidget {
                     : () async {
                   isDownloading.value = true;
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      duration: Duration(seconds: 1),
-                      backgroundColor: Color(0xFF007BFF),
-                      content: Text(
-                        'Generating PDF report...',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Montserrat',
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-
                   try {
-                    final List<RoomInspection> pdfRooms = allRooms;
-
                     final pdfBytes = await generateInspectionReportPdf(
                       idCode: idCode,
                       tenantName: tenantName,
                       landlordName: landlordName,
                       propertyAddress: propertyAddress,
                       inspectionDate: inspectionDate,
-                      rooms: pdfRooms,
+                      rooms: allRooms,
                       tenantPhone: controller.tenantPhone.value,
                       landlordPhone: controller.landlordPhone.value,
                       showPhone: controller.showPhoneInPdf.value,
+                        agreementDate: controller.agreementDate.value,
                     );
 
                     final savedPath = await DownloadHelper.downloadPdf(
@@ -945,19 +943,13 @@ class ReportReviewScreen extends StatelessWidget {
                       );
                     }
                   } catch (e) {
-                    debugPrint("Error generating PDF: $e");
-
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: const Color(0xFFE74C3C),
                           content: Text(
                             'Failed to generate PDF: $e',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                       );
@@ -997,6 +989,7 @@ class ReportReviewScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             Obx(
                   () => ElevatedButton(
                 onPressed: (isDownloading.value || isUploading.value)
@@ -1004,95 +997,23 @@ class ReportReviewScreen extends StatelessWidget {
                     : () async {
                   isUploading.value = true;
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF2C3E50),
-                      content: Text(
-                        'Uploading inspection report...',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Montserrat',
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-
-                  final formattedRooms = allRooms.map((room) {
-                    return {
-                      'roomName': room.name,
-                      'photosCount': room.checklist.fold<int>(
-                        0,
-                            (sum, item) => sum + item.photos.length,
-                      ),
-                      'features': room.checklist.map((item) {
-                        return {
-                          'name': item.name,
-                          'status': item.status == RoomItemStatus.happy
-                              ? 'good'
-                              : item.status == RoomItemStatus.sad
-                              ? 'bad'
-                              : 'neutral',
-                          'photos': item.photos,
-                        };
-                      }).toList(),
-                    };
-                  }).toList();
-
-                  final restClient = Get.find<RestClient>();
-
                   try {
-                    final response = await restClient.dio.post(
-                      '/inspection/create',
-                      data: {
-                        'idCode': idCode,
-                        'tenantName': tenantName,
-                        'landlordName': landlordName,
-                        'propertyAddress': propertyAddress,
-                        'inspectionDate': inspectionDate,
-                        'rooms': formattedRooms,
-                      },
+                    await _sharePdfToEmail(
+                      context: context,
+                      idCode: idCode,
+                      tenantName: tenantName,
+                      landlordName: landlordName,
+                      propertyAddress: propertyAddress,
+                      inspectionDate: inspectionDate,
+                      agreementDate: controller.agreementDate.value,
+                      allRooms: allRooms,
                     );
-
-                    if (response.statusCode == 200 ||
-                        response.statusCode == 201) {
-                      final data = response.data['data'];
-                      final inspectionId =
-                      data != null ? (data['inspectionId'] ?? '') : '';
-
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: const Color(0xFF2ECC71),
-                            content: Text(
-                              'Inspection report uploaded successfully! ID: $inspectionId',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        );
-
-                        Navigator.pop(dialogContext);
-                      }
-                    }
-                  } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: const Color(0xFFE74C3C),
-                          content: Text(
-                            'Connection error. Failed to save report: $e',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      );
+                      // Navigator.pop(dialogContext); // close dialog
+                      Get.offAll(() => HomeScreen(
+                        role: 'tenant',
+                        userName: BaseController.name.value,
+                      ));
                     }
                   } finally {
                     isUploading.value = false;
@@ -1129,4 +1050,53 @@ class ReportReviewScreen extends StatelessWidget {
       },
     );
   }
-}
+
+  Future<void> _sharePdfToEmail({
+    required BuildContext context,
+    required String idCode,
+    required String tenantName,
+    required String landlordName,
+    required String propertyAddress,
+    required String inspectionDate,
+    required String agreementDate,
+    required List<RoomInspection> allRooms,
+  }) async {
+    final controller = Get.find<InspectionController>();
+
+    try {
+      final pdfBytes = await generateInspectionReportPdf(
+        idCode: idCode,
+        tenantName: tenantName,
+        landlordName: landlordName,
+        propertyAddress: propertyAddress,
+        inspectionDate: inspectionDate,
+        agreementDate: controller.agreementDate.value,
+        rooms: allRooms,
+        tenantPhone: controller.tenantPhone.value,
+        landlordPhone: controller.landlordPhone.value,
+        showPhone: controller.showPhoneInPdf.value,
+      );
+
+      final dir = await getTemporaryDirectory();
+
+      final file = File(
+        '${dir.path}/TenantSnap_Inspection_Report_${idCode.isNotEmpty ? idCode : DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+
+      await file.writeAsBytes(pdfBytes);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'TenantSnap Inspection Report',
+        text: 'Please find attached the TenantSnap property inspection report.',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share PDF: $e')),
+        );
+      }
+    }
+  }
+  }
+

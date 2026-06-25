@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:dio/dio.dart';
+
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/auth/signup/model/signup_model.dart';
 
 class SignUpController extends BaseController {
   final obscurePassword = true.obs;
+  final signupStatus = RxStatus.empty().obs;
 
   final firstNameError = RxnString();
   final lastNameError = RxnString();
@@ -15,41 +18,124 @@ class SignUpController extends BaseController {
   final passwordError = RxnString();
   final confirmPasswordError = RxnString();
 
+  final emailText = ''.obs;
+  final phoneText = ''.obs;
+  final idCodeText = ''.obs;
+
+  Worker? emailWorker;
+  Worker? phoneWorker;
+  Worker? idCodeWorker;
+
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final idCodeController = TextEditingController();
+
   final selectedCountry = Rx<Country>(
-    CountryService().findByCode('US') ?? Country(
-      phoneCode: '1',
-      countryCode: 'US',
-      e164Sc: 1,
-      geographic: true,
-      level: 1,
-      name: 'United States',
-      example: '2015550123',
-      displayName: 'United States (US) [+1]',
-      displayNameNoCountryCode: 'United States (US)',
-      e164Key: '1-US-0',
-    ),
+    CountryService().findByCode('US') ??
+        Country(
+          phoneCode: '1',
+          countryCode: 'US',
+          e164Sc: 1,
+          geographic: true,
+          level: 1,
+          name: 'United States',
+          example: '2015550123',
+          displayName: 'United States (US) [+1]',
+          displayNameNoCountryCode: 'United States (US)',
+          e164Key: '1-US-0',
+        ),
   );
+
+  @override
+  void onInit() {
+    super.onInit();
+
+    emailWorker = debounce<String>(
+      emailText,
+          (value) async {
+        final email = value.trim();
+
+        if (email.isEmpty) {
+          emailError.value = null;
+          return;
+        }
+
+        if (!GetUtils.isEmail(email)) {
+          emailError.value = 'Please enter a valid email address.';
+          return;
+        }
+
+        final exists = await checkEmailExists(email);
+        emailError.value = exists ? 'Email already exists.' : null;
+      },
+      time: const Duration(milliseconds: 600),
+    );
+
+    phoneWorker = debounce<String>(
+      phoneText,
+          (value) async {
+        final phone = value.trim();
+
+        if (phone.isEmpty) {
+          phoneError.value = null;
+          return;
+        }
+
+        if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
+          phoneError.value = 'Phone number must contain digits only.';
+          return;
+        }
+
+        if (phone.length < 8 || phone.length > 10) {
+          phoneError.value = 'Enter a valid phone number.';
+          return;
+        }
+
+        final exists = await checkPhoneExists(phone);
+        phoneError.value = exists ? 'Phone number already exists.' : null;
+      },
+      time: const Duration(milliseconds: 600),
+    );
+
+    idCodeWorker = debounce<String>(
+      idCodeText,
+          (value) async {
+        final idCode = value.trim();
+
+        if (idCode.isEmpty) {
+          idCodeError.value = null;
+          return;
+        }
+
+        final exists = await checkIdCodeExists(idCode);
+        idCodeError.value = exists ? 'ID Code already exists.' : null;
+      },
+      time: const Duration(milliseconds: 600),
+    );
+  }
+
+  void toggleObscurePassword() {
+    obscurePassword.value = !obscurePassword.value;
+  }
 
   bool validateInputs() {
     firstNameError.value = null;
     lastNameError.value = null;
-    emailError.value = null;
-    phoneError.value = null;
-    idCodeError.value = null;
-    passwordError.value = null;
-    confirmPasswordError.value = null;
 
     final firstName = firstNameController.text.trim();
     final lastName = lastNameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
-    final password = passwordController.text;
-    final confirmPassword = confirmPasswordController.text;
     final idCode = idCodeController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
     bool isValid = true;
 
-    // 1. First Name Validation
     if (firstName.isEmpty) {
       firstNameError.value = 'First name is required.';
       isValid = false;
@@ -58,7 +144,6 @@ class SignUpController extends BaseController {
       isValid = false;
     }
 
-    // 2. Last Name Validation
     if (lastName.isEmpty) {
       lastNameError.value = 'Last name is required.';
       isValid = false;
@@ -67,34 +152,36 @@ class SignUpController extends BaseController {
       isValid = false;
     }
 
-    // 3. Email Validation
     if (email.isEmpty) {
       emailError.value = 'Email is required.';
       isValid = false;
     } else if (!GetUtils.isEmail(email)) {
       emailError.value = 'Please enter a valid email address.';
       isValid = false;
+    } else if (emailError.value == 'Email already exists.') {
+      isValid = false;
     }
 
-    // 4. Phone Validation
     if (phone.isEmpty) {
       phoneError.value = 'Phone number is required.';
       isValid = false;
     } else if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
       phoneError.value = 'Phone number must contain digits only.';
       isValid = false;
-    } else if (phone.length < 8 || phone.length > 15) {
-      phoneError.value = 'Enter a valid phone number (8-15 digits).';
+    } else if (phone.length < 8 || phone.length > 10) {
+      phoneError.value = 'Enter a valid phone number.';
+      isValid = false;
+    } else if (phoneError.value == 'Phone number already exists.') {
       isValid = false;
     }
 
-    // 5. Tenant ID Code Validation
     if (idCode.isEmpty) {
       idCodeError.value = 'Tenant ID Code is required.';
       isValid = false;
+    } else if (idCodeError.value == 'ID Code already exists.') {
+      isValid = false;
     }
 
-    // 6. Password Validation
     if (password.isEmpty) {
       passwordError.value = 'Password is required.';
       isValid = false;
@@ -104,56 +191,57 @@ class SignUpController extends BaseController {
     } else if (!RegExp(r'[0-9]').hasMatch(password)) {
       passwordError.value = 'Password must contain at least one number.';
       isValid = false;
+    } else {
+      passwordError.value = null;
     }
 
-    // 7. Confirm Password Validation
     if (confirmPassword.isEmpty) {
       confirmPasswordError.value = 'Please confirm your password.';
       isValid = false;
     } else if (password != confirmPassword) {
       confirmPasswordError.value = 'Passwords do not match.';
       isValid = false;
+    } else {
+      confirmPasswordError.value = null;
     }
 
     return isValid;
   }
 
-  final TextEditingController firstNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
-  final TextEditingController idCodeController = TextEditingController();
+  Future<String?> signUp() async {
+    if (!validateInputs()) {
+      return 'Please fix the errors and try again.';
+    }
 
-  void toggleObscurePassword() {
-    obscurePassword.value = !obscurePassword.value;
-  }
-
-  Future<bool> signUp() async {
     final firstName = firstNameController.text.trim();
     final lastName = lastNameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
-    final password = passwordController.text;
-    final confirmPassword = confirmPasswordController.text;
+    final password = passwordController.text.trim();
     final idCode = idCodeController.text.trim();
 
-    if (firstName.isEmpty ||
-        lastName.isEmpty ||
-        email.isEmpty ||
-        phone.isEmpty ||
-        idCode.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
-      return false;
-    }
-    if (password != confirmPassword) {
-      return false;
-    }
     isLoading.value = true;
+    signupStatus.value = RxStatus.loading();
 
     try {
+      if (await checkEmailExists(email)) {
+        emailError.value = 'Email already exists.';
+        signupStatus.value = RxStatus.error();
+        return 'Email already exists.';
+      }
+
+      if (await checkPhoneExists(phone)) {
+        phoneError.value = 'Phone number already exists.';
+        signupStatus.value = RxStatus.error();
+        return 'Phone number already exists.';
+      }
+
+      if (await checkIdCodeExists(idCode)) {
+        idCodeError.value = 'ID Code already exists.';
+        signupStatus.value = RxStatus.error();
+        return 'ID Code already exists.';
+      }
+
       final request = SignupRequest(
         firstName: firstName,
         lastName: lastName,
@@ -162,29 +250,98 @@ class SignUpController extends BaseController {
         password: password,
         idCode: idCode,
       );
-      final response = await restClient.dio.post('/users/register', data: request.toJson());
-      
-      if (response.statusCode == 200 || response.statusCode == 201) {
+
+      final response = await restClient.dio.post(
+        '/users/register',
+        data: request.toJson(),
+      );
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data != null) {
         final signupRes = SignupResponse.fromJson(response.data);
-        BaseController.name.value = '${signupRes.firstName ?? firstName} ${signupRes.lastName ?? lastName}'.trim();
+
+        BaseController.name.value =
+            '${signupRes.firstName ?? firstName} ${signupRes.lastName ?? lastName}'.trim();
         BaseController.email.value = (signupRes.email ?? email).trim();
         BaseController.phone.value = (signupRes.phone ?? phone).trim();
         BaseController.idCode.value = signupRes.idCode ?? idCode;
-        debugPrint("Signup success response: idCode = ${signupRes.idCode}");
-        isLoading.value = false;
-        return true;
-      }
-    } catch (e) {
-      isLoading.value = false;
-      return false;
-    }
 
-    isLoading.value = false;
-    return false;
+        signupStatus.value = RxStatus.success();
+        return null;
+      }
+
+      signupStatus.value = RxStatus.error();
+      return response.data is Map && response.data['message'] != null
+          ? response.data['message'].toString()
+          : 'Signup failed. Please try again.';
+    } on DioException catch (e) {
+      signupStatus.value = RxStatus.error();
+
+      final data = e.response?.data;
+
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+
+      if (data is Map && data['error'] != null) {
+        return data['error'].toString();
+      }
+
+      return 'Connection error. Please try again.';
+    } catch (_) {
+      signupStatus.value = RxStatus.error();
+      return 'Connection error. Please try again.';
+    } finally {
+      isLoading.value = false;
+    }
   }
 
+  Future<bool> checkEmailExists(String email) async {
+    try {
+      final response = await restClient.dio.get(
+        '/users/check-email',
+        queryParameters: {'email': email},
+      );
+      return response.data is Map && response.data['exists'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> checkPhoneExists(String phone) async {
+    try {
+      final response = await restClient.dio.get(
+        '/users/check-phone',
+        queryParameters: {'phone': phone},
+      );
+      return response.data is Map && response.data['exists'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> checkIdCodeExists(String idCode) async {
+    try {
+      final response = await restClient.dio.get(
+        '/users/check-idcode',
+        queryParameters: {'idCode': idCode},
+      );
+      return response.data is Map && response.data['exists'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void clearFirstNameError() => firstNameError.value = null;
+  void clearLastNameError() => lastNameError.value = null;
+  void clearEmailError() => emailError.value = null;
+  void clearPhoneError() => phoneError.value = null;
+  void clearIdCodeError() => idCodeError.value = null;
+  void clearPasswordError() => passwordError.value = null;
+  void clearConfirmPasswordError() => confirmPasswordError.value = null;
+
   @override
-  void dispose() {
+  void onClose() {
     firstNameController.dispose();
     lastNameController.dispose();
     emailController.dispose();
@@ -192,6 +349,11 @@ class SignUpController extends BaseController {
     passwordController.dispose();
     confirmPasswordController.dispose();
     idCodeController.dispose();
-    super.dispose();
+
+    emailWorker?.dispose();
+    phoneWorker?.dispose();
+    idCodeWorker?.dispose();
+
+    super.onClose();
   }
 }

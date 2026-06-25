@@ -336,7 +336,7 @@ Future<Uint8List> generateInspectionReportPdf({
   required List<RoomInspection> rooms,
   String? tenantPhone,
   String? landlordPhone,
-  bool showPhone = true,
+  bool showPhone = true, required String agreementDate,
 }) async {
   final pdf = pw.Document();
   final Map<String, Uint8List> loadedImages = {};

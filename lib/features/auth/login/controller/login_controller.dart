@@ -8,6 +8,7 @@ class LoginController extends BaseController {
   final obscurePassword = true.obs;
   final emailError = RxnString();
   final passwordError = RxnString();
+  Rx<RxStatus> loginStatus = RxStatus.empty().obs;
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -21,23 +22,23 @@ class LoginController extends BaseController {
     passwordError.value = null;
 
     final emailInput = emailController.text.trim();
-    final password = passwordController.text;
+    final password = passwordController.text.trim();
 
     bool isValid = true;
 
     if (emailInput.isEmpty) {
-      emailError.value = 'Email is required.';
+      emailError.value = 'Email is required';
       isValid = false;
     } else if (!GetUtils.isEmail(emailInput)) {
-      emailError.value = 'Please enter a valid email address.';
+      emailError.value = 'Enter valid email';
       isValid = false;
     }
 
     if (password.isEmpty) {
-      passwordError.value = 'Password is required.';
+      passwordError.value = 'Password is required';
       isValid = false;
     } else if (password.length < 6) {
-      passwordError.value = 'Password must be at least 6 characters.';
+      passwordError.value = 'Password must be at least 6 characters';
       isValid = false;
     }
 
@@ -45,46 +46,76 @@ class LoginController extends BaseController {
   }
 
   Future<String?> login() async {
-    final emailInput = emailController.text.trim();
-    final password = passwordController.text;
+    emailError.value = null;
+    passwordError.value = null;
 
-    if (emailInput.isEmpty || password.isEmpty) {
-      return "Email and password are required";
+    final emailInput = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (!validateInputs()) {
+      return 'Please fix the errors and try again.';
     }
+
     isLoading.value = true;
-    
+    loginStatus.value = RxStatus.loading();
+
     try {
-      final request = LoginRequest(email: emailInput, password: password);
-      final response = await restClient.dio.post('/users/login', data: request.toJson());
-      
-      if (response.statusCode == 200) {
+      final request = LoginRequest(
+        email: emailInput,
+        password: password,
+      );
+
+      final response = await restClient.dio.post(
+        '/users/login',
+        data: request.toJson(),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
         final loginRes = LoginResponse.fromJson(response.data);
-        if (loginRes.token != null) {
+
+        if (loginRes.token != null && loginRes.token!.isNotEmpty) {
           BaseController.email.value = (loginRes.email ?? emailInput).trim();
-          BaseController.name.value = '${loginRes.firstName ?? ''} ${loginRes.lastName ?? ''}'.trim();
+
+          BaseController.name.value =
+              '${loginRes.firstName ?? ''} ${loginRes.lastName ?? ''}'.trim();
+
           BaseController.phone.value = loginRes.phone ?? '';
           BaseController.idCode.value = loginRes.idCode ?? '';
-          isLoading.value = false;
+
+          loginStatus.value = RxStatus.success();
           return null;
         }
+
+        loginStatus.value = RxStatus.error();
+
+        return loginRes.error ?? 'Login failed. Please try again.';
       }
+
+      loginStatus.value = RxStatus.error();
+      return 'Login failed. Please try again.';
     } on DioException catch (dioError) {
-      isLoading.value = false;
-      if (dioError.response != null && dioError.response?.data != null) {
-        final data = dioError.response?.data;
-        if (data is Map && data.containsKey('message')) {
-          return data['message'].toString();
-        }
+      loginStatus.value = RxStatus.error();
+
+      final data = dioError.response?.data;
+
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
       }
-      return "Incorrect credentials. Please try again.";
+
+      if (data is Map && data['error'] != null) {
+        return data['error'].toString();
+      }
+
+      return 'Incorrect credentials. Please try again.';
     } catch (e) {
+      loginStatus.value = RxStatus.error();
+      return 'Connection error. Please try again.';
+    } finally {
       isLoading.value = false;
-      return "Connection error. Please try again.";
     }
-    
-    isLoading.value = false;
-    return "Login failed. Please try again.";
   }
+
+
 
   Future<Map<String, dynamic>> sendOtp(String emailInput) async {
     if (emailInput.trim().isEmpty) {
@@ -165,11 +196,17 @@ class LoginController extends BaseController {
     isLoading.value = false;
     return 'Reset failed. Please try again.';
   }
+  void clearLoginFields() {
+    emailController.clear();
+    passwordController.clear();
 
+    emailError.value = null;
+    passwordError.value = null;
+    obscurePassword.value = true;
+  }
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
-    super.dispose();
   }
 }

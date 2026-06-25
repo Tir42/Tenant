@@ -79,14 +79,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     // Trigger navigation after loading finishes + small visual pause
     _progressController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            Get.off(
-              () => const LoginScreen(),
-              transition: Transition.fade,
-              duration: const Duration(milliseconds: 800),
-            );
-          }
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (!mounted) return;
+
+          Get.offAll(
+                () => const LoginScreen(),
+            transition: Transition.fade,
+            duration: const Duration(milliseconds: 300),
+          );
         });
       }
     });

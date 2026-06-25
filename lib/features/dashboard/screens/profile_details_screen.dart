@@ -203,7 +203,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     );
 
                     // Redirect to Login Screen
-                    Get.offAll(
+                    Get.to(
                       () => const LoginScreen(),
                       transition: Transition.fade,
                       duration: const Duration(milliseconds: 600),
