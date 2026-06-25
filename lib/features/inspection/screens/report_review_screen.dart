@@ -51,11 +51,9 @@ class ReportReviewScreen extends StatelessWidget {
     final String activeIdCode = idCode ?? controller.idCode.value;
 
     final List<RoomInspection> sourceRooms =
-        allRooms ?? controller.roomsList.toList();
+        allRooms ?? (singleRoom != null ? [singleRoom!] : controller.roomsList.toList());
 
-    final List<RoomInspection> activeRooms = sourceRooms
-        .where((room) => room.checklist.any((item) => item.photos.isNotEmpty))
-        .toList();
+    final List<RoomInspection> activeRooms = sourceRooms;
 
     return Scaffold(
       body: Container(
@@ -906,13 +904,7 @@ class ReportReviewScreen extends StatelessWidget {
                   );
 
                   try {
-                    final List<RoomInspection> pdfRooms = allRooms
-                        .where(
-                          (room) => room.checklist.any(
-                            (item) => item.photos.isNotEmpty,
-                      ),
-                    )
-                        .toList();
+                    final List<RoomInspection> pdfRooms = allRooms;
 
                     final pdfBytes = await generateInspectionReportPdf(
                       idCode: idCode,

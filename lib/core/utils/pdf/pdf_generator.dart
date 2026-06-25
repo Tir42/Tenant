@@ -49,9 +49,7 @@ pw.Widget _sectionTitle(String title) {
     width: double.infinity,
     margin: const pw.EdgeInsets.only(top: 18, bottom: 10),
     padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-    decoration: pw.BoxDecoration(
-      color: PdfTheme.dark,
-    ),
+    decoration: pw.BoxDecoration(color: PdfTheme.dark),
     child: pw.Text(
       title.toUpperCase(),
       style: pw.TextStyle(
@@ -95,6 +93,32 @@ pw.Widget _metadataRow(String label, String value) {
   );
 }
 
+pw.Widget _statusIcon(RoomItemStatus status) {
+  if (status == RoomItemStatus.neutral) {
+    return pw.SizedBox();
+  }
+
+  final bool isGood = status == RoomItemStatus.happy;
+
+  return pw.Container(
+    width: 13,
+    height: 13,
+    alignment: pw.Alignment.center,
+    decoration: pw.BoxDecoration(
+      shape: pw.BoxShape.circle,
+      color: isGood ? PdfTheme.green : PdfTheme.red,
+    ),
+    child: pw.Text(
+      isGood ? ':)' : ':(',
+      style: pw.TextStyle(
+        color: PdfColors.white,
+        fontSize: 5.5,
+        fontWeight: pw.FontWeight.bold,
+      ),
+    ),
+  );
+}
+
 pw.Widget _statusBadge(RoomItemStatus status) {
   return pw.Container(
     padding: const pw.EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -102,13 +126,22 @@ pw.Widget _statusBadge(RoomItemStatus status) {
       color: _statusColor(status),
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
     ),
-    child: pw.Text(
-      _statusText(status),
-      style: pw.TextStyle(
-        color: PdfColors.white,
-        fontSize: 8.5,
-        fontWeight: pw.FontWeight.bold,
-      ),
+    child: pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      children: [
+        if (status != RoomItemStatus.neutral) ...[
+          _statusIcon(status),
+          pw.SizedBox(width: 5),
+        ],
+        pw.Text(
+          _statusText(status),
+          style: pw.TextStyle(
+            color: PdfColors.white,
+            fontSize: 8.5,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ],
     ),
   );
 }
@@ -117,8 +150,8 @@ pw.Widget _imageBlock(Uint8List? bytes) {
   if (bytes != null && bytes.isNotEmpty) {
     try {
       return pw.Container(
-        width: 240,
-        height: 170,
+        width: double.infinity,
+        height: 210,
         decoration: pw.BoxDecoration(
           border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
         ),
@@ -133,8 +166,8 @@ pw.Widget _imageBlock(Uint8List? bytes) {
   }
 
   return pw.Container(
-    width: 240,
-    height: 170,
+    width: double.infinity,
+    height: 210,
     alignment: pw.Alignment.center,
     decoration: pw.BoxDecoration(
       color: PdfTheme.bgGrey,
@@ -150,79 +183,95 @@ pw.Widget _imageBlock(Uint8List? bytes) {
   );
 }
 
+pw.Widget _detailsWidget(InspectionItem item) {
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+      pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Expanded(
+            child: pw.Text(
+              item.name,
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfTheme.black,
+              ),
+            ),
+          ),
+          pw.SizedBox(width: 10),
+          _statusBadge(item.status),
+        ],
+      ),
+
+      pw.SizedBox(height: 12),
+
+      pw.Text(
+        'Observation',
+        style: pw.TextStyle(
+          fontSize: 9,
+          color: PdfTheme.grey,
+          fontWeight: pw.FontWeight.bold,
+        ),
+      ),
+
+      pw.SizedBox(height: 4),
+
+      pw.Text(
+        _defaultComment(item),
+        style: pw.TextStyle(
+          fontSize: 10.5,
+          color: PdfTheme.black,
+          lineSpacing: 2,
+        ),
+      ),
+
+      pw.SizedBox(height: 10),
+
+      pw.Text(
+        'Photos Attached: ${item.photos.length}',
+        style: pw.TextStyle(
+          fontSize: 9.5,
+          color: PdfTheme.grey,
+          fontWeight: pw.FontWeight.bold,
+        ),
+      ),
+    ],
+  );
+}
+
 pw.Widget _featureBlock({
   required InspectionItem item,
   required Map<String, Uint8List> loadedImages,
 }) {
+  final Uint8List? firstImage =
+  item.photos.isNotEmpty ? loadedImages[item.photos.first] : null;
+
   return pw.Container(
-    margin: const pw.EdgeInsets.only(bottom: 16),
+    margin: const pw.EdgeInsets.only(bottom: 14),
     padding: const pw.EdgeInsets.all(12),
     decoration: pw.BoxDecoration(
       border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
       color: PdfColors.white,
     ),
-    child: pw.Column(
+    child: firstImage != null
+        ? pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Expanded(
-              child: pw.Text(
-                item.name,
-                style: pw.TextStyle(
-                  fontSize: 13,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfTheme.black,
-                ),
-              ),
-            ),
-            _statusBadge(item.status),
-          ],
+        pw.Expanded(
+          flex: 5,
+          child: _imageBlock(firstImage),
         ),
-
-        pw.SizedBox(height: 8),
-
-        pw.Text(
-          'Observation',
-          style: pw.TextStyle(
-            fontSize: 9,
-            color: PdfTheme.grey,
-            fontWeight: pw.FontWeight.bold,
-          ),
+        pw.SizedBox(width: 14),
+        pw.Expanded(
+          flex: 5,
+          child: _detailsWidget(item),
         ),
-        pw.SizedBox(height: 3),
-        pw.Text(
-          _defaultComment(item),
-          style: pw.TextStyle(
-            fontSize: 10.5,
-            color: PdfTheme.black,
-            lineSpacing: 2,
-          ),
-        ),
-
-        if (item.photos.isNotEmpty) ...[
-          pw.SizedBox(height: 12),
-          pw.Text(
-            'Photo Evidence',
-            style: pw.TextStyle(
-              fontSize: 9,
-              color: PdfTheme.grey,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 6),
-          pw.Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: item.photos.map((photoPath) {
-              return _imageBlock(loadedImages[photoPath]);
-            }).toList(),
-          ),
-        ],
       ],
-    ),
+    )
+        : _detailsWidget(item),
   );
 }
 
@@ -290,16 +339,19 @@ Future<Uint8List> generateInspectionReportPdf({
   bool showPhone = true,
 }) async {
   final pdf = pw.Document();
-
   final Map<String, Uint8List> loadedImages = {};
 
   for (final room in rooms) {
     for (final item in room.checklist) {
       for (final photoPath in item.photos) {
         if (photoPath.isNotEmpty && !loadedImages.containsKey(photoPath)) {
-          final bytes = await fetchImageBytes(photoPath);
-          if (bytes.isNotEmpty) {
-            loadedImages[photoPath] = bytes;
+          try {
+            final bytes = await fetchImageBytes(photoPath);
+            if (bytes.isNotEmpty) {
+              loadedImages[photoPath] = bytes;
+            }
+          } catch (e) {
+            debugPrint('Image load failed: $photoPath $e');
           }
         }
       }
@@ -428,7 +480,7 @@ Future<Uint8List> generateInspectionReportPdf({
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                _metadataRow('Report ID', idCode),
+                _metadataRow('ID Code', idCode),
                 _metadataRow(
                   'Tenant Name',
                   showPhone && tenantPhone != null && tenantPhone.isNotEmpty
@@ -533,11 +585,9 @@ Future<Uint8List> generateInspectionReportPdf({
 
           for (final item in room.checklist) {
             content.add(
-              pw.Inseparable(
-                child: _featureBlock(
-                  item: item,
-                  loadedImages: loadedImages,
-                ),
+              _featureBlock(
+                item: item,
+                loadedImages: loadedImages,
               ),
             );
           }

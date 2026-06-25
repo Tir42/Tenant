@@ -4,7 +4,7 @@ import '../models/inspection_model.dart';
 
 class InspectionController extends GetxController {
   // Property Details Metadata
-  final idCode = 'TS-402-URBL'.obs;
+  final idCode = ''.obs;
   final tenantName = 'Liam Carter'.obs;
   final tenantPhone = '+1 (555) 012-3456'.obs;
   final landlordName = 'Victoria Sterling'.obs;
