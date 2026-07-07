@@ -39,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _startCarouselTimer();
   }
 
+
   void _startCarouselTimer() {
     _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (_carouselController.hasClients) {
