@@ -254,6 +254,13 @@ class SignUpController extends BaseController {
       final response = await restClient.dio.post(
         '/users/register',
         data: request.toJson(),
+        options: Options(
+          responseType: ResponseType.json,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
       );
 
       if ((response.statusCode == 200 || response.statusCode == 201) &&

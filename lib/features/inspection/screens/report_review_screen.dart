@@ -131,6 +131,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     final String activePropertyAddress =
         widget.propertyAddress ?? controller.propertyAddress.value;
 
+    final String cleanedPropertyAddress = activePropertyAddress
+        .replaceAll(RegExp(r'(,\s*)+'), ', ')
+        .trim();
+
     final String activeInspectionDate = controller.possessionDate.value;
     final String activeAgreementDate =
         controller.agreementDate.value;
@@ -215,7 +219,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                           idCode: activeIdCode,
                           tenantName: activeTenantName,
                           landlordName: activeLandlordName,
-                          propertyAddress: activePropertyAddress,
+                          propertyAddress: cleanedPropertyAddress,
                           inspectionDate: activeInspectionDate,
                             agreementDate: activeAgreementDate
                         ),
@@ -414,17 +418,6 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
   }
 
   Widget _buildInnerCommentedItem(BuildContext context, InspectionItem item) {
-    IconData statusIcon = Icons.sentiment_satisfied_alt;
-    Color statusColor = const Color(0xFF2ECC71);
-
-    if (item.status == RoomItemStatus.sad) {
-      statusIcon = Icons.sentiment_very_dissatisfied;
-      statusColor = const Color(0xFFE74C3C);
-    } else if (item.status == RoomItemStatus.neutral) {
-      statusIcon = Icons.remove;
-      statusColor = const Color(0xFF7F8C8D);
-    }
-
     final String commentText = item.comment.isNotEmpty
         ? item.comment
         : item.status == RoomItemStatus.happy
@@ -434,46 +427,6 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         : 'Standard condition; no major issues observed.';
 
     final bool hasPhotos = item.photos.isNotEmpty;
-    String imgUrl = '';
-    Widget? imageWidget;
-
-    if (hasPhotos) {
-      imgUrl = item.photos.first;
-
-      final bool isRealFile = !imgUrl.startsWith('assets/') &&
-          !imgUrl.startsWith('http') &&
-          !imgUrl.startsWith('blob:');
-
-      if (isRealFile) {
-        imageWidget = Image.file(
-          File(imgUrl),
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Center(
-              child: Icon(
-                Icons.image_outlined,
-                color: const Color(0xFF7F8C8D),
-                size: 16.w,
-              ),
-            );
-          },
-        );
-      } else {
-        imageWidget = Image.network(
-          imgUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Center(
-              child: Icon(
-                Icons.image_outlined,
-                color: const Color(0xFF7F8C8D),
-                size: 16.w,
-              ),
-            );
-          },
-        );
-      }
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,67 +440,87 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
             fontSize: 14.0.sp,
           ),
         ),
-        SizedBox(height: 10.0.h),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hasPhotos && imageWidget != null) ...[
-              GestureDetector(
-                onTap: () {
-                  _showPhotoPreviewDialog(context, imgUrl);
-                },
-                child: Container(
-                  width: 58.w,
-                  height: 48.h,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0.w),
-                    color: const Color(0xFFEEF2F6),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0.w),
-                    child: imageWidget,
-                  ),
-                ),
-              ),
-              SizedBox(width: 10.0.w),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+        if (hasPhotos) ...[
+          SizedBox(height: 10.0.h),
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: item.photos.map((photoPath) {
+              final bool isRealFile = !photoPath.startsWith('assets/') &&
+                  !photoPath.startsWith('http') &&
+                  !photoPath.startsWith('blob:');
+
+              final Widget imageWidget = isRealFile
+                  ? Image.file(
+                File(photoPath),
+                fit: BoxFit.cover,
+              )
+                  : Image.network(
+                photoPath,
+                fit: BoxFit.cover,
+              );
+
+              return Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 20.w,
-                        height: 20.h,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEEF2F6),
+                  GestureDetector(
+                    onTap: () => _showPhotoPreviewDialog(context, photoPath),
+                    child: Container(
+                      width: 75.w,
+                      height: 65.h,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10.0.w),
+                        color: const Color(0xFFEEF2F6),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10.0.w),
+                        child: imageWidget,
+                      ),
+                    ),
+                  ),
+
+                  Positioned(
+                    top: -6,
+                    right: -6,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          item.photos.remove(photoPath);
+                        });
+                      },
+                      child: Container(
+                        width: 22.w,
+                        height: 22.h,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
                           shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
                         ),
                         child: Icon(
-                          statusIcon,
-                          color: statusColor,
+                          Icons.close,
+                          color: Colors.white,
                           size: 14.w,
                         ),
                       ),
-                      SizedBox(width: 8.0.w),
-                      Expanded(
-                        child: Text(
-                          commentText,
-                          style: TextStyle(
-                            color: const Color(0xFF7F8C8D),
-                            fontFamily: 'Montserrat',
-                            fontSize: 11.0.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
-              ),
-            ),
-          ],
+              );
+            }).toList(),
+          ),
+        ],
+
+        SizedBox(height: 10.0.h),
+
+        Text(
+          commentText,
+          style: TextStyle(
+            color: const Color(0xFF7F8C8D),
+            fontFamily: 'Montserrat',
+            fontSize: 11.0.sp,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

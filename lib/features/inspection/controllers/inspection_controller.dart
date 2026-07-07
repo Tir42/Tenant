@@ -5,18 +5,18 @@ import '../models/inspection_model.dart';
 class InspectionController extends GetxController {
   // Property Details Metadata
   final idCode = ''.obs;
-  final tenantName = 'Liam Carter'.obs;
-  final tenantPhone = '+1 (555) 012-3456'.obs;
-  final landlordName = 'Victoria Sterling'.obs;
-  final landlordPhone = '+1 (555) 019-2834'.obs;
-  final propertyAddress = 'Unit 402 – Urban Loft, 1180 Folsom St'.obs;
-  final city = 'San Francisco'.obs;
-  final state = 'CA'.obs;
-  final zipcode = '94103'.obs;
-  final country = 'USA'.obs;
-  final possessionDate = '06/20/2026'.obs;
-  final agreementDate = '06/15/2026'.obs;
-  final inspectionType = 'Move-In'.obs;
+  final tenantName = ''.obs;
+  final tenantPhone = ''.obs;
+  final landlordName = ''.obs;
+  final landlordPhone = ''.obs;
+  final propertyAddress = ''.obs;
+  final city = ''.obs;
+  final state = ''.obs;
+  final zipcode = ''.obs;
+  final country = ''.obs;
+  final possessionDate = ''.obs;
+  final agreementDate = ''.obs;
+  final inspectionType = ''.obs;
   final showPhoneInPdf = true.obs;
 
 

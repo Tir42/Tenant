@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/auth/login/model/login_model.dart';
 
@@ -81,6 +82,16 @@ class LoginController extends BaseController {
 
           BaseController.phone.value = loginRes.phone ?? '';
           BaseController.idCode.value = loginRes.idCode ?? '';
+
+          final box = GetStorage();
+
+          box.write('isLoggedIn', true);
+          box.write('loginTime', DateTime.now().millisecondsSinceEpoch);
+          box.write('role', 'tenant');
+          box.write('userName', BaseController.name.value);
+          box.write('email', BaseController.email.value);
+          box.write('phone', BaseController.phone.value);
+          box.write('idCode', BaseController.idCode.value);
 
           loginStatus.value = RxStatus.success();
           return null;

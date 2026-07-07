@@ -10,7 +10,7 @@ class RestClient extends GetxService {
     _dio = Dio(
       BaseOptions(
         //baseUrl: 'http://192.168.1.8:5000/api',
-        baseUrl: 'http://tenant-apis.vercel.app/api',
+        baseUrl: 'https://tenant-apis.vercel.app/api',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         sendTimeout: const Duration(seconds: 10),

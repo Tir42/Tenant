@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
+
+import '../../../dashboard/screens/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -81,6 +84,30 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 300), () {
           if (!mounted) return;
+
+          final box = GetStorage();
+
+          final bool isLoggedIn = box.read('isLoggedIn') ?? false;
+          final int? loginTime = box.read('loginTime');
+
+          if (isLoggedIn && loginTime != null) {
+            final loginDate = DateTime.fromMillisecondsSinceEpoch(loginTime);
+            final days = DateTime.now().difference(loginDate).inDays;
+
+            if (days < 7) {
+              Get.offAll(
+                    () => HomeScreen(
+                  role: box.read('role') ?? 'tenant',
+                  userName: box.read('userName') ?? '',
+                ),
+                transition: Transition.fade,
+                duration: const Duration(milliseconds: 300),
+              );
+              return;
+            } else {
+              box.erase();
+            }
+          }
 
           Get.offAll(
                 () => const LoginScreen(),

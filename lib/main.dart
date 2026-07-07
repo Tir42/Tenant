@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/features/auth/login/screen/splash_screen.dart';
 import 'package:tenantsnap/core/services/rest_client.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+  await GetStorage.init();
+
+
   // Initialize GetX controllers
   Get.put(RestClient());
   Get.put(InspectionController());
