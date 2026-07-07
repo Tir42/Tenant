@@ -347,6 +347,18 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       ),
                       SizedBox(height: 18.0.h),
 
+                      Obx(() => _buildDropdownField(
+                        label: 'INSPECTION TYPE',
+                        value: _detailsController.inspectionType.value,
+                        items: const ['Move-In', 'Move-Out'],
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            _detailsController.inspectionType.value = newValue;
+                          }
+                        },
+                      )),
+                      SizedBox(height: 18.0.h),
+
                       Obx(() => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
