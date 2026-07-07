@@ -589,6 +589,54 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       },
       onSadTap: () {
         controller.updateItemStatus(widget.roomId, item.name, RoomItemStatus.sad);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            duration: const Duration(seconds: 4),
+            elevation: 8,
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            content: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: const Color(0xFF007BFF),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Add a repair photo for "${item.name}" to keep strong evidence.',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            action: SnackBarAction(
+              label: 'ADD',
+              textColor: const Color(0xFF007BFF),
+              onPressed: () {
+                _showImageSourcePicker(targetItem: item);
+              },
+            ),
+          ),
+        );
       },
       onNeutralTap: () {
         if (controller.roomsList.firstWhere((r) => r.id == widget.roomId).name.toLowerCase() == 'utils') {

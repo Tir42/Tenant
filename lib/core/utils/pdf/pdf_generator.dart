@@ -333,6 +333,8 @@ Future<Uint8List> generateInspectionReportPdf({
   required String landlordName,
   required String propertyAddress,
   required String inspectionDate,
+  required String inspectionType,
+  required String reportGeneratedOn,
   required List<RoomInspection> rooms,
   String? tenantPhone,
   String? landlordPhone,
@@ -340,6 +342,13 @@ Future<Uint8List> generateInspectionReportPdf({
 }) async {
   final pdf = pw.Document();
   final Map<String, Uint8List> loadedImages = {};
+  Uint8List? logoBytes;
+
+  try {
+    logoBytes = await fetchImageBytes('assets/app_icon.png');
+  } catch (e) {
+    debugPrint('Logo load failed: $e');
+  }
 
   for (final room in rooms) {
     for (final item in room.checklist) {
@@ -435,6 +444,14 @@ Future<Uint8List> generateInspectionReportPdf({
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
+                if (logoBytes != null) ...[
+                  pw.Image(
+                    pw.MemoryImage(logoBytes),
+                    width: 70,
+                    height: 70,
+                  ),
+                  pw.SizedBox(height: 8),
+                ],
                 pw.Text(
                   'TENANTSNAP',
                   style: pw.TextStyle(
@@ -494,7 +511,9 @@ Future<Uint8List> generateInspectionReportPdf({
                       : landlordName,
                 ),
                 _metadataRow('Property Address', propertyAddress),
+                _metadataRow('Inspection Type', inspectionType),
                 _metadataRow('Inspection Date', inspectionDate),
+                _metadataRow('Report Generated On', reportGeneratedOn),
               ],
             ),
           ),

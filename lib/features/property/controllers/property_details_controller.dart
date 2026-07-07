@@ -6,6 +6,7 @@ import 'package:tenantsnap/features/inspection/controllers/inspection_controller
 class PropertyDetailsController extends BaseController {
   final selectedRole = 'tenant'.obs;
   final showPhoneInPdf = true.obs;
+  final inspectionType = 'Move-In'.obs;
 
   late final TextEditingController idCodeController;
   late final TextEditingController tenantController;
@@ -19,6 +20,7 @@ class PropertyDetailsController extends BaseController {
   late final TextEditingController stateController;
   late final TextEditingController zipController;
   late final TextEditingController countryController;
+
 
   final InspectionController _inspectionController = Get.find<InspectionController>();
 
@@ -69,6 +71,8 @@ class PropertyDetailsController extends BaseController {
     countryController = TextEditingController(text: _inspectionController.country.value);
     possessionDateController = TextEditingController(text: _inspectionController.possessionDate.value);
     leaseDateController = TextEditingController(text: _inspectionController.agreementDate.value);
+
+
 
     if (initialUserName != null && initialUserName.isNotEmpty) {
       if (selectedRole.value == 'tenant') {
@@ -242,6 +246,7 @@ class PropertyDetailsController extends BaseController {
       tenantPh: tenantPhoneVal,
       landlordPh: landlordPhoneVal,
       showPhone: showPhoneInPdf.value,
+      inspectionType: inspectionType.value,
     );
 
     // POST property registration details to backend REST API

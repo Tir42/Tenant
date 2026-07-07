@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-
+import 'package:file_picker/file_picker.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart' as syncfusion_pdf;
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/download_helper/download_helper.dart';
 import 'package:tenantsnap/core/utils/pdf/pdf_generator.dart';
@@ -15,7 +17,9 @@ import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import '../../../core/controllers/base_controller.dart';
 import '../../dashboard/screens/home_screen.dart';
 
-class ReportReviewScreen extends StatelessWidget {
+
+
+class ReportReviewScreen extends StatefulWidget {
   final RoomInspection? singleRoom;
   final List<RoomInspection>? allRooms;
   final String? roomName;
@@ -25,6 +29,7 @@ class ReportReviewScreen extends StatelessWidget {
   final String? inspectionDate;
   final String? idCode;
   final String? agreementDate;
+
 
   const ReportReviewScreen({
     super.key,
@@ -40,24 +45,100 @@ class ReportReviewScreen extends StatelessWidget {
   });
 
   @override
+  State<ReportReviewScreen> createState() => _ReportReviewScreenState();
+}
+class _ReportReviewScreenState extends State<ReportReviewScreen> {
+  File? selectedLeasePdf;
+
+  Future<void> _pickLeasePdf() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        selectedLeasePdf = File(result.files.single.path!);
+      });
+
+      Get.snackbar(
+        'Lease Added',
+        'Lease agreement PDF will be attached to the final report.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF2ECC71),
+        colorText: Colors.white,
+      );
+    }
+  }
+  Future<Uint8List> _appendLeasePdf({
+    required Uint8List reportPdfBytes,
+    required File leasePdfFile,
+  }) async {
+    final syncfusion_pdf.PdfDocument reportDocument =
+    syncfusion_pdf.PdfDocument(inputBytes: reportPdfBytes);
+
+    final syncfusion_pdf.PdfDocument leaseDocument =
+    syncfusion_pdf.PdfDocument(inputBytes: await leasePdfFile.readAsBytes());
+
+    final syncfusion_pdf.PdfDocument finalDocument =
+    syncfusion_pdf.PdfDocument();
+
+    for (int i = 0; i < reportDocument.pages.count; i++) {
+      final template = reportDocument.pages[i].createTemplate();
+      final page = finalDocument.pages.add();
+      page.graphics.drawPdfTemplate(template, Offset.zero);
+    }
+
+    for (int i = 0; i < leaseDocument.pages.count; i++) {
+      final template = leaseDocument.pages[i].createTemplate();
+      final page = finalDocument.pages.add();
+      page.graphics.drawPdfTemplate(template, Offset.zero);
+    }
+
+    final bytes = await finalDocument.save();
+
+    reportDocument.dispose();
+    leaseDocument.dispose();
+    finalDocument.dispose();
+
+    return Uint8List.fromList(bytes);
+  }
+  Future<Uint8List> _lockPdf(Uint8List pdfBytes) async {
+    final document = syncfusion_pdf.PdfDocument(inputBytes: pdfBytes);
+
+    document.security.userPassword = '';
+    document.security.ownerPassword = 'TenantSnapOwner@2026';
+
+    document.security.permissions.clear();
+    document.security.permissions.addAll([
+      syncfusion_pdf.PdfPermissionsFlags.print,
+    ]);
+
+    final lockedBytes = await document.save();
+    document.dispose();
+
+    return Uint8List.fromList(lockedBytes);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
     final controller = Get.find<InspectionController>();
 
-    final String activeTenantName = tenantName ?? controller.tenantName.value;
+    final String activeTenantName = widget.tenantName ?? controller.tenantName.value;
     final String activeLandlordName =
-        landlordName ?? controller.landlordName.value;
+        widget.landlordName ?? controller.landlordName.value;
     final String activePropertyAddress =
-        propertyAddress ?? controller.propertyAddress.value;
+        widget.propertyAddress ?? controller.propertyAddress.value;
 
     final String activeInspectionDate = controller.possessionDate.value;
     final String activeAgreementDate =
         controller.agreementDate.value;
 
-    final String activeIdCode = idCode ?? controller.idCode.value;
+    final String activeIdCode =  widget.idCode ?? controller.idCode.value;
 
     final List<RoomInspection> sourceRooms =
-        allRooms ?? (singleRoom != null ? [singleRoom!] : controller.roomsList.toList());
+        widget.allRooms ?? ( widget.singleRoom != null ? [ widget.singleRoom!] : controller.roomsList.toList());
 
     final List<RoomInspection> activeRooms = sourceRooms;
 
@@ -799,6 +880,7 @@ class ReportReviewScreen extends StatelessWidget {
     final controller = Get.find<InspectionController>();
     final isDownloading = false.obs;
     final isUploading = false.obs;
+    final isDisclaimerAccepted = false.obs;
 
     showDialog(
       context: context,
@@ -871,6 +953,36 @@ class ReportReviewScreen extends StatelessWidget {
                       SizedBox(height: 10.0.h),
                       const Divider(),
                       Text('Rooms with evidence: ${previewRooms.length}'),
+                      SizedBox(height: 10.0.h),
+                      OutlinedButton.icon(
+                        onPressed: _pickLeasePdf,
+                        icon: const Icon(Icons.picture_as_pdf_rounded),
+                        label: Text(
+                          selectedLeasePdf == null
+                              ? 'Attach Lease Agreement PDF'
+                              : 'Lease PDF Attached',
+                        ),
+                      ),
+                      SizedBox(height: 12.0.h),
+                      Obx(
+                            () => CheckboxListTile(
+                          value: isDisclaimerAccepted.value,
+                          onChanged: (value) {
+                            isDisclaimerAccepted.value = value ?? false;
+                          },
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'I acknowledge that this report is generated automatically based on the information I provided, and TenantSnap is not responsible for any legal or security deposit disputes.',
+                            style: TextStyle(
+                              color: const Color(0xFF2C3E50),
+                              fontFamily: 'Montserrat',
+                              fontSize: 10.5.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -880,7 +992,7 @@ class ReportReviewScreen extends StatelessWidget {
           actions: [
             Obx(
                   () => TextButton(
-                onPressed: (isDownloading.value || isUploading.value)
+                    onPressed: (isDownloading.value || isUploading.value)
                     ? null
                     : () => Navigator.pop(dialogContext),
                 child: Text(
@@ -897,8 +1009,9 @@ class ReportReviewScreen extends StatelessWidget {
 
             Obx(
                   () => ElevatedButton.icon(
-                onPressed: (isDownloading.value || isUploading.value)
-                    ? null
+                    //onz (isDownloading.value || isUploading.value )
+        onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
+                      ? null
                     : () async {
                   isDownloading.value = true;
 
@@ -909,6 +1022,9 @@ class ReportReviewScreen extends StatelessWidget {
                       landlordName: landlordName,
                       propertyAddress: propertyAddress,
                       inspectionDate: inspectionDate,
+                      inspectionType: controller.inspectionType.value,
+                      reportGeneratedOn:
+                      '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
                       rooms: allRooms,
                       tenantPhone: controller.tenantPhone.value,
                       landlordPhone: controller.landlordPhone.value,
@@ -916,8 +1032,18 @@ class ReportReviewScreen extends StatelessWidget {
                         agreementDate: controller.agreementDate.value,
                     );
 
+                    Uint8List finalPdfBytes = pdfBytes;
+
+                    if (selectedLeasePdf != null) {
+                      finalPdfBytes = await _appendLeasePdf(
+                        reportPdfBytes: pdfBytes,
+                        leasePdfFile: selectedLeasePdf!,
+                      );
+                    }
+                    finalPdfBytes = await _lockPdf(finalPdfBytes);
+
                     final savedPath = await DownloadHelper.downloadPdf(
-                      bytes: pdfBytes,
+                      bytes: finalPdfBytes,
                       fileName:
                       'TenantSnap_Inspection_Report_${idCode.isNotEmpty ? idCode : DateTime.now().millisecondsSinceEpoch}.pdf',
                     );
@@ -992,7 +1118,8 @@ class ReportReviewScreen extends StatelessWidget {
 
             Obx(
                   () => ElevatedButton(
-                onPressed: (isDownloading.value || isUploading.value)
+                    //onPressed: (isDownloading.value || isUploading.value )
+        onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
                     ? null
                     : () async {
                   isUploading.value = true;
@@ -1035,7 +1162,7 @@ class ReportReviewScreen extends StatelessWidget {
                   ),
                 )
                     : Text(
-                  'Share & Send',
+                  'Email PDF',
                   style: TextStyle(
                     color: Colors.white,
                     fontFamily: 'Montserrat',
@@ -1070,6 +1197,9 @@ class ReportReviewScreen extends StatelessWidget {
         landlordName: landlordName,
         propertyAddress: propertyAddress,
         inspectionDate: inspectionDate,
+        inspectionType: controller.inspectionType.value,
+        reportGeneratedOn:
+        '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
         agreementDate: controller.agreementDate.value,
         rooms: allRooms,
         tenantPhone: controller.tenantPhone.value,
@@ -1077,18 +1207,34 @@ class ReportReviewScreen extends StatelessWidget {
         showPhone: controller.showPhoneInPdf.value,
       );
 
+      Uint8List finalPdfBytes = pdfBytes;
+
+      if (selectedLeasePdf != null) {
+        finalPdfBytes = await _appendLeasePdf(
+          reportPdfBytes: pdfBytes,
+          leasePdfFile: selectedLeasePdf!,
+        );
+      }
+      finalPdfBytes = await _lockPdf(finalPdfBytes);
+
       final dir = await getTemporaryDirectory();
 
       final file = File(
         '${dir.path}/TenantSnap_Inspection_Report_${idCode.isNotEmpty ? idCode : DateTime.now().millisecondsSinceEpoch}.pdf',
       );
 
-      await file.writeAsBytes(pdfBytes);
+      await file.writeAsBytes(finalPdfBytes);
 
       await Share.shareXFiles(
         [XFile(file.path)],
-        subject: 'TenantSnap Inspection Report',
-        text: 'Please find attached the TenantSnap property inspection report.',
+        subject: 'TenantSnap Inspection Report - $propertyAddress',
+        text:
+        'Hello,\n\nPlease find attached the TenantSnap property inspection report.\n\n'
+            'Tenant: $tenantName\n'
+            'Landlord: $landlordName\n'
+            'Property: $propertyAddress\n'
+            'Inspection Date: $inspectionDate\n\n'
+            'Regards,\nTenantSnap',
       );
     } catch (e) {
       if (context.mounted) {

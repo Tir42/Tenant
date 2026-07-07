@@ -16,7 +16,9 @@ class InspectionController extends GetxController {
   final country = 'USA'.obs;
   final possessionDate = '06/20/2026'.obs;
   final agreementDate = '06/15/2026'.obs;
+  final inspectionType = 'Move-In'.obs;
   final showPhoneInPdf = true.obs;
+
 
   // Active rooms list
   final roomsList = <RoomInspection>[].obs;
@@ -66,6 +68,7 @@ class InspectionController extends GetxController {
     required String countryVal,
     required String possession,
     required String agreement,
+    required String inspectionType,
     String? tenantPh,
     String? landlordPh,
     bool? showPhone,
@@ -83,6 +86,8 @@ class InspectionController extends GetxController {
     if (tenantPh != null) tenantPhone.value = tenantPh;
     if (landlordPh != null) landlordPhone.value = landlordPh;
     if (showPhone != null) showPhoneInPdf.value = showPhone;
+    this.inspectionType.value = inspectionType;
+
   }
 
   // Update a whole room state
