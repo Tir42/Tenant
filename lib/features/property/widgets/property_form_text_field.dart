@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/responsive/responsive_extension.dart';
+
 class PropertyFormTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -24,7 +26,8 @@ class PropertyFormTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children:  [
+        if (label.isNotEmpty) ...[
         Text(
           label,
           style: const TextStyle(
@@ -34,8 +37,11 @@ class PropertyFormTextField extends StatelessWidget {
             fontSize: 11,
             letterSpacing: 1.2,
           ),
+
         ),
-        const SizedBox(height: 8),
+
+          SizedBox(height: 6.0.h),
+        ],
         Container(
           decoration: BoxDecoration(
             color: Colors.white,

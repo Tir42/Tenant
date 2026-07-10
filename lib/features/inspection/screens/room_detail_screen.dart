@@ -25,6 +25,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   late TextEditingController _commentController;
   final ImagePicker _picker = ImagePicker();
 
+  // Keeps track of the currently visible top toast so a new one can
+  // replace it instead of stacking multiple toasts on screen.
+  OverlayEntry? _activeToastEntry;
+
   @override
   void initState() {
     super.initState();
@@ -41,7 +45,134 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   @override
   void dispose() {
     _commentController.dispose();
+    _dismissTopToast();
     super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Top toast overlay (replaces SnackBar)
+  // ---------------------------------------------------------------------------
+
+  void _dismissTopToast() {
+    _activeToastEntry?.remove();
+    _activeToastEntry = null;
+  }
+
+  void _showTopToast(
+      String message, {
+        String? actionLabel,
+        VoidCallback? onAction,
+        Duration duration = const Duration(seconds: 4),
+      }) {
+    // Remove any toast that's already showing so they don't stack.
+    _dismissTopToast();
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+
+    final entry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          top: MediaQuery.of(context).padding.top + 12.0.h,
+          left: 16.0.w,
+          right: 16.0.w,
+          child: Material(
+            color: Colors.transparent,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, (1 - value) * -24),
+                    child: child,
+                  ),
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 14.0.w, vertical: 12.0.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(18.0.w),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 12.0.w,
+                      offset: Offset(0, 4.0.h),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8.0.w),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.camera_alt_rounded,
+                        color: const Color(0xFF007BFF),
+                        size: 20.w,
+                      ),
+                    ),
+                    SizedBox(width: 12.0.w),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12.0.sp,
+                        ),
+                      ),
+                    ),
+                    if (actionLabel != null && onAction != null) ...[
+                      SizedBox(width: 8.0.w),
+                      GestureDetector(
+                        onTap: () {
+                          _dismissTopToast();
+                          onAction();
+                        },
+                        child: Text(
+                          actionLabel,
+                          style: TextStyle(
+                            color: const Color(0xFF007BFF),
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12.0.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                    SizedBox(width: 10.0.w),
+                    GestureDetector(
+                      onTap: _dismissTopToast,
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        size: 18.w,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    _activeToastEntry = entry;
+    overlay.insert(entry);
+
+    Future.delayed(duration, () {
+      if (_activeToastEntry == entry) {
+        _dismissTopToast();
+      }
+    });
   }
 
   Future<void> _pickImage(ImageSource source, {required InspectionItem targetItem}) async {
@@ -57,29 +188,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         controller.addPhotoToItem(widget.roomId, targetItem.name, pickedFile.path);
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF2C3E50),
-            duration: const Duration(seconds: 2),
-            content: Text(
-              'Photo added to ${targetItem.name}!',
-              style: const TextStyle(
-                color: Colors.white,
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        );
+        _showTopToast('Photo added to ${targetItem.name}!');
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error capturing picture: $e'),
-        ),
-      );
+      _showTopToast('Error capturing picture: $e');
     }
   }
 
@@ -534,10 +647,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         decoration: BoxDecoration(
           gradient: isSel
               ? const LinearGradient(
-                  colors: [Color(0xFF007BFF), Color(0xFF0056B3)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
+            colors: [Color(0xFF007BFF), Color(0xFF0056B3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
               : null,
           color: isSel ? null : Colors.white,
           borderRadius: BorderRadius.circular(12.0.w),
@@ -547,12 +660,12 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           ),
           boxShadow: isSel
               ? [
-                  BoxShadow(
-                    color: const Color(0xFF007BFF).withValues(alpha: 0.25),
-                    blurRadius: 6.0.w,
-                    offset: Offset(0, 2.0.h),
-                  ),
-                ]
+            BoxShadow(
+              color: const Color(0xFF007BFF).withValues(alpha: 0.25),
+              blurRadius: 6.0.w,
+              offset: Offset(0, 2.0.h),
+            ),
+          ]
               : [],
         ),
         child: Row(
@@ -590,52 +703,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       onSadTap: () {
         controller.updateItemStatus(widget.roomId, item.name, RoomItemStatus.sad);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            duration: const Duration(seconds: 4),
-            elevation: 8,
-            backgroundColor: const Color(0xFF1E293B),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            content: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt_rounded,
-                    color: const Color(0xFF007BFF),
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Add a repair photo for "${item.name}" to keep strong evidence.',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Montserrat',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            action: SnackBarAction(
-              label: 'ADD',
-              textColor: const Color(0xFF007BFF),
-              onPressed: () {
-                _showImageSourcePicker(targetItem: item);
-              },
-            ),
-          ),
+        // Top toast overlay instead of a SnackBar.
+        _showTopToast(
+          'Add a repair photo for "${item.name}" to keep strong evidence.',
+          actionLabel: 'ADD',
+          onAction: () => _showImageSourcePicker(targetItem: item),
         );
       },
       onNeutralTap: () {
@@ -691,19 +763,19 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                         color: const Color(0xFFF2F4F7),
                         child: isRealFile && File(photoPath).existsSync()
                             ? Image.file(
-                                File(photoPath),
-                                fit: BoxFit.cover,
-                              )
+                          File(photoPath),
+                          fit: BoxFit.cover,
+                        )
                             : Image.network(
-                                photoPath.contains("door")
-                                    ? (photoPath.contains("1")
-                                        ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600"
-                                        : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600")
-                                    : (photoPath.contains("1")
-                                        ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600"
-                                        : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=600"),
-                                fit: BoxFit.cover,
-                              ),
+                          photoPath.contains("door")
+                              ? (photoPath.contains("1")
+                              ? "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600"
+                              : "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=600")
+                              : (photoPath.contains("1")
+                              ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600"
+                              : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=600"),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     GestureDetector(
@@ -783,19 +855,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                                 room.recalculateProgress();
                                 controller.roomsList.refresh();
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Color(0xFF2C3E50),
-                                    content: Text(
-                                      'Photo evidence deleted successfully.',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Montserrat',
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                );
+                                _showTopToast('Photo evidence deleted successfully.');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFE74C3C),
@@ -860,7 +920,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300"
             : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=300";
       }
-      
+
       imageWidget = Image.network(
         imageUrl,
         fit: BoxFit.cover,
@@ -1150,4 +1210,3 @@ class InspectionChecklistRow extends StatelessWidget {
     );
   }
 }
-

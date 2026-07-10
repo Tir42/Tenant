@@ -131,6 +131,11 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     final String activePropertyAddress =
         widget.propertyAddress ?? controller.propertyAddress.value;
 
+    // Bug fix: use this cleaned address everywhere on this screen (header,
+    // preview dialog, PDF generation, email body) instead of the raw
+    // activePropertyAddress, so any accidental duplication of
+    // city/state/zip/country segments upstream doesn't get displayed or
+    // baked into the generated PDF / email text.
     final String cleanedPropertyAddress = activePropertyAddress
         .replaceAll(RegExp(r'(,\s*)+'), ', ')
         .trim();
@@ -144,7 +149,19 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     final List<RoomInspection> sourceRooms =
         widget.allRooms ?? ( widget.singleRoom != null ? [ widget.singleRoom!] : controller.roomsList.toList());
 
-    final List<RoomInspection> activeRooms = sourceRooms;
+    // Only keep rooms that actually have at least one filled-in item
+    // (happy/sad status, a photo, or a comment). Rooms where nothing
+    // was selected show up as an empty card with just a name and no
+    // content, so they're dropped from the report entirely.
+    final List<RoomInspection> activeRooms = sourceRooms.where((room) {
+      return room.checklist.any((item) {
+        final bool hasStatus = item.status == RoomItemStatus.happy ||
+            item.status == RoomItemStatus.sad;
+        final bool hasPhotos = item.photos.isNotEmpty;
+        final bool hasComment = item.comment.isNotEmpty;
+        return hasStatus || hasPhotos || hasComment;
+      });
+    }).toList();
 
     return Scaffold(
       body: Container(
@@ -215,12 +232,12 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                         SizedBox(height: 20.0.h),
 
                         _buildGlobalHeaderCard(
-                          context,
-                          idCode: activeIdCode,
-                          tenantName: activeTenantName,
-                          landlordName: activeLandlordName,
-                          propertyAddress: cleanedPropertyAddress,
-                          inspectionDate: activeInspectionDate,
+                            context,
+                            idCode: activeIdCode,
+                            tenantName: activeTenantName,
+                            landlordName: activeLandlordName,
+                            propertyAddress: cleanedPropertyAddress,
+                            inspectionDate: activeInspectionDate,
                             agreementDate: activeAgreementDate
                         ),
 
@@ -255,10 +272,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                           idCode: activeIdCode,
                           tenantName: activeTenantName,
                           landlordName: activeLandlordName,
-                          propertyAddress: activePropertyAddress,
+                          propertyAddress: cleanedPropertyAddress,
                           inspectionDate: activeInspectionDate,
                           agreementDate: activeAgreementDate,
-                          allRooms: sourceRooms,
+                          allRooms: activeRooms,
                         ),
                       ],
                     ),
@@ -307,117 +324,63 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
           SizedBox(height: 12.0.h),
           Divider(color: const Color(0xFFE2E8F0), height: 1.0.h),
           SizedBox(height: 16.0.h),
-          ...room.checklist.asMap().entries.map((entry) {
-            final int index = entry.key;
-            final item = entry.value;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildUnifiedChecklistItem(context, item),
-                if (index < room.checklist.length - 1) ...[
-                  SizedBox(height: 16.0.h),
-                  Divider(
-                    color: const Color(0xFFEEF2F6),
-                    height: 1.0.h,
-                    thickness: 1.0.h,
-                  ),
-                  SizedBox(height: 16.0.h),
-                ],
-              ],
-            );
-          }),
+          ..._buildSelectedChecklistItems(context, room.checklist),
         ],
       ),
     );
   }
 
-  Widget _buildUnifiedChecklistItem(BuildContext context, InspectionItem item) {
-    final nameLower = item.name.toLowerCase();
+  /// Only items the user actually filled in are rendered: happy/sad
+  /// status, at least one photo, or a written comment. Items left
+  /// completely untouched (neutral status, no photos, no comment) are
+  /// skipped entirely.
+  List<Widget> _buildSelectedChecklistItems(
+      BuildContext context,
+      List<InspectionItem> checklist,
+      ) {
+    final List<InspectionItem> selectedItems = checklist.where((item) {
+      final bool hasStatus = item.status == RoomItemStatus.happy ||
+          item.status == RoomItemStatus.sad;
+      final bool hasPhotos = item.photos.isNotEmpty;
+      final bool hasComment = item.comment.isNotEmpty;
+      return hasStatus || hasPhotos || hasComment;
+    }).toList();
 
-    if (nameLower.contains('wall')) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              item.name,
-              style: TextStyle(
-                color: const Color(0xFF2C3E50),
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.w800,
-                fontSize: 14.0.sp,
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              item.status == RoomItemStatus.happy
-                  ? _buildColoredCircle(
-                Icons.sentiment_satisfied_alt,
-                const Color(0xFF2ECC71),
-              )
-                  : _buildMutedCircle(
-                Icons.sentiment_satisfied_alt,
-                const Color(0xFF2ECC71),
-              ),
-              SizedBox(width: 6.0.w),
-              item.status == RoomItemStatus.sad
-                  ? _buildColoredCircle(
-                Icons.sentiment_very_dissatisfied,
-                const Color(0xFFE74C3C),
-              )
-                  : _buildMutedCircle(
-                Icons.sentiment_very_dissatisfied,
-                const Color(0xFFE74C3C),
-              ),
-              SizedBox(width: 6.0.w),
-              item.status == RoomItemStatus.neutral
-                  ? _buildColoredCircle(
-                Icons.remove,
-                const Color(0xFF7F8C8D),
-              )
-                  : _buildMutedCircle(
-                Icons.remove,
-                const Color(0xFF7F8C8D),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
+    return selectedItems.asMap().entries.map((entry) {
+      final int index = entry.key;
+      final InspectionItem item = entry.value;
 
-    if (nameLower.contains('floor') ||
-        nameLower.contains('carpet') ||
-        nameLower.contains('tile')) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            item.name,
-            style: TextStyle(
-              color: const Color(0xFF2C3E50),
-              fontFamily: 'Montserrat',
-              fontWeight: FontWeight.w800,
-              fontSize: 14.0.sp,
+          _buildUnifiedChecklistItem(context, item),
+          if (index < selectedItems.length - 1) ...[
+            SizedBox(height: 16.0.h),
+            Divider(
+              color: const Color(0xFFEEF2F6),
+              height: 1.0.h,
+              thickness: 1.0.h,
             ),
-          ),
-          if (item.photos.isNotEmpty) ...[
-            SizedBox(height: 10.0.h),
-            Row(
-              children: item.photos
-                  .map((p) => _buildImageThumbnail(context, p, '10:33 AM'))
-                  .toList(),
-            ),
+            SizedBox(height: 16.0.h),
           ],
         ],
       );
-    }
-
-    return _buildInnerCommentedItem(context, item);
+    }).toList();
   }
 
-  Widget _buildInnerCommentedItem(BuildContext context, InspectionItem item) {
+  /// Bug fix: previously this branched on the item's *name* (checking for
+  /// "wall", "floor"/"carpet"/"tile", or "other") and rendered a different
+  /// — and incomplete — subset of the item's data depending on which
+  /// bucket it fell into:
+  ///   - "wall" items showed status circles only (no photos, no comment)
+  ///   - "floor"/"carpet"/"tile" items showed photos only (no status, no comment)
+  ///   - everything else showed photos + comment only (no status circles)
+  /// That meant real data (photos, comments, or status) silently disappeared
+  /// from the report depending purely on how the checklist item was named.
+  ///
+  /// Now every item renders the *same* complete set of info regardless of
+  /// its name: item name, status circles, photos (if any), and comment.
+  Widget _buildUnifiedChecklistItem(BuildContext context, InspectionItem item) {
     final String commentText = item.comment.isNotEmpty
         ? item.comment
         : item.status == RoomItemStatus.happy
@@ -431,14 +394,22 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          item.name,
-          style: TextStyle(
-            color: const Color(0xFF2C3E50),
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.w800,
-            fontSize: 14.0.sp,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                item.name,
+                style: TextStyle(
+                  color: const Color(0xFF2C3E50),
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14.0.sp,
+                ),
+              ),
+            ),
+            _buildSelectedStatusIcon(item.status),
+          ],
         ),
 
         if (hasPhotos) ...[
@@ -526,6 +497,25 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     );
   }
 
+  /// Renders only the icon matching the item's actual selected status.
+  /// Neutral status shows no icon — only happy/sad are displayed.
+  Widget _buildSelectedStatusIcon(RoomItemStatus status) {
+    switch (status) {
+      case RoomItemStatus.happy:
+        return _buildColoredCircle(
+          Icons.sentiment_satisfied_alt,
+          const Color(0xFF2ECC71),
+        );
+      case RoomItemStatus.sad:
+        return _buildColoredCircle(
+          Icons.sentiment_very_dissatisfied,
+          const Color(0xFFE74C3C),
+        );
+      case RoomItemStatus.neutral:
+        return const SizedBox.shrink();
+    }
+  }
+
   void _showPhotoPreviewDialog(BuildContext context, String photoPath) {
     final bool isRealFile = !photoPath.startsWith('assets/') &&
         !photoPath.startsWith('http') &&
@@ -597,7 +587,15 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       },
     );
   }
+  void _clearAllInspectionData() {
+    final controller = Get.find<InspectionController>();
 
+    controller.clearInspectionData();
+
+    setState(() {
+      selectedLeasePdf = null;
+    });
+  }
   Widget _buildMetadataRow(String key, String value) {
     return Padding(
       padding: EdgeInsets.only(bottom: 4.0.h),
@@ -629,22 +627,6 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     );
   }
 
-  Widget _buildMutedCircle(IconData icon, Color color) {
-    return Container(
-      width: 24.w,
-      height: 24.h,
-      decoration: const BoxDecoration(
-        color: Color(0xFFEEF2F6),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        size: 13.w,
-        color: color.withValues(alpha: 0.3),
-      ),
-    );
-  }
-
   Widget _buildColoredCircle(IconData icon, Color color) {
     return Container(
       width: 24.w,
@@ -658,73 +640,6 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         icon,
         size: 13.w,
         color: color,
-      ),
-    );
-  }
-
-  Widget _buildImageThumbnail(
-      BuildContext context,
-      String photoPath,
-      String time,
-      ) {
-    final bool isRealFile = !photoPath.startsWith('assets/') &&
-        !photoPath.startsWith('http') &&
-        !photoPath.startsWith('blob:');
-
-    Widget imageWidget;
-
-    if (isRealFile) {
-      imageWidget = Image.file(
-        File(photoPath),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Center(
-            child: Icon(
-              Icons.image_outlined,
-              color: const Color(0xFF7F8C8D),
-              size: 16.w,
-            ),
-          );
-        },
-      );
-    } else {
-      imageWidget = Image.network(
-        photoPath,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Center(
-            child: Icon(
-              Icons.image_outlined,
-              color: const Color(0xFF7F8C8D),
-              size: 16.w,
-            ),
-          );
-        },
-      );
-    }
-
-    return Expanded(
-      child: AspectRatio(
-        aspectRatio: 1.3,
-        child: GestureDetector(
-          onTap: () {
-            _showPhotoPreviewDialog(context, photoPath);
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10.0.w),
-              color: const Color(0xFFEEF2F6),
-              border: Border.all(
-                color: const Color(0xFFE2E8F0),
-                width: 0.5.w,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(9.0.w),
-              child: imageWidget,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -965,7 +880,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
           actions: [
             Obx(
                   () => TextButton(
-                    onPressed: (isDownloading.value || isUploading.value)
+                onPressed: (isDownloading.value || isUploading.value)
                     ? null
                     : () => Navigator.pop(dialogContext),
                 child: Text(
@@ -982,9 +897,9 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
 
             Obx(
                   () => ElevatedButton.icon(
-                    //onz (isDownloading.value || isUploading.value )
-        onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
-                      ? null
+                //onz (isDownloading.value || isUploading.value )
+                onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
+                    ? null
                     : () async {
                   isDownloading.value = true;
 
@@ -1002,7 +917,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       tenantPhone: controller.tenantPhone.value,
                       landlordPhone: controller.landlordPhone.value,
                       showPhone: controller.showPhoneInPdf.value,
-                        agreementDate: controller.agreementDate.value,
+                      agreementDate: controller.agreementDate.value,
                     );
 
                     Uint8List finalPdfBytes = pdfBytes;
@@ -1025,6 +940,18 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       throw Exception('PDF download failed.');
                     }
 
+                    _clearAllInspectionData();
+
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop();
+                    }
+
+                    Get.offAll(
+                          () => HomeScreen(
+                        role: 'tenant',
+                        userName: BaseController.name.value,
+                      ),
+                    );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -1091,8 +1018,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
 
             Obx(
                   () => ElevatedButton(
-                    //onPressed: (isDownloading.value || isUploading.value )
-        onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
+                //onPressed: (isDownloading.value || isUploading.value )
+                onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
                     ? null
                     : () async {
                   isUploading.value = true;
@@ -1108,6 +1035,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       agreementDate: controller.agreementDate.value,
                       allRooms: allRooms,
                     );
+
                     if (context.mounted) {
                       // Navigator.pop(dialogContext); // close dialog
                       Get.offAll(() => HomeScreen(
@@ -1216,6 +1144,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         );
       }
     }
-  }
-  }
 
+
+  }
+}

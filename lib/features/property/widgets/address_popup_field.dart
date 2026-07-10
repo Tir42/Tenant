@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/responsive/responsive_extension.dart';
+
 class AddressPopupField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -23,11 +25,11 @@ class AddressPopupField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style:  TextStyle(
             color: Color(0xFF7F8C8D),
             fontFamily: 'Montserrat',
             fontWeight: FontWeight.bold,
-            fontSize: 10,
+            fontSize: 12.0.sp,
             letterSpacing: 1.0,
           ),
         ),

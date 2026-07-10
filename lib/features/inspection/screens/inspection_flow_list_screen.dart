@@ -19,6 +19,8 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
   final ScrollController _listScrollController = ScrollController();
   final InspectionController controller = Get.find<InspectionController>();
 
+
+
   @override
   void dispose() {
     _listScrollController.dispose();
@@ -29,7 +31,7 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
   void _showAddRoomDialog() {
     final TextEditingController nameController = TextEditingController();
     IconData selectedIcon = Icons.home_outlined;
-    
+
     final List<Map<String, dynamic>> iconsList = [
       {'icon': Icons.bed_outlined, 'name': 'Bedroom'},
       {'icon': Icons.chair_outlined, 'name': 'Living'},
@@ -344,12 +346,12 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                     child: roomsList.isEmpty
                         ? _buildEmptyState()
                         : ListView.builder(
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: roomsList.length,
-                            itemBuilder: (context, index) {
-                              return _buildRoomTile(context, roomsList[index]);
-                            },
-                          ),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: roomsList.length,
+                      itemBuilder: (context, index) {
+                        return _buildRoomTile(context, roomsList[index]);
+                      },
+                    ),
                   ),
                   SizedBox(height: 20.0.h),
                   _buildAddRoomButton(),
@@ -366,11 +368,112 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Emoji-status count chip (😊 / 😢 / ➖)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildStatusChip({
+    required IconData icon,
+    required Color color,
+    required int count,
+  }) {
+    if (count == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(right: 10.0.w),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13.0.w, color: color),
+          SizedBox(width: 3.0.w),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: color,
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w700,
+              fontSize: 11.0.sp,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildStarRating(double rating) {
+    final List<Widget> stars = [];
+
+    for (int i = 1; i <= 5; i++) {
+      IconData icon;
+      if (rating >= i) {
+        icon = Icons.star_rounded;
+      } else if (rating >= i - 0.5) {
+        icon = Icons.star_half_rounded;
+      } else {
+        icon = Icons.star_border_rounded;
+      }
+
+      stars.add(Icon(
+        icon,
+        size: 13.0.w,
+        color: const Color(0xFFF5A623),
+      ));
+    }
+
+    return Row(mainAxisSize: MainAxisSize.min, children: stars);
+  }
+
   Widget _buildRoomTile(BuildContext context, RoomInspection room) {
     int photoCount = 0;
+    int happyCount = 0;
+    int sadCount = 0;
+    int neutralCount = 0;
+    int itemsWithPhotos = 0;
+
     for (var item in room.checklist) {
       photoCount += item.photos.length;
+
+      if (item.photos.isNotEmpty) {
+        itemsWithPhotos++;
+      }
+
+      switch (item.status) {
+        case RoomItemStatus.happy:
+          happyCount++;
+          break;
+        case RoomItemStatus.sad:
+          sadCount++;
+          break;
+        case RoomItemStatus.neutral:
+          neutralCount++;
+          break;
+      }
     }
+
+    final int totalItems = room.checklist.length;
+
+    final bool hasInspectionData =
+        happyCount > 0 ||
+            sadCount > 0 ||
+            photoCount > 0 ||
+            room.checklist.any((item) => item.comment.trim().isNotEmpty);
+
+
+    final int ratedItems = happyCount + sadCount;
+
+    double rating = 0;
+
+    if (ratedItems > 0) {
+      rating = 5 * happyCount / ratedItems;
+    }
+
+    // final bool hasInspectionData =
+    //     ratedItems > 0 ||
+    //         photoCount > 0 ||
+    //         room.checklist.any(
+    //               (item) => item.comment.trim().isNotEmpty,
+    //         );
 
     String displayLeftName = room.name;
     if (displayLeftName == "Utility / Laundry Room") displayLeftName = "Laundry";
@@ -385,14 +488,8 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
     if (displayLeftName == "Living Room / Lounge") displayLeftName = "Living Room";
     if (displayLeftName == "Entry / Mudroom") displayLeftName = "Entry";
 
-    String subtitleText = "";
-    if (room.name == "Bathroom") {
-      subtitleText = "00";
-    } else if (room.name == "Washroom") {
-      subtitleText = "";
-    } else {
-      subtitleText = photoCount > 0 ? "$photoCount photos" : "No photos captured";
-    }
+    final String subtitleText =
+    photoCount > 0 ? "$photoCount photos" : "No photos captured";
 
     return Padding(
       padding: EdgeInsets.only(bottom: 12.0.h),
@@ -441,16 +538,50 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
                           fontSize: 14.0.sp,
                         ),
                       ),
-                      if (subtitleText.isNotEmpty) ...[
-                        SizedBox(height: 4.0.h),
-                        Text(
-                          subtitleText,
-                          style: TextStyle(
-                            color: const Color(0xFF8F9CA9),
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11.0.sp,
+                      SizedBox(height: 4.0.h),
+                      Row(
+                        children: [
+                          if (subtitleText.isNotEmpty) ...[
+                            Text(
+                              subtitleText,
+                              style: TextStyle(
+                                color: const Color(0xFF8F9CA9),
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11.0.sp,
+                              ),
+                            ),
+                            SizedBox(width: 10.0.w),
+                          ],
+                          _buildStatusChip(
+                            icon: Icons.sentiment_satisfied_alt,
+                            color: const Color(0xFF2ECC71),
+                            count: happyCount,
                           ),
+                          _buildStatusChip(
+                            icon: Icons.sentiment_very_dissatisfied,
+                            color: const Color(0xFFE74C3C),
+                            count: sadCount,
+                          ),
+                        ],
+                      ),
+                      if (hasInspectionData) ...[
+                        SizedBox(height: 4.0.h),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildStarRating(rating),
+                            SizedBox(width: 6.0.w),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: TextStyle(
+                                color: const Color(0xFF8F9CA9),
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 10.0.sp,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],
@@ -530,15 +661,23 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          final address = '${controller.propertyAddress.value}${controller.city.value.isNotEmpty ? ", ${controller.city.value}" : ""}${controller.state.value.isNotEmpty ? ", ${controller.state.value}" : ""}${controller.zipcode.value.isNotEmpty ? " ${controller.zipcode.value}" : ""}${controller.country.value.isNotEmpty ? ", ${controller.country.value}" : ""}';
-          Get.to(() => ReportReviewScreen(
-            allRooms: controller.roomsList,
-            tenantName: controller.tenantName.value,
-            landlordName: controller.landlordName.value,
-            propertyAddress: address,
-            inspectionDate: controller.agreementDate.value.isNotEmpty ? controller.agreementDate.value : controller.possessionDate.value,
-            idCode: controller.idCode.value,
-          ));
+          // propertyAddress already contains the complete address
+          final String address =
+          controller.propertyAddress.value.trim();
+
+          Get.to(
+                () => ReportReviewScreen(
+              allRooms: controller.roomsList,
+              tenantName: controller.tenantName.value,
+              landlordName: controller.landlordName.value,
+              propertyAddress: address,
+              inspectionDate:
+              controller.agreementDate.value.isNotEmpty
+                  ? controller.agreementDate.value
+                  : controller.possessionDate.value,
+              idCode: controller.idCode.value,
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(25.0.w),
         child: Container(
@@ -546,14 +685,18 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF007BFF), Color(0xFF0056B3)],
+              colors: [
+                Color(0xFF007BFF),
+                Color(0xFF0056B3),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(25.0.w),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF007BFF).withValues(alpha: 0.3),
+                color: const Color(0xFF007BFF)
+                    .withValues(alpha: 0.3),
                 blurRadius: 12.0.w,
                 offset: Offset(0, 4.0.h),
               ),

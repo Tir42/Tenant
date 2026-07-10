@@ -45,6 +45,15 @@ class InspectionController extends GetxController {
     syncAvailableUtilitiesFromChecklist();
   }
 
+
+
+
+  String get fullPropertyAddress {
+    return propertyAddress.value.trim();
+  }
+
+
+
   void syncAvailableUtilitiesFromChecklist() {
     int utilsIndex = roomsList.indexWhere((r) => r.name.toLowerCase() == 'utils');
     if (utilsIndex != -1) {
@@ -73,21 +82,34 @@ class InspectionController extends GetxController {
     String? landlordPh,
     bool? showPhone,
   }) {
-    idCode.value = id;
-    tenantName.value = tenant;
-    landlordName.value = landlord;
-    propertyAddress.value = address;
-    city.value = cityVal;
-    state.value = stateVal;
-    zipcode.value = zipVal;
-    country.value = countryVal;
-    possessionDate.value = possession;
-    agreementDate.value = agreement;
-    if (tenantPh != null) tenantPhone.value = tenantPh;
-    if (landlordPh != null) landlordPhone.value = landlordPh;
-    if (showPhone != null) showPhoneInPdf.value = showPhone;
-    this.inspectionType.value = inspectionType;
+    idCode.value = id.trim();
+    tenantName.value = tenant.trim();
+    landlordName.value = landlord.trim();
 
+    // Street address only
+    propertyAddress.value = address.trim();
+
+    city.value = cityVal.trim();
+    state.value = stateVal.trim();
+    zipcode.value = zipVal.trim();
+    country.value = countryVal.trim();
+
+    possessionDate.value = possession.trim();
+    agreementDate.value = agreement.trim();
+
+    if (tenantPh != null) {
+      tenantPhone.value = tenantPh.trim();
+    }
+
+    if (landlordPh != null) {
+      landlordPhone.value = landlordPh.trim();
+    }
+
+    if (showPhone != null) {
+      showPhoneInPdf.value = showPhone;
+    }
+
+    this.inspectionType.value = inspectionType.trim();
   }
 
   // Update a whole room state
@@ -241,5 +263,25 @@ class InspectionController extends GetxController {
       final List roomsJson = json['rooms'];
       roomsList.assignAll(roomsJson.map((r) => RoomInspection.fromJson(r)).toList());
     }
+  }
+
+  void clearInspectionData() {
+    idCode.value = '';
+    tenantName.value = '';
+    tenantPhone.value = '';
+    landlordName.value = '';
+    landlordPhone.value = '';
+    propertyAddress.value = '';
+    city.value = '';
+    state.value = '';
+    zipcode.value = '';
+    country.value = '';
+    possessionDate.value = '';
+    agreementDate.value = '';
+    inspectionType.value = '';
+    showPhoneInPdf.value = true;
+
+    // Reset rooms and checklist items
+    initializeDefaultRooms();
   }
 }

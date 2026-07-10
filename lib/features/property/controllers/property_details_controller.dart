@@ -176,6 +176,23 @@ class PropertyDetailsController extends BaseController {
     }
   }
 
+  /// Builds the combined address string from the five separate fields.
+  ///
+  /// Bug fix: previously this simply appended `street` as-is, then
+  /// appended `city`, `state zip`, and `country` on top of it. Since the
+  /// Street Address field (`AddressPopupField`) is a completely free-form
+  /// `TextField` with no validation, nothing stops someone from typing or
+  /// pasting the *entire* formatted address into the Street box (e.g.
+  /// "12356, fgj, Ca 134568, USA") instead of just the street line. When
+  /// that happened, this method faithfully re-appended city/state/zip/
+  /// country a second time, producing a visibly duplicated address like:
+  ///   "12356, fgj, Ca 134568, USA, fgj, Ca 134568, USA"
+  ///
+  /// Now, before joining, we strip any comma-separated segment out of
+  /// `street` that exactly matches (case-insensitively) the city, state,
+  /// zip, "state zip", or country values. This keeps the join logic
+  /// working normally for a clean street value, while making it robust
+  /// against a street value that already contains the other parts.
   void updateAddress({
     required String street,
     required String city,
@@ -187,9 +204,28 @@ class PropertyDetailsController extends BaseController {
     stateController.text = state;
     zipController.text = zip;
     countryController.text = country;
-    
+
+    final String stateZip = (state.isNotEmpty && zip.isNotEmpty)
+        ? "$state $zip"
+        : '';
+
+    final Set<String> segmentsToStrip = {
+      city.trim().toLowerCase(),
+      state.trim().toLowerCase(),
+      zip.trim().toLowerCase(),
+      stateZip.trim().toLowerCase(),
+      country.trim().toLowerCase(),
+    }..removeWhere((s) => s.isEmpty);
+
+    final String cleanedStreet = street
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) =>
+    part.isNotEmpty && !segmentsToStrip.contains(part.toLowerCase()))
+        .join(', ');
+
     final List<String> addressParts = [];
-    if (street.isNotEmpty) addressParts.add(street);
+    if (cleanedStreet.isNotEmpty) addressParts.add(cleanedStreet);
     if (city.isNotEmpty) addressParts.add(city);
     if (state.isNotEmpty) {
       if (zip.isNotEmpty) {

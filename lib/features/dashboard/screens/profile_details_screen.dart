@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
 
@@ -184,14 +185,21 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                   border: Border.all(color: const Color(0xFFFFC9C9), width: 1.0),
                 ),
                 child: InkWell(
-                  onTap: () {
-                    // Reset global profile details
+                  onTap: () async {
+                    final box = GetStorage();
+
+                    // Clear saved login session
+                    await box.write('isLoggedIn', false);
+                    await box.remove('loginTime');
+                    await box.remove('role');
+                    await box.remove('userName');
+
+                    // Clear global user details
                     BaseController.name.value = '';
                     BaseController.email.value = '';
                     BaseController.phone.value = '';
                     BaseController.idCode.value = '';
 
-                    // Show visual disconnect snackbar
                     Get.snackbar(
                       'Disconnected',
                       'Secure session closed successfully.',
@@ -202,9 +210,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                       duration: const Duration(seconds: 2),
                     );
 
-                    // Redirect to Login Screen
-                    Get.to(
-                      () => const LoginScreen(),
+                    // Remove all previous screens
+                    Get.offAll(
+                          () => const LoginScreen(),
                       transition: Transition.fade,
                       duration: const Duration(milliseconds: 600),
                     );
