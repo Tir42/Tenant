@@ -852,21 +852,24 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                         ),
                       ),
                       SizedBox(height: 12.0.h),
-                      Obx(
-                            () => CheckboxListTile(
-                          value: isDisclaimerAccepted.value,
-                          onChanged: (value) {
-                            isDisclaimerAccepted.value = value ?? false;
-                          },
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            'I acknowledge that this report is generated automatically based on the information I provided, and TenantSnap is not responsible for any legal or security deposit disputes.',
-                            style: TextStyle(
-                              color: const Color(0xFF2C3E50),
-                              fontFamily: 'Montserrat',
-                              fontSize: 10.5.sp,
-                              fontWeight: FontWeight.w600,
+                      Material(
+                        color: Colors.transparent,
+                        child: Obx(
+                              () => CheckboxListTile(
+                            value: isDisclaimerAccepted.value,
+                            onChanged: (value) {
+                              isDisclaimerAccepted.value = value ?? false;
+                            },
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'I acknowledge that this report is generated automatically based on the information I provided, and TenantSnap is not responsible for any legal or security deposit disputes.',
+                              style: TextStyle(
+                                color: const Color(0xFF2C3E50),
+                                fontFamily: 'Montserrat',
+                                fontSize: 10.5.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -878,6 +881,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
             ],
           ),
           actions: [
+            // Closing the preview dialog (Close button, or dismiss) always
+            // keeps all inspection data untouched -- no clearing happens here.
             Obx(
                   () => TextButton(
                 onPressed: (isDownloading.value || isUploading.value)
@@ -895,9 +900,11 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               ),
             ),
 
+            // Download button:
+            //  success -> clear data -> close dialog -> go Home
+            //  failure -> keep data, dialog stays open, error snackbar shown
             Obx(
                   () => ElevatedButton.icon(
-                //onz (isDownloading.value || isUploading.value )
                 onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
                     ? null
                     : () async {
@@ -940,6 +947,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       throw Exception('PDF download failed.');
                     }
 
+                    // --- Success path ---
                     _clearAllInspectionData();
 
                     if (dialogContext.mounted) {
@@ -969,6 +977,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       );
                     }
                   } catch (e) {
+                    // --- Failure path: keep data, dialog stays open ---
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -1016,9 +1025,16 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               ),
             ),
 
+            // Email/Share button:
+            //  success -> clear data -> close dialog -> go Home
+            //  failure -> keep data, dialog stays open, error snackbar shown
+            // (Mirrors the Download button's success/failure handling.
+            //  Previously _sharePdfToEmail swallowed all errors internally
+            //  and this handler always navigated Home + never cleared data,
+            //  so email "succeeded" visually even when the share failed,
+            //  and never actually reset the inspection state.)
             Obx(
                   () => ElevatedButton(
-                //onPressed: (isDownloading.value || isUploading.value )
                 onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)
                     ? null
                     : () async {
@@ -1036,12 +1052,48 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       allRooms: allRooms,
                     );
 
+                    // --- Success path ---
+                    _clearAllInspectionData();
+
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop();
+                    }
+
                     if (context.mounted) {
-                      // Navigator.pop(dialogContext); // close dialog
                       Get.offAll(() => HomeScreen(
                         role: 'tenant',
                         userName: BaseController.name.value,
                       ));
+                    }
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          duration: Duration(seconds: 4),
+                          backgroundColor: Color(0xFF2ECC71),
+                          content: Text(
+                            'Report shared successfully.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    // --- Failure path: keep data, dialog stays open ---
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFFE74C3C),
+                          content: Text(
+                            'Failed to share PDF: $e',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      );
                     }
                   } finally {
                     isUploading.value = false;
@@ -1079,6 +1131,12 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     );
   }
 
+  /// Generates the PDF (with optional lease attachment + lock) and shares it
+  /// via the platform share sheet. Any failure -- PDF generation, lease
+  /// append, locking, writing to temp storage, or the share sheet itself --
+  /// propagates as a thrown exception so the caller can keep the dialog open
+  /// and leave inspection data untouched. Success only happens when the
+  /// share sheet reports something other than an explicit user cancellation.
   Future<void> _sharePdfToEmail({
     required BuildContext context,
     required String idCode,
@@ -1091,60 +1149,58 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
   }) async {
     final controller = Get.find<InspectionController>();
 
-    try {
-      final pdfBytes = await generateInspectionReportPdf(
-        idCode: idCode,
-        tenantName: tenantName,
-        landlordName: landlordName,
-        propertyAddress: propertyAddress,
-        inspectionDate: inspectionDate,
-        inspectionType: controller.inspectionType.value,
-        reportGeneratedOn:
-        '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-        agreementDate: controller.agreementDate.value,
-        rooms: allRooms,
-        tenantPhone: controller.tenantPhone.value,
-        landlordPhone: controller.landlordPhone.value,
-        showPhone: controller.showPhoneInPdf.value,
+    final pdfBytes = await generateInspectionReportPdf(
+      idCode: idCode,
+      tenantName: tenantName,
+      landlordName: landlordName,
+      propertyAddress: propertyAddress,
+      inspectionDate: inspectionDate,
+      inspectionType: controller.inspectionType.value,
+      reportGeneratedOn:
+      '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+      agreementDate: controller.agreementDate.value,
+      rooms: allRooms,
+      tenantPhone: controller.tenantPhone.value,
+      landlordPhone: controller.landlordPhone.value,
+      showPhone: controller.showPhoneInPdf.value,
+    );
+
+    Uint8List finalPdfBytes = pdfBytes;
+
+    if (selectedLeasePdf != null) {
+      finalPdfBytes = await _appendLeasePdf(
+        reportPdfBytes: pdfBytes,
+        leasePdfFile: selectedLeasePdf!,
       );
-
-      Uint8List finalPdfBytes = pdfBytes;
-
-      if (selectedLeasePdf != null) {
-        finalPdfBytes = await _appendLeasePdf(
-          reportPdfBytes: pdfBytes,
-          leasePdfFile: selectedLeasePdf!,
-        );
-      }
-      finalPdfBytes = await _lockPdf(finalPdfBytes);
-
-      final dir = await getTemporaryDirectory();
-
-      final file = File(
-        '${dir.path}/TenantSnap_Inspection_Report_${idCode.isNotEmpty ? idCode : DateTime.now().millisecondsSinceEpoch}.pdf',
-      );
-
-      await file.writeAsBytes(finalPdfBytes);
-
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'TenantSnap Inspection Report - $propertyAddress',
-        text:
-        'Hello,\n\nPlease find attached the TenantSnap property inspection report.\n\n'
-            'Tenant: $tenantName\n'
-            'Landlord: $landlordName\n'
-            'Property: $propertyAddress\n'
-            'Inspection Date: $inspectionDate\n\n'
-            'Regards,\nTenantSnap',
-      );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share PDF: $e')),
-        );
-      }
     }
+    finalPdfBytes = await _lockPdf(finalPdfBytes);
 
+    final dir = await getTemporaryDirectory();
 
+    final file = File(
+      '${dir.path}/TenantSnap_Inspection_Report_${idCode.isNotEmpty ? idCode : DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+
+    await file.writeAsBytes(finalPdfBytes);
+
+    final result = await Share.shareXFiles(
+      [XFile(file.path)],
+      subject: 'TenantSnap Inspection Report - $propertyAddress',
+      text:
+      'Hello,\n\nPlease find attached the TenantSnap property inspection report.\n\n'
+          'Tenant: $tenantName\n'
+          'Landlord: $landlordName\n'
+          'Property: $propertyAddress\n'
+          'Inspection Date: $inspectionDate\n\n'
+          'Regards,\nTenantSnap',
+    );
+
+    // share_plus reports an explicit "dismissed" status when the user closes
+    // the share sheet without picking a target. Treat that as a failure so
+    // data is preserved and the dialog stays open; any other status (or an
+    // exception thrown above) is handled by the caller.
+    if (result.status == ShareResultStatus.dismissed) {
+      throw Exception('Share was cancelled.');
+    }
   }
 }
