@@ -2,9 +2,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart' show debugPrint;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:intl/intl.dart'; // add if not already imported
 
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/core/utils/image_loader/image_byte_loader.dart';
+
+import '../responsive/responsive_extension.dart';
 
 class PdfTheme {
   static final black = PdfColor.fromInt(0xFF111827);
@@ -23,7 +26,7 @@ String _statusText(RoomItemStatus status) {
   if (status == RoomItemStatus.sad) return 'NEEDS REPAIR';
   return 'NOT APPLICABLE';
 }
-
+final String currentDate = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
 PdfColor _statusColor(RoomItemStatus status) {
   if (status == RoomItemStatus.happy) return PdfTheme.green;
   if (status == RoomItemStatus.sad) return PdfTheme.red;
@@ -137,7 +140,7 @@ pw.Widget _statusBadge(RoomItemStatus status) {
           _statusText(status),
           style: pw.TextStyle(
             color: PdfColors.white,
-            fontSize: 8.5,
+            fontSize: 12.sp,
             fontWeight: pw.FontWeight.bold,
           ),
         ),
@@ -242,12 +245,95 @@ pw.Widget _detailsWidget(InspectionItem item) {
   );
 }
 
+pw.Widget _imageThumb(Uint8List? bytes) {
+  if (bytes != null && bytes.isNotEmpty) {
+    try {
+      return pw.Container(
+        width: double.infinity,
+        height: 130,
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+        ),
+        child: pw.Image(
+          pw.MemoryImage(bytes),
+          fit: pw.BoxFit.cover,
+        ),
+      );
+    } catch (e) {
+      debugPrint('PDF Image Error: $e');
+    }
+  }
+
+  return pw.Container(
+    width: double.infinity,
+    height: 130,
+    alignment: pw.Alignment.center,
+    decoration: pw.BoxDecoration(
+      color: PdfTheme.bgGrey,
+      border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+    ),
+    child: pw.Text(
+      'Image not available',
+      style: pw.TextStyle(color: PdfTheme.grey, fontSize: 8),
+    ),
+  );
+}
+
+pw.Widget _imageGrid(List<Uint8List?> images) {
+  if (images.isEmpty) {
+    return _imageThumb(null);
+  }
+
+  if (images.length == 1) {
+    return _imageThumb(images[0]);
+  }
+
+  if (images.length == 2) {
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Expanded(child: _imageThumb(images[0])),
+        pw.SizedBox(width: 6),
+        pw.Expanded(child: _imageThumb(images[1])),
+      ],
+    );
+  }
+
+  // 3+ images: wrap into rows of 2
+  final List<pw.Widget> rows = [];
+  for (int i = 0; i < images.length; i += 2) {
+    final bool hasSecond = i + 1 < images.length;
+    rows.add(
+      pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 6),
+        child: pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Expanded(child: _imageThumb(images[i])),
+            pw.SizedBox(width: 6),
+            pw.Expanded(
+              child: hasSecond ? _imageThumb(images[i + 1]) : pw.SizedBox(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: rows,
+  );
+}
+
 pw.Widget _featureBlock({
   required InspectionItem item,
   required Map<String, Uint8List> loadedImages,
 }) {
-  final Uint8List? firstImage =
-  item.photos.isNotEmpty ? loadedImages[item.photos.first] : null;
+  final List<Uint8List?> allImages = item.photos
+      .map((path) => loadedImages[path])
+      .where((bytes) => bytes != null && bytes.isNotEmpty)
+      .toList();
 
   return pw.Container(
     margin: const pw.EdgeInsets.only(bottom: 14),
@@ -256,22 +342,20 @@ pw.Widget _featureBlock({
       border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
       color: PdfColors.white,
     ),
-    child: firstImage != null
-        ? pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+    child: pw.Wrap(
       children: [
-        pw.Expanded(
-          flex: 5,
-          child: _imageBlock(firstImage),
-        ),
-        pw.SizedBox(width: 14),
-        pw.Expanded(
-          flex: 5,
-          child: _detailsWidget(item),
+        pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            _detailsWidget(item),
+            if (allImages.isNotEmpty) ...[
+              pw.SizedBox(height: 10),
+              _imageGrid(allImages),
+            ],
+          ],
         ),
       ],
-    )
-        : _detailsWidget(item),
+    ),
   );
 }
 
@@ -415,6 +499,14 @@ Future<Uint8List> generateInspectionReportPdf({
                 style: pw.TextStyle(
                   color: PdfTheme.grey,
                   fontSize: 8.5,
+                ),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Generated on: $currentDate',
+                style: pw.TextStyle(
+                  fontSize: 8.5,
+                  color: PdfTheme.grey,
                 ),
               ),
               pw.Text(

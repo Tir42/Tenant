@@ -658,12 +658,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final lastName = signUpController.lastNameController.text.trim();
     final email = signUpController.emailController.text.trim();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Generating new secure tenant profile...'),
-      ),
-    );
-
     final errorMsg = await signUpController.signUp();
 
     if (!mounted) return;
@@ -677,6 +671,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ? 'landlord'
           : 'tenant';
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully!'),
+          backgroundColor: Color(0xFF2ECC71),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      if (!mounted) return;
+
       Get.off(
             () => HomeScreen(
           role: role,
@@ -687,7 +694,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMsg)),
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: const Color(0xFFE74C3C),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
       );
     }
   }
