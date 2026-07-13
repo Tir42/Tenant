@@ -32,13 +32,6 @@ class _LoginScreenState extends State<LoginScreen>
   void _handlePrimaryAction() async {
     if (!loginController.validateInputs()) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Decrypting credentials profile...'),
-        duration: Duration(milliseconds: 500),
-      ),
-    );
-
     final errorMsg = await loginController.login();
 
     if (!mounted) return;
@@ -53,6 +46,19 @@ class _LoginScreenState extends State<LoginScreen>
           email.toLowerCase().contains('landlord'))
           ? 'landlord'
           : 'tenant';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login successful!'),
+          backgroundColor: Color(0xFF2ECC71),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      if (!mounted) return;
 
       Get.off(
             () => HomeScreen(
@@ -70,6 +76,15 @@ class _LoginScreenState extends State<LoginScreen>
       } else {
         loginController.passwordError.value = errorMsg;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: const Color(0xFFE74C3C),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
