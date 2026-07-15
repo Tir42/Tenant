@@ -3,7 +3,7 @@ import 'package:tenantsnap/core/controllers/base_controller.dart';
 
 class DashboardController extends GetxController {
   final activeRole = 'tenant'.obs;
-  final userName = 'Liam Carter'.obs;
+  final userName = ''.obs;
 
   @override
   void onInit() {

@@ -30,6 +30,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   final List<TextEditingController> _tenantControllers = [
     TextEditingController(),
   ];
+  final List<TextEditingController> _tenantIdCodeControllers = [
+    TextEditingController(),
+  ];
 
   final List<TextEditingController> _landlordControllers = [
     TextEditingController(),
@@ -63,6 +66,17 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     _tenantControllers.first.text =
         _detailsController.tenantController.text.trim();
 
+    if (_detailsController
+        .inspectionController
+        .tenantIdCodes
+        .isNotEmpty) {
+      _tenantIdCodeControllers.first.text =
+          _detailsController
+              .inspectionController
+              .tenantIdCodes
+              .first;
+    }
+
     _landlordControllers.first.text =
         _detailsController.landlordController.text.trim();
 
@@ -82,6 +96,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   void dispose() {
     for (final controller in _tenantControllers) {
       controller.removeListener(_onTenantFieldChanged);
+      controller.dispose();
+    }
+    for (final controller in _tenantIdCodeControllers) {
       controller.dispose();
     }
 
@@ -166,27 +183,46 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   void _addTenantField() {
     if (_tenantControllers.length >= 5) return;
 
-    final controller = TextEditingController()
+    final tenantNameController = TextEditingController()
       ..addListener(_onTenantFieldChanged);
 
+    final tenantIdCodeController =
+    TextEditingController();
+
     setState(() {
-      _tenantControllers.add(controller);
+      _tenantControllers.add(tenantNameController);
+      _tenantIdCodeControllers.add(
+        tenantIdCodeController,
+      );
+
       _tenantError = null;
     });
   }
 
   void _removeTenantField(int index) {
-    if (index <= 0 || _tenantControllers.length <= 1) return;
+    if (index <= 0 ||
+        _tenantControllers.length <= 1) {
+      return;
+    }
 
-    final controller = _tenantControllers[index];
-    controller.removeListener(_onTenantFieldChanged);
+    final tenantNameController =
+    _tenantControllers[index];
+
+    final tenantIdCodeController =
+    _tenantIdCodeControllers[index];
+
+    tenantNameController.removeListener(
+      _onTenantFieldChanged,
+    );
 
     setState(() {
       _tenantControllers.removeAt(index);
+      _tenantIdCodeControllers.removeAt(index);
       _tenantError = null;
     });
 
-    controller.dispose();
+    tenantNameController.dispose();
+    tenantIdCodeController.dispose();
   }
 
   // ---------------------------------------------------------------------------
@@ -319,10 +355,23 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   Future<void> _handleSubmit() async {
     FocusScope.of(context).unfocus();
 
-    final tenantNames = _tenantControllers
-        .map((controller) => controller.text.trim())
-        .where((name) => name.isNotEmpty)
-        .toList();
+    final List<String> tenantNames = [];
+    final List<String> tenantIdCodes = [];
+
+    for (int index = 0;
+    index < _tenantControllers.length;
+    index++) {
+      final tenantName =
+      _tenantControllers[index].text.trim();
+
+      final tenantIdCode =
+      _tenantIdCodeControllers[index].text.trim();
+
+      if (tenantName.isNotEmpty) {
+        tenantNames.add(tenantName);
+        tenantIdCodes.add(tenantIdCode);
+      }
+    }
 
     final landlordNames = _landlordControllers
         .map((controller) => controller.text.trim())
@@ -397,6 +446,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
     _detailsController.landlordController.text =
         landlordNames.join(', ');
+
+    _detailsController
+        .inspectionController
+        .tenantIdCodes
+        .assignAll(tenantIdCodes);
 
     final success =
     await _detailsController.submitMetadata();
@@ -536,7 +590,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         children: [
           Obx(
                 () => _buildDropdownField(
-              label: 'Register as',
+              label: 'INSPECTION CARRIED OUT BY',
               value:
               _detailsController.selectedRole.value,
               items: const ['Tenant', 'Landlord'],
@@ -570,6 +624,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             fieldLabel: 'Tenant Name',
             hintText: 'Enter tenant name...',
             controllers: _tenantControllers,
+            idCodeControllers: _tenantIdCodeControllers,
+            showIdCodeField: true,
             errorText: _tenantError,
             onAdd: _addTenantField,
             onRemove: _removeTenantField,
@@ -597,6 +653,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             fieldLabel: 'Landlord Name',
             hintText: 'Enter landlord name...',
             controllers: _landlordControllers,
+            showIdCodeField: false,
             errorText: _landlordError,
             onAdd: _addLandlordField,
             onRemove: _removeLandlordField,
@@ -738,6 +795,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     required List<TextEditingController> controllers,
     required VoidCallback onAdd,
     required ValueChanged<int> onRemove,
+    List<TextEditingController>? idCodeControllers,
+    bool showIdCodeField = false,
     String? errorText,
   }) {
     return Column(
@@ -847,6 +906,19 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                               ? hintText
                               : 'Enter optional ${fieldLabel.toLowerCase()}...',
                         ),
+
+                        if (showIdCodeField &&
+                            idCodeControllers != null) ...[
+                          SizedBox(height: 8.0.h),
+
+                          PropertyFormTextField(
+                            controller: idCodeControllers[index],
+                            label: '',
+                            hintText: index == 0
+                                ? 'Enter tenant ID code (optional)...'
+                                : 'Enter optional tenant ID code...',
+                          ),
+                        ],
                       ],
                     ),
                   ),

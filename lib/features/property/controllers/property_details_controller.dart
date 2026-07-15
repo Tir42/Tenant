@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+import '../models/tenant_model.dart';
 
 class PropertyDetailsController extends BaseController {
   final selectedRole = 'tenant'.obs;
@@ -23,7 +24,8 @@ class PropertyDetailsController extends BaseController {
 
 
   final InspectionController _inspectionController = Get.find<InspectionController>();
-
+  InspectionController get inspectionController =>
+      _inspectionController;
   Worker? _idWorker;
   Worker? _nameWorker;
   Worker? _phoneWorker;
@@ -32,7 +34,20 @@ class PropertyDetailsController extends BaseController {
   Worker? _inspectLandlordWorker;
 
   void initializeData({required String initialRole, String? initialUserName}) {
-    selectedRole.value = initialRole;
+    final savedPerformedBy =
+    _inspectionController.inspectionPerformedBy.value
+        .trim()
+        .toLowerCase();
+
+    if (savedPerformedBy == 'tenant' ||
+        savedPerformedBy == 'landlord') {
+      selectedRole.value = savedPerformedBy;
+    } else {
+      selectedRole.value =
+      initialRole.toLowerCase() == 'landlord'
+          ? 'landlord'
+          : 'tenant';
+    }
 
     idCodeController = TextEditingController(
       text: BaseController.idCode.value.isNotEmpty ? BaseController.idCode.value : _inspectionController.idCode.value,
@@ -283,6 +298,9 @@ class PropertyDetailsController extends BaseController {
       landlordPh: landlordPhoneVal,
       showPhone: showPhoneInPdf.value,
       inspectionType: inspectionType.value,
+      performedBy: selectedRole.value == 'landlord'
+          ? 'Landlord'
+          : 'Tenant',
     );
 
     // POST property registration details to backend REST API

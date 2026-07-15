@@ -418,6 +418,7 @@ Future<Uint8List> generateInspectionReportPdf({
   required String propertyAddress,
   required String inspectionDate,
   required String inspectionType,
+  required String inspectionPerformedBy,
   required String reportGeneratedOn,
   required List<RoomInspection> rooms,
   String? tenantPhone,
@@ -604,6 +605,10 @@ Future<Uint8List> generateInspectionReportPdf({
                 ),
                 _metadataRow('Property Address', propertyAddress),
                 _metadataRow('Inspection Type', inspectionType),
+                _metadataRow(
+                  'Inspection Carried Out By',
+                  inspectionPerformedBy,
+                ),
                 _metadataRow('Inspection Date', inspectionDate),
                 _metadataRow('Report Generated On', reportGeneratedOn),
               ],

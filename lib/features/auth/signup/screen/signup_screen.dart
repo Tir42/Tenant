@@ -331,7 +331,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   SizedBox(height: 14.0.h),
 
                   // --- 6. TENANT ID CODE ---
-                  _StaggeredEntrance(
+                  /*_StaggeredEntrance(
                     delayMs: 500,
                     child: Obx(() => _buildCustomTextField(
                       controller: signUpController.idCodeController,
@@ -344,7 +344,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                     )),
                   ),
-                  SizedBox(height: 14.0.h),
+                  SizedBox(height: 14.0.h),*/
 
                   // --- 7. PASSWORD & STRENGTH INDICATOR ---
                   _StaggeredEntrance(
