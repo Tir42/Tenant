@@ -32,7 +32,7 @@ class SignUpController extends BaseController {
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  final idCodeController = TextEditingController();
+  //final idCodeController = TextEditingController();
 
   final selectedCountry = Rx<Country>(
     CountryService().findByCode('US') ??
@@ -130,7 +130,7 @@ class SignUpController extends BaseController {
     final lastName = lastNameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
-    final idCode = idCodeController.text.trim();
+    //final idCode = idCodeController.text.trim();
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
@@ -175,12 +175,12 @@ class SignUpController extends BaseController {
       isValid = false;
     }
 
-    if (idCode.isEmpty) {
+    /*if (idCode.isEmpty) {
       idCodeError.value = 'Tenant ID Code is required.';
       isValid = false;
     } else if (idCodeError.value == 'ID Code already exists.') {
       isValid = false;
-    }
+    }*/
 
     if (password.isEmpty) {
       passwordError.value = 'Password is required.';
@@ -218,7 +218,7 @@ class SignUpController extends BaseController {
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
     final password = passwordController.text.trim();
-    final idCode = idCodeController.text.trim();
+    //final idCode = idCodeController.text.trim();
 
     isLoading.value = true;
     signupStatus.value = RxStatus.loading();
@@ -236,11 +236,11 @@ class SignUpController extends BaseController {
         return 'Phone number already exists.';
       }
 
-      if (await checkIdCodeExists(idCode)) {
+      /*if (await checkIdCodeExists(idCode)) {
         idCodeError.value = 'ID Code already exists.';
         signupStatus.value = RxStatus.error();
         return 'ID Code already exists.';
-      }
+      }*/
 
       final request = SignupRequest(
         firstName: firstName,
@@ -248,7 +248,7 @@ class SignUpController extends BaseController {
         email: email,
         fullPhoneNumber: phone,
         password: password,
-        idCode: idCode,
+        //idCode: idCode,
       );
 
       final response = await restClient.dio.post(
@@ -271,7 +271,7 @@ class SignUpController extends BaseController {
             '${signupRes.firstName ?? firstName} ${signupRes.lastName ?? lastName}'.trim();
         BaseController.email.value = (signupRes.email ?? email).trim();
         BaseController.phone.value = (signupRes.phone ?? phone).trim();
-        BaseController.idCode.value = signupRes.idCode ?? idCode;
+        //BaseController.idCode.value = signupRes.idCode ?? idCode;
 
         signupStatus.value = RxStatus.success();
         return null;
@@ -355,7 +355,7 @@ class SignUpController extends BaseController {
     phoneController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
-    idCodeController.dispose();
+    //idCodeController.dispose();
 
     emailWorker?.dispose();
     phoneWorker?.dispose();

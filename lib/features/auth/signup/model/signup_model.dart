@@ -4,7 +4,7 @@ class SignupRequest {
   final String email;
   final String fullPhoneNumber;
   final String password;
-  final String idCode;
+  //final String idCode;
 
   SignupRequest({
     required this.firstName,
@@ -12,7 +12,7 @@ class SignupRequest {
     required this.email,
     required this.fullPhoneNumber,
     required this.password,
-    required this.idCode,
+    //required this.idCode,
   });
 
   Map<String, dynamic> toJson() => {
@@ -21,7 +21,7 @@ class SignupRequest {
     'email': email,
     'fullPhoneNumber': fullPhoneNumber,
     'password': password,
-    'idCode': idCode,
+    //'idCode': idCode,
   };
 }
 

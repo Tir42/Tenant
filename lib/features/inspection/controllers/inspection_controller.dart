@@ -6,6 +6,7 @@ class InspectionController extends GetxController {
   // Property Details Metadata
   final idCode = ''.obs;
   final tenantName = ''.obs;
+  final tenantIdCodes = <String>[].obs;
   final tenantPhone = ''.obs;
   final landlordName = ''.obs;
   final landlordPhone = ''.obs;
@@ -17,6 +18,7 @@ class InspectionController extends GetxController {
   final possessionDate = ''.obs;
   final agreementDate = ''.obs;
   final inspectionType = ''.obs;
+  final inspectionPerformedBy = 'Tenant'.obs;
   final showPhoneInPdf = true.obs;
 
 
@@ -78,6 +80,7 @@ class InspectionController extends GetxController {
     required String possession,
     required String agreement,
     required String inspectionType,
+    required String performedBy,
     String? tenantPh,
     String? landlordPh,
     bool? showPhone,
@@ -110,6 +113,10 @@ class InspectionController extends GetxController {
     }
 
     this.inspectionType.value = inspectionType.trim();
+    final normalizedPerformer = performedBy.trim().toLowerCase();
+
+    inspectionPerformedBy.value =
+    normalizedPerformer == 'landlord' ? 'Landlord' : 'Tenant';
   }
 
   // Update a whole room state
@@ -228,6 +235,7 @@ class InspectionController extends GetxController {
     return {
       'idCode': idCode.value,
       'tenantName': tenantName.value,
+      'tenantIdCodes': tenantIdCodes.toList(),
       'tenantPhone': tenantPhone.value,
       'landlordName': landlordName.value,
       'landlordPhone': landlordPhone.value,
@@ -238,6 +246,8 @@ class InspectionController extends GetxController {
       'country': country.value,
       'possessionDate': possessionDate.value,
       'agreementDate': agreementDate.value,
+      'inspectionType': inspectionType.value,
+      'inspectionPerformedBy': inspectionPerformedBy.value,
       'showPhoneInPdf': showPhoneInPdf.value,
       'rooms': roomsList.map((r) => r.toJson()).toList(),
     };
@@ -247,7 +257,22 @@ class InspectionController extends GetxController {
   void importFromJson(Map<String, dynamic> json) {
     idCode.value = json['idCode'] ?? '';
     tenantName.value = json['tenantName'] ?? '';
-    tenantPhone.value = json['tenantPhone'] ?? '+1 (555) 012-3456';
+
+    final dynamic savedTenantIdCodes =
+    json['tenantIdCodes'];
+
+    if (savedTenantIdCodes is List) {
+      tenantIdCodes.assignAll(
+        savedTenantIdCodes
+            .map((idCode) => idCode.toString())
+            .toList(),
+      );
+    } else {
+      tenantIdCodes.clear();
+    }
+
+    tenantPhone.value =
+        json['tenantPhone'] ?? '+1 (555) 012-3456';
     landlordName.value = json['landlordName'] ?? '';
     landlordPhone.value = json['landlordPhone'] ?? '+1 (555) 019-2834';
     propertyAddress.value = json['propertyAddress'] ?? '';
@@ -257,6 +282,13 @@ class InspectionController extends GetxController {
     country.value = json['country'] ?? '';
     possessionDate.value = json['possessionDate'] ?? '';
     agreementDate.value = json['agreementDate'] ?? '';
+    inspectionType.value = json['inspectionType'] ?? '';
+
+    final restoredPerformer =
+    json['inspectionPerformedBy']?.toString().trim().toLowerCase();
+
+    inspectionPerformedBy.value =
+    restoredPerformer == 'landlord' ? 'Landlord' : 'Tenant';
     showPhoneInPdf.value = json['showPhoneInPdf'] ?? true;
 
     if (json['rooms'] != null) {
@@ -268,6 +300,7 @@ class InspectionController extends GetxController {
   void clearInspectionData() {
     idCode.value = '';
     tenantName.value = '';
+    tenantIdCodes.clear();
     tenantPhone.value = '';
     landlordName.value = '';
     landlordPhone.value = '';
@@ -279,6 +312,7 @@ class InspectionController extends GetxController {
     possessionDate.value = '';
     agreementDate.value = '';
     inspectionType.value = '';
+    inspectionPerformedBy.value = 'Tenant';
     showPhoneInPdf.value = true;
 
     // Reset rooms and checklist items

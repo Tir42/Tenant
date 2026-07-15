@@ -238,7 +238,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                             landlordName: activeLandlordName,
                             propertyAddress: cleanedPropertyAddress,
                             inspectionDate: activeInspectionDate,
-                            agreementDate: activeAgreementDate
+                            agreementDate: activeAgreementDate,
+                          inspectionPerformedBy: controller.inspectionPerformedBy.value,
                         ),
 
                         SizedBox(height: 16.0.h),
@@ -651,7 +652,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         required String landlordName,
         required String propertyAddress,
         required String inspectionDate,
-        required String agreementDate
+        required String agreementDate,
+        required String inspectionPerformedBy,
 
       }) {
     return Container(
@@ -686,6 +688,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
           ),
           SizedBox(height: 12.0.h),
           if (idCode.isNotEmpty) _buildMetadataRow('ID Code', idCode),
+          _buildMetadataRow(
+            'Inspection Carried Out By',
+            inspectionPerformedBy,
+          ),
           _buildMetadataRow('Tenant', tenantName),
           _buildMetadataRow('Landlord', landlordName),
           _buildMetadataRow('Address', propertyAddress),
@@ -918,6 +924,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       propertyAddress: propertyAddress,
                       inspectionDate: inspectionDate,
                       inspectionType: controller.inspectionType.value,
+                      inspectionPerformedBy:
+                      controller.inspectionPerformedBy.value,
                       reportGeneratedOn:
                       '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
                       rooms: allRooms,
@@ -1156,6 +1164,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       propertyAddress: propertyAddress,
       inspectionDate: inspectionDate,
       inspectionType: controller.inspectionType.value,
+      inspectionPerformedBy:
+      controller.inspectionPerformedBy.value,
       reportGeneratedOn:
       '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
       agreementDate: controller.agreementDate.value,
