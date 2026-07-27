@@ -120,6 +120,50 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     return Uint8List.fromList(lockedBytes);
   }
 
+  /// Builds a display string like:
+  ///   "Kalyan (ID: 2323) | Sunny (ID: 23424)"
+  ///
+  /// `namesJoined` is the comma-separated names string stored on the
+  /// controller (e.g. "Kalyan, Sunny"). `idCodes` holds the per-person
+  /// ID codes entered on Property Details, aligned by index with the
+  /// names list. Used for both tenant and landlord rows.
+  ///
+  /// Note: the top-level "ID Code" field (shown separately as its own
+  /// "ID Code: ..." row) is NOT used here. That field is a general ID
+  /// for whoever performed the inspection (tenant or landlord) — it is
+  /// not specific to the first person in either list, so it must never
+  /// be borrowed as person #1's ID. Person #1 has no ID-code input on
+  /// Property Details (that field only appears for additional people,
+  /// index > 0), so person #1 simply shows with no ID unless one is
+  /// otherwise present at index 0.
+  ///
+  /// If a person has no ID code available, only their name is shown
+  /// (no empty "(ID: )" suffix).
+  String _formatNamesWithIds({
+    required String namesJoined,
+    required List<String> idCodes,
+  }) {
+    final List<String> names = namesJoined
+        .split(',')
+        .map((name) => name.trim())
+        .where((name) => name.isNotEmpty)
+        .toList();
+
+    if (names.isEmpty) return '-';
+
+    final List<String> parts = [];
+
+    for (int i = 0; i < names.length; i++) {
+      final String name = names[i];
+
+      final String id = i < idCodes.length ? idCodes[i].trim() : '';
+
+      parts.add(id.isNotEmpty ? '$name (ID: $id)' : name);
+    }
+
+    return parts.join(' | ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
@@ -145,6 +189,12 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         controller.agreementDate.value;
 
     final String activeIdCode =  widget.idCode ?? controller.idCode.value;
+
+    // Individual tenant/landlord ID codes, aligned by index with the
+    // names in activeTenantName / activeLandlordName (see
+    // _formatNamesWithIds for details).
+    final List<String> activeTenantIdCodes = controller.tenantIdCodes.toList();
+    final List<String> activeLandlordIdCodes = controller.landlordIdCodes.toList();
 
     final List<RoomInspection> sourceRooms =
         widget.allRooms ?? ( widget.singleRoom != null ? [ widget.singleRoom!] : controller.roomsList.toList());
@@ -232,13 +282,15 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                         SizedBox(height: 20.0.h),
 
                         _buildGlobalHeaderCard(
-                            context,
-                            idCode: activeIdCode,
-                            tenantName: activeTenantName,
-                            landlordName: activeLandlordName,
-                            propertyAddress: cleanedPropertyAddress,
-                            inspectionDate: activeInspectionDate,
-                            agreementDate: activeAgreementDate,
+                          context,
+                          idCode: activeIdCode,
+                          tenantName: activeTenantName,
+                          tenantIdCodes: activeTenantIdCodes,
+                          landlordName: activeLandlordName,
+                          landlordIdCodes: activeLandlordIdCodes,
+                          propertyAddress: cleanedPropertyAddress,
+                          inspectionDate: activeInspectionDate,
+                          agreementDate: activeAgreementDate,
                           inspectionPerformedBy: controller.inspectionPerformedBy.value,
                         ),
 
@@ -649,13 +701,33 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       BuildContext context, {
         required String idCode,
         required String tenantName,
+        required List<String> tenantIdCodes,
         required String landlordName,
+        required List<String> landlordIdCodes,
         required String propertyAddress,
         required String inspectionDate,
         required String agreementDate,
         required String inspectionPerformedBy,
 
       }) {
+    final String tenantNamesWithIds = _formatNamesWithIds(
+      namesJoined: tenantName,
+      idCodes: tenantIdCodes,
+    );
+
+    final String landlordNamesWithIds = _formatNamesWithIds(
+      namesJoined: landlordName,
+      idCodes: landlordIdCodes,
+    );
+
+    final bool landlordFirst =
+        inspectionPerformedBy.trim().toLowerCase() == 'landlord';
+
+    final Widget tenantRow =
+    _buildMetadataRow("Tenant's Names", tenantNamesWithIds);
+    final Widget landlordRow =
+    _buildMetadataRow("Landlord's Names", landlordNamesWithIds);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -687,13 +759,16 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
             ),
           ),
           SizedBox(height: 12.0.h),
-          if (idCode.isNotEmpty) _buildMetadataRow('ID Code', idCode),
-          _buildMetadataRow(
-            'Inspection Carried Out By',
-            inspectionPerformedBy,
-          ),
-          _buildMetadataRow('Tenant', tenantName),
-          _buildMetadataRow('Landlord', landlordName),
+          if (idCode.isNotEmpty)
+            _buildMetadataRow(
+              'Inspection Carried Out By',
+              inspectionPerformedBy,
+            ),
+          _buildMetadataRow('ID Code', idCode),
+
+          ...landlordFirst
+              ? [landlordRow, tenantRow]
+              : [tenantRow, landlordRow],
           _buildMetadataRow('Address', propertyAddress),
           _buildMetadataRow('InspectionDate', inspectionDate),
           _buildMetadataRow('AgreementDate', agreementDate),
@@ -779,10 +854,6 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        final previewRooms = allRooms
-            .where((room) => room.checklist.any((item) => item.photos.isNotEmpty))
-            .toList();
-
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -811,76 +882,41 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 ),
               ),
               SizedBox(height: 12.0.h),
-              Container(
-                width: double.infinity,
-                height: 220.h,
-                padding: EdgeInsets.all(12.0.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12.0.w),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+              OutlinedButton.icon(
+                onPressed: _pickLeasePdf,
+                icon: const Icon(Icons.picture_as_pdf_rounded),
+                label: Text(
+                  selectedLeasePdf == null
+                      ? 'Attach Lease Agreement PDF'
+                      : 'Lease PDF Attached',
                 ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Text(
-                          'TenantSnap Property Inspection Report',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: const Color(0xFF2C3E50),
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14.0.sp,
-                          ),
-                        ),
+              ),
+              SizedBox(height: 12.0.h),
+              Material(
+                color: Colors.transparent,
+                child: Obx(
+                      () => CheckboxListTile(
+                    value: isDisclaimerAccepted.value,
+                    onChanged: (value) {
+                      isDisclaimerAccepted.value = value ?? false;
+                    },
+                    activeColor: Colors.white,
+                    checkColor: Colors.white,
+                    side: const BorderSide(
+                      color: Color(0xFF95A5A6),
+                      width: 1.5,
+                    ),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      'I acknowledge that this report is generated automatically based on the information I provided, and TenantSnap is not responsible for any legal or security deposit disputes.',
+                      style: TextStyle(
+                        color: const Color(0xFF2C3E50),
+                        fontFamily: 'Montserrat',
+                        fontSize: 10.5.sp,
+                        fontWeight: FontWeight.w600,
                       ),
-                      SizedBox(height: 10.0.h),
-                      const Divider(),
-                      Text('ID Code: ${idCode.isNotEmpty ? idCode : "-"}'),
-                      Text('Tenant: $tenantName'),
-                      Text('Landlord: $landlordName'),
-                      Text('Address: $propertyAddress'),
-                      Text('inspectionDate: $inspectionDate'),
-                      Text('agreementDate: $agreementDate'),
-                      SizedBox(height: 10.0.h),
-                      const Divider(),
-                      Text('Rooms with evidence: ${previewRooms.length}'),
-                      SizedBox(height: 10.0.h),
-                      OutlinedButton.icon(
-                        onPressed: _pickLeasePdf,
-                        icon: const Icon(Icons.picture_as_pdf_rounded),
-                        label: Text(
-                          selectedLeasePdf == null
-                              ? 'Attach Lease Agreement PDF'
-                              : 'Lease PDF Attached',
-                        ),
-                      ),
-                      SizedBox(height: 12.0.h),
-                      Material(
-                        color: Colors.transparent,
-                        child: Obx(
-                              () => CheckboxListTile(
-                            value: isDisclaimerAccepted.value,
-                            onChanged: (value) {
-                              isDisclaimerAccepted.value = value ?? false;
-                            },
-                            controlAffinity: ListTileControlAffinity.leading,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              'I acknowledge that this report is generated automatically based on the information I provided, and TenantSnap is not responsible for any legal or security deposit disputes.',
-                              style: TextStyle(
-                                color: const Color(0xFF2C3E50),
-                                fontFamily: 'Montserrat',
-                                fontSize: 10.5.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -905,10 +941,6 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 ),
               ),
             ),
-
-            // Download button:
-            //  success -> clear data -> close dialog -> go Home
-            //  failure -> keep data, dialog stays open, error snackbar shown
             Obx(
                   () => ElevatedButton.icon(
                 onPressed: (isDownloading.value || isUploading.value || !isDisclaimerAccepted.value)

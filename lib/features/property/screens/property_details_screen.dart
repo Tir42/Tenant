@@ -37,6 +37,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   final List<TextEditingController> _landlordControllers = [
     TextEditingController(),
   ];
+  final List<TextEditingController> _landlordIdCodeControllers = [
+    TextEditingController(),
+  ];
+
+  final TextEditingController _roleController = TextEditingController();
 
   // Basic phone validation: 7-15 digits, optional leading +.
   final RegExp _phoneRegex = RegExp(r'^\+?\d{7,15}$');
@@ -62,23 +67,23 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       initialUserName: widget.userName,
     );
 
-    // Copy existing values into the first dynamic fields.
-    _tenantControllers.first.text =
-        _detailsController.tenantController.text.trim();
+    // Start every field blank instead of pre-filling from existing data.
+    _detailsController.idCodeController.clear();
+    _detailsController.tenantController.clear();
+    _detailsController.tenantPhoneController.clear();
+    _detailsController.landlordController.clear();
+    _detailsController.landlordPhoneController.clear();
+    _detailsController.addressController.clear();
+    _detailsController.cityController.clear();
+    _detailsController.stateController.clear();
+    _detailsController.zipController.clear();
+    _detailsController.countryController.clear();
+    _detailsController.possessionDateController.clear();
+    _detailsController.leaseDateController.clear();
+    _detailsController.inspectionController.tenantIdCodes.clear();
+    _detailsController.inspectionController.landlordIdCodes.clear();
 
-    if (_detailsController
-        .inspectionController
-        .tenantIdCodes
-        .isNotEmpty) {
-      _tenantIdCodeControllers.first.text =
-          _detailsController
-              .inspectionController
-              .tenantIdCodes
-              .first;
-    }
-
-    _landlordControllers.first.text =
-        _detailsController.landlordController.text.trim();
+    _roleController.addListener(_onRoleFieldChanged);
 
     // Clear the relevant error as soon as the user edits a field.
     _tenantControllers.first.addListener(_onTenantFieldChanged);
@@ -106,6 +111,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       controller.removeListener(_onLandlordFieldChanged);
       controller.dispose();
     }
+    for (final controller in _landlordIdCodeControllers) {
+      controller.dispose();
+    }
+
+    _roleController.removeListener(_onRoleFieldChanged);
+    _roleController.dispose();
 
     _detailsController.idCodeController.removeListener(_clearIdCodeError);
     _detailsController.tenantPhoneController
@@ -138,6 +149,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         _submitError = null;
       });
     }
+  }
+
+  void _onRoleFieldChanged() {
+    _detailsController.updateSelectedRole(_roleController.text.trim());
   }
 
   void _clearIdCodeError() {
@@ -232,11 +247,18 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   void _addLandlordField() {
     if (_landlordControllers.length >= 5) return;
 
-    final controller = TextEditingController()
+    final landlordNameController = TextEditingController()
       ..addListener(_onLandlordFieldChanged);
 
+    final landlordIdCodeController =
+    TextEditingController();
+
     setState(() {
-      _landlordControllers.add(controller);
+      _landlordControllers.add(landlordNameController);
+      _landlordIdCodeControllers.add(
+        landlordIdCodeController,
+      );
+
       _landlordError = null;
     });
   }
@@ -244,15 +266,22 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   void _removeLandlordField(int index) {
     if (index <= 0 || _landlordControllers.length <= 1) return;
 
-    final controller = _landlordControllers[index];
-    controller.removeListener(_onLandlordFieldChanged);
+    final landlordNameController =
+    _landlordControllers[index];
+
+    final landlordIdCodeController =
+    _landlordIdCodeControllers[index];
+
+    landlordNameController.removeListener(_onLandlordFieldChanged);
 
     setState(() {
       _landlordControllers.removeAt(index);
+      _landlordIdCodeControllers.removeAt(index);
       _landlordError = null;
     });
 
-    controller.dispose();
+    landlordNameController.dispose();
+    landlordIdCodeController.dispose();
   }
 
   // ---------------------------------------------------------------------------
@@ -373,10 +402,23 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       }
     }
 
-    final landlordNames = _landlordControllers
-        .map((controller) => controller.text.trim())
-        .where((name) => name.isNotEmpty)
-        .toList();
+    final List<String> landlordNames = [];
+    final List<String> landlordIdCodes = [];
+
+    for (int index = 0;
+    index < _landlordControllers.length;
+    index++) {
+      final landlordName =
+      _landlordControllers[index].text.trim();
+
+      final landlordIdCode =
+      _landlordIdCodeControllers[index].text.trim();
+
+      if (landlordName.isNotEmpty) {
+        landlordNames.add(landlordName);
+        landlordIdCodes.add(landlordIdCode);
+      }
+    }
 
     final idCode = _detailsController.idCodeController.text.trim();
     final tenantPhone =
@@ -451,6 +493,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         .inspectionController
         .tenantIdCodes
         .assignAll(tenantIdCodes);
+
+    // Landlord ID code is optional; whatever was entered (possibly blank
+    // strings for landlords who skipped it) is stored aligned by index
+    // with landlordNames, mirroring tenantIdCodes.
+    _detailsController
+        .inspectionController
+        .landlordIdCodes
+        .assignAll(landlordIdCodes);
 
     final success =
     await _detailsController.submitMetadata();
@@ -588,19 +638,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(
-                () => _buildDropdownField(
-              label: 'INSPECTION CARRIED OUT BY',
-              value:
-              _detailsController.selectedRole.value,
-              items: const ['Tenant', 'Landlord'],
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  _detailsController
-                      .updateSelectedRole(newValue);
-                }
-              },
-            ),
+          AddressPopupField(
+            controller: _roleController,
+            label: 'INSPECTION CARRIED OUT BY',
+            hint: 'Enter Tenant or Landlord...',
           ),
 
           SizedBox(height: 5.0.h),
@@ -619,60 +660,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
           SizedBox(height: 8.0.h),
 
-          // Tenant name section
-          _buildDynamicNameSection(
-            fieldLabel: 'Tenant Name',
-            hintText: 'Enter tenant name...',
-            controllers: _tenantControllers,
-            idCodeControllers: _tenantIdCodeControllers,
-            showIdCodeField: true,
-            errorText: _tenantError,
-            onAdd: _addTenantField,
-            onRemove: _removeTenantField,
-          ),
-
-          SizedBox(height: 8.0.h),
-
-          PropertyFormTextField(
-            controller:
-            _detailsController.tenantPhoneController,
-            label: 'Tenant Phone',
-            hintText: 'Enter tenant phone number...',
-            keyboardType: TextInputType.phone,
-          ),
-
-          if (_tenantPhoneError != null) ...[
-            SizedBox(height: 7.0.h),
-            _buildErrorMessage(_tenantPhoneError!),
-          ],
-
-          SizedBox(height: 8.0.h),
-
-          // Landlord name section
-          _buildDynamicNameSection(
-            fieldLabel: 'Landlord Name',
-            hintText: 'Enter landlord name...',
-            controllers: _landlordControllers,
-            showIdCodeField: false,
-            errorText: _landlordError,
-            onAdd: _addLandlordField,
-            onRemove: _removeLandlordField,
-          ),
-
-          SizedBox(height: 18.0.h),
-
-          PropertyFormTextField(
-            controller:
-            _detailsController.landlordPhoneController,
-            label: 'Landlord Phone',
-            hintText: 'Enter landlord phone number...',
-            keyboardType: TextInputType.phone,
-          ),
-
-          if (_landlordPhoneError != null) ...[
-            SizedBox(height: 7.0.h),
-            _buildErrorMessage(_landlordPhoneError!),
-          ],
+          _buildOrderedTenantLandlordSections(),
 
           SizedBox(height: 18.0.h),
 
@@ -725,23 +713,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           SizedBox(height: 18.0.h),
 
           Obx(
-                () => _buildDropdownField(
-              label: 'INSPECTION TYPE',
-              value:
-              _detailsController.inspectionType.value,
-              items: const ['Move-In', 'Move-Out'],
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  _detailsController.inspectionType.value =
-                      newValue;
-                }
-              },
-            ),
-          ),
-
-          SizedBox(height: 18.0.h),
-
-          Obx(
                 () => Row(
               mainAxisAlignment:
               MainAxisAlignment.spaceBetween,
@@ -783,6 +754,102 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         ],
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tenant / Landlord section ordering
+  // ---------------------------------------------------------------------------
+
+  Widget _buildTenantSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDynamicNameSection(
+          fieldLabel: 'Tenant Name',
+          hintText: 'Enter tenant name...',
+          controllers: _tenantControllers,
+          idCodeControllers: _tenantIdCodeControllers,
+          showIdCodeField: true,
+          errorText: _tenantError,
+          onAdd: _addTenantField,
+          onRemove: _removeTenantField,
+        ),
+
+        SizedBox(height: 8.0.h),
+
+        PropertyFormTextField(
+          controller:
+          _detailsController.tenantPhoneController,
+          label: 'Tenant Phone',
+          hintText: 'Enter tenant phone number...',
+          keyboardType: TextInputType.phone,
+        ),
+
+        if (_tenantPhoneError != null) ...[
+          SizedBox(height: 7.0.h),
+          _buildErrorMessage(_tenantPhoneError!),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildLandlordSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDynamicNameSection(
+          fieldLabel: 'Landlord Name',
+          hintText: 'Enter landlord name...',
+          controllers: _landlordControllers,
+          idCodeControllers: _landlordIdCodeControllers,
+          showIdCodeField: true,
+          errorText: _landlordError,
+          onAdd: _addLandlordField,
+          onRemove: _removeLandlordField,
+        ),
+
+        SizedBox(height: 18.0.h),
+
+        PropertyFormTextField(
+          controller:
+          _detailsController.landlordPhoneController,
+          label: 'Landlord Phone',
+          hintText: 'Enter landlord phone number...',
+          keyboardType: TextInputType.phone,
+        ),
+
+        if (_landlordPhoneError != null) ...[
+          SizedBox(height: 7.0.h),
+          _buildErrorMessage(_landlordPhoneError!),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildOrderedTenantLandlordSections() {
+    return Obx(() {
+      final role =
+      _detailsController.selectedRole.value.trim().toLowerCase();
+      final landlordFirst = role.contains('landlord');
+
+      final tenantBlock = _buildTenantSection();
+      final landlordBlock = _buildLandlordSection();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: landlordFirst
+            ? [
+          landlordBlock,
+          SizedBox(height: 8.0.h),
+          tenantBlock,
+        ]
+            : [
+          tenantBlock,
+          SizedBox(height: 8.0.h),
+          landlordBlock,
+        ],
+      );
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -904,19 +971,18 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           label: '',
                           hintText: index == 0
                               ? hintText
-                              : 'Enter optional ${fieldLabel.toLowerCase()}...',
+                              : 'Enter ${fieldLabel.toLowerCase()}...',
                         ),
 
                         if (showIdCodeField &&
-                            idCodeControllers != null) ...[
+                            idCodeControllers != null &&
+                            index > 0) ...[
                           SizedBox(height: 8.0.h),
 
                           PropertyFormTextField(
                             controller: idCodeControllers[index],
                             label: '',
-                            hintText: index == 0
-                                ? 'Enter tenant ID code (optional)...'
-                                : 'Enter optional tenant ID code...',
+                            hintText: 'Enter ${fieldLabel.toLowerCase().replaceAll(' name', '')} ID code...',
                           ),
                         ],
                       ],
@@ -1062,73 +1128,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDropdownField({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final normalizedValue = value.trim().toLowerCase();
-
-    final matchingItem = items.firstWhere(
-          (item) => item.toLowerCase() == normalizedValue,
-      orElse: () => items.first,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: const Color(0xFF2C3E50),
-            fontFamily: 'Montserrat',
-            fontWeight: FontWeight.bold,
-            fontSize: 13.0.sp,
-          ),
-        ),
-        SizedBox(height: 2.0.h),
-        Container(
-          height: 48.0.h,
-          padding:
-          EdgeInsets.symmetric(horizontal: 20.0.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24.0.w),
-            border: Border.all(
-              color: const Color(0xFFE2E8F0),
-              width: 1.0.w,
-            ),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: matchingItem,
-              isExpanded: true,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: const Color(0xFF7F8C8D),
-                size: 20.0.w,
-              ),
-              style: TextStyle(
-                color: const Color(0xFF2C3E50),
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Montserrat',
-                fontSize: 14.0.sp,
-              ),
-              items: items.map((String item) {
-                return DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(item),
-                );
-              }).toList(),
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1281,7 +1280,7 @@ class _AddressDetailsDialogState
       _streetError =
       street.isEmpty ? 'Please enter the street address.' : null;
       _cityError = city.isEmpty ? 'Please enter the city.' : null;
-      _stateError = state.isEmpty ? 'Please enter the state.' : null;
+      _stateError = state.isEmpty ? 'Please enter the county/state.' : null;
       _zipError = zip.isEmpty ? 'Please enter the zip code.' : null;
       _countryError =
       country.isEmpty ? 'Please enter the country.' : null;
@@ -1374,7 +1373,7 @@ class _AddressDetailsDialogState
             SizedBox(height: 12.0.h),
             AddressPopupField(
               controller: stateController,
-              label: 'State',
+              label: 'County/State',
               hint: 'e.g. CA',
             ),
             if (_stateError != null) _buildFieldError(_stateError!),

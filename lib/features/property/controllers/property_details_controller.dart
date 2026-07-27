@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
-import '../models/tenant_model.dart';
+
 
 class PropertyDetailsController extends BaseController {
   final selectedRole = 'tenant'.obs;
@@ -191,23 +191,7 @@ class PropertyDetailsController extends BaseController {
     }
   }
 
-  /// Builds the combined address string from the five separate fields.
-  ///
-  /// Bug fix: previously this simply appended `street` as-is, then
-  /// appended `city`, `state zip`, and `country` on top of it. Since the
-  /// Street Address field (`AddressPopupField`) is a completely free-form
-  /// `TextField` with no validation, nothing stops someone from typing or
-  /// pasting the *entire* formatted address into the Street box (e.g.
-  /// "12356, fgj, Ca 134568, USA") instead of just the street line. When
-  /// that happened, this method faithfully re-appended city/state/zip/
-  /// country a second time, producing a visibly duplicated address like:
-  ///   "12356, fgj, Ca 134568, USA, fgj, Ca 134568, USA"
-  ///
-  /// Now, before joining, we strip any comma-separated segment out of
-  /// `street` that exactly matches (case-insensitively) the city, state,
-  /// zip, "state zip", or country values. This keeps the join logic
-  /// working normally for a clean street value, while making it robust
-  /// against a street value that already contains the other parts.
+
   void updateAddress({
     required String street,
     required String city,

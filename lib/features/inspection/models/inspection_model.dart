@@ -474,7 +474,7 @@ List<RoomInspection> getDefaultInspectionData() {
     RoomInspection(
       id: 2,
       number: "02",
-      name: "Living Room",
+      name: "Bedroom 2",
       icon: Icons.chair_outlined,
       progress: 0.0,
       checklist: [
@@ -549,7 +549,7 @@ List<RoomInspection> getDefaultInspectionData() {
     RoomInspection(
       id: 7,
       number: "07",
-      name: "utils",
+      name: "Utilities",
       icon: Icons.home_outlined,
       progress: 0.0,
       checklist: [

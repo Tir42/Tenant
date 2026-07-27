@@ -590,6 +590,10 @@ Future<Uint8List> generateInspectionReportPdf({
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
+                _metadataRow(
+                  'Inspection Carried Out By',
+                  inspectionPerformedBy,
+                ),
                 _metadataRow('ID Code', idCode),
                 _metadataRow(
                   'Tenant Name',
@@ -605,10 +609,7 @@ Future<Uint8List> generateInspectionReportPdf({
                 ),
                 _metadataRow('Property Address', propertyAddress),
                 _metadataRow('Inspection Type', inspectionType),
-                _metadataRow(
-                  'Inspection Carried Out By',
-                  inspectionPerformedBy,
-                ),
+
                 _metadataRow('Inspection Date', inspectionDate),
                 _metadataRow('Report Generated On', reportGeneratedOn),
               ],

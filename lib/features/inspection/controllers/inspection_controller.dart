@@ -9,6 +9,7 @@ class InspectionController extends GetxController {
   final tenantIdCodes = <String>[].obs;
   final tenantPhone = ''.obs;
   final landlordName = ''.obs;
+  final landlordIdCodes = <String>[].obs;
   final landlordPhone = ''.obs;
   final propertyAddress = ''.obs;
   final city = ''.obs;
@@ -57,7 +58,7 @@ class InspectionController extends GetxController {
 
 
   void syncAvailableUtilitiesFromChecklist() {
-    int utilsIndex = roomsList.indexWhere((r) => r.name.toLowerCase() == 'utils');
+    int utilsIndex = roomsList.indexWhere((r) => r.name.toLowerCase() == 'Utilities');
     if (utilsIndex != -1) {
       for (var item in roomsList[utilsIndex].checklist) {
         if (!availableUtilities.contains(item.name)) {
@@ -133,7 +134,7 @@ class InspectionController extends GetxController {
   void addRoom(String name, IconData icon) {
     final int newId = roomsList.length + 1;
     final List<InspectionItem> customChecklist;
-    if (name.toLowerCase() == 'utils') {
+    if (name.toLowerCase() == 'Utilities') {
       customChecklist = [
         InspectionItem(name: "Furniture", status: RoomItemStatus.neutral),
         InspectionItem(name: "TV", status: RoomItemStatus.neutral),
@@ -238,6 +239,7 @@ class InspectionController extends GetxController {
       'tenantIdCodes': tenantIdCodes.toList(),
       'tenantPhone': tenantPhone.value,
       'landlordName': landlordName.value,
+      'landlordIdCodes': landlordIdCodes.toList(),
       'landlordPhone': landlordPhone.value,
       'propertyAddress': propertyAddress.value,
       'city': city.value,
@@ -274,6 +276,20 @@ class InspectionController extends GetxController {
     tenantPhone.value =
         json['tenantPhone'] ?? '+1 (555) 012-3456';
     landlordName.value = json['landlordName'] ?? '';
+
+    final dynamic savedLandlordIdCodes =
+    json['landlordIdCodes'];
+
+    if (savedLandlordIdCodes is List) {
+      landlordIdCodes.assignAll(
+        savedLandlordIdCodes
+            .map((idCode) => idCode.toString())
+            .toList(),
+      );
+    } else {
+      landlordIdCodes.clear();
+    }
+
     landlordPhone.value = json['landlordPhone'] ?? '+1 (555) 019-2834';
     propertyAddress.value = json['propertyAddress'] ?? '';
     city.value = json['city'] ?? '';
@@ -303,6 +319,7 @@ class InspectionController extends GetxController {
     tenantIdCodes.clear();
     tenantPhone.value = '';
     landlordName.value = '';
+    landlordIdCodes.clear();
     landlordPhone.value = '';
     propertyAddress.value = '';
     city.value = '';

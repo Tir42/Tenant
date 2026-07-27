@@ -5,6 +5,7 @@ import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 import 'package:tenantsnap/features/dashboard/screens/tenant_dashboard_screen.dart';
+import '../../property/screens/property_details_screen.dart';
 import 'room_detail_screen.dart';
 import 'report_review_screen.dart';
 
@@ -41,7 +42,7 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
       {'icon': Icons.local_laundry_service_outlined, 'name': 'Washer'},
       {'icon': Icons.door_front_door_outlined, 'name': 'Door'},
       {'icon': Icons.balcony_outlined, 'name': 'Balcony'},
-      {'icon': Icons.home_outlined, 'name': 'Utils'},
+      {'icon': Icons.home_outlined, 'name': 'Utilities'},
     ];
 
     showDialog(
@@ -193,7 +194,7 @@ class _InspectionFlowListScreenState extends State<InspectionFlowListScreen> {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             } else {
-              Get.offAll(() => const TenantDashboardScreen());
+              Get.offAll(() => const PropertyDetailsScreen());
             }
           },
           child: Container(
