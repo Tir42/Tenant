@@ -179,9 +179,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
-        maxWidth: 1080,
-        maxHeight: 1080,
-        imageQuality: 85,
       );
 
       if (pickedFile != null) {

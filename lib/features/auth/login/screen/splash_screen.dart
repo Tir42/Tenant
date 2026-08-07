@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
+import 'package:tenantsnap/core/controllers/base_controller.dart';
 
 import '../../../dashboard/screens/home_screen.dart';
 
@@ -95,6 +96,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             final days = DateTime.now().difference(loginDate).inDays;
 
             if (days < 7) {
+              BaseController.name.value = box.read('userName') ?? '';
+              BaseController.email.value = box.read('email') ?? '';
+              BaseController.phone.value = box.read('phone') ?? '';
+              BaseController.idCode.value = box.read('idCode') ?? '';
+              BaseController.userId.value = box.read('userId') ?? 0;
+
               Get.offAll(
                     () => HomeScreen(
                   role: box.read('role') ?? 'tenant',

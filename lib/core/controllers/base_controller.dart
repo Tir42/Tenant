@@ -10,6 +10,7 @@ class BaseController extends GetxController {
   static final email = ''.obs;
   static final phone = ''.obs;
   static final idCode = ''.obs;
+  static final userId = 0.obs;
 
   @override
   void onInit() {

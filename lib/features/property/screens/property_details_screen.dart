@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:country_picker/country_picker.dart';
 
@@ -43,8 +44,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   final TextEditingController _roleController = TextEditingController();
 
-  // Basic phone validation: 7-15 digits, optional leading +.
-  final RegExp _phoneRegex = RegExp(r'^\+?\d{7,15}$');
+  // Strict phone validation: exactly 10 digits.
+  final RegExp _phoneRegex = RegExp(r'^\d{10}$');
 
   String? _idCodeError;
   String? _tenantError;
@@ -67,27 +68,91 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       initialUserName: widget.userName,
     );
 
-    // Start every field blank instead of pre-filling from existing data.
-    _detailsController.idCodeController.clear();
-    _detailsController.tenantController.clear();
-    _detailsController.tenantPhoneController.clear();
-    _detailsController.landlordController.clear();
-    _detailsController.landlordPhoneController.clear();
-    _detailsController.addressController.clear();
-    _detailsController.cityController.clear();
-    _detailsController.stateController.clear();
-    _detailsController.zipController.clear();
-    _detailsController.countryController.clear();
-    _detailsController.possessionDateController.clear();
-    _detailsController.leaseDateController.clear();
-    _detailsController.inspectionController.tenantIdCodes.clear();
-    _detailsController.inspectionController.landlordIdCodes.clear();
+    final inspectionController = _detailsController.inspectionController;
+    if (inspectionController.editingRecordId.value.isNotEmpty) {
+      _detailsController.idCodeController.text = inspectionController.idCode.value;
+      _detailsController.tenantPhoneController.text = inspectionController.tenantPhone.value;
+      _detailsController.landlordPhoneController.text = inspectionController.landlordPhone.value;
+      _detailsController.addressController.text = inspectionController.propertyAddress.value;
+      _detailsController.cityController.text = inspectionController.city.value;
+      _detailsController.stateController.text = inspectionController.state.value;
+      _detailsController.zipController.text = inspectionController.zipcode.value;
+      _detailsController.countryController.text = inspectionController.country.value;
+      _detailsController.possessionDateController.text = inspectionController.possessionDate.value;
+      _detailsController.leaseDateController.text = inspectionController.agreementDate.value;
+      
+      _detailsController.selectedRole.value = inspectionController.inspectionPerformedBy.value == 'Landlord' ? 'Landlord' : 'Tenant';
+      _roleController.text = _detailsController.selectedRole.value;
+
+      _tenantControllers.clear();
+      _tenantIdCodeControllers.clear();
+      final List<String> tenants = inspectionController.tenantName.value.split(',').map((t) => t.trim()).toList();
+      for (int i = 0; i < tenants.length; i++) {
+        final controller = TextEditingController(text: tenants[i]);
+        controller.addListener(_onTenantFieldChanged);
+        _tenantControllers.add(controller);
+
+        String idCode = '';
+        if (i < inspectionController.tenantIdCodes.length) {
+          idCode = inspectionController.tenantIdCodes[i];
+        }
+        _tenantIdCodeControllers.add(TextEditingController(text: idCode));
+      }
+      if (_tenantControllers.isEmpty) {
+        _tenantControllers.add(TextEditingController()..addListener(_onTenantFieldChanged));
+        _tenantIdCodeControllers.add(TextEditingController());
+      }
+
+      _landlordControllers.clear();
+      _landlordIdCodeControllers.clear();
+      final List<String> landlords = inspectionController.landlordName.value.split(',').map((l) => l.trim()).toList();
+      for (int i = 0; i < landlords.length; i++) {
+        final controller = TextEditingController(text: landlords[i]);
+        controller.addListener(_onLandlordFieldChanged);
+        _landlordControllers.add(controller);
+
+        String idCode = '';
+        if (i < inspectionController.landlordIdCodes.length) {
+          idCode = inspectionController.landlordIdCodes[i];
+        }
+        _landlordIdCodeControllers.add(TextEditingController(text: idCode));
+      }
+      if (_landlordControllers.isEmpty) {
+        _landlordControllers.add(TextEditingController()..addListener(_onLandlordFieldChanged));
+        _landlordIdCodeControllers.add(TextEditingController());
+      }
+    } else {
+      _detailsController.idCodeController.clear();
+      _detailsController.tenantController.clear();
+      _detailsController.tenantPhoneController.clear();
+      _detailsController.landlordController.clear();
+      _detailsController.landlordPhoneController.clear();
+      _detailsController.addressController.clear();
+      _detailsController.cityController.clear();
+      _detailsController.stateController.clear();
+      _detailsController.zipController.clear();
+      _detailsController.countryController.clear();
+      _detailsController.possessionDateController.clear();
+      _detailsController.leaseDateController.clear();
+      _detailsController.inspectionController.tenantIdCodes.clear();
+      _detailsController.inspectionController.landlordIdCodes.clear();
+      
+      _tenantControllers.clear();
+      _tenantControllers.add(TextEditingController()..addListener(_onTenantFieldChanged));
+      _tenantIdCodeControllers.clear();
+      _tenantIdCodeControllers.add(TextEditingController());
+
+      _landlordControllers.clear();
+      _landlordControllers.add(TextEditingController()..addListener(_onLandlordFieldChanged));
+      _landlordIdCodeControllers.clear();
+      _landlordIdCodeControllers.add(TextEditingController());
+
+      _roleController.text = _detailsController.selectedRole.value == 'landlord' ? 'Landlord' : 'Tenant';
+    }
 
     _roleController.addListener(_onRoleFieldChanged);
 
-    // Clear the relevant error as soon as the user edits a field.
-    _tenantControllers.first.addListener(_onTenantFieldChanged);
-    _landlordControllers.first.addListener(_onLandlordFieldChanged);
+
 
     _detailsController.idCodeController.addListener(_clearIdCodeError);
     _detailsController.tenantPhoneController
@@ -443,7 +508,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       _tenantPhoneError = tenantPhone.isEmpty
           ? 'Please enter the tenant phone number.'
           : (!_phoneRegex.hasMatch(tenantPhone)
-          ? 'Please enter a valid phone number.'
+          ? 'Phone number must be exactly 10 digits.'
           : null);
 
       _landlordError = landlordNames.isEmpty
@@ -453,7 +518,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       _landlordPhoneError = landlordPhone.isEmpty
           ? 'Please enter the landlord phone number.'
           : (!_phoneRegex.hasMatch(landlordPhone)
-          ? 'Please enter a valid phone number.'
+          ? 'Phone number must be exactly 10 digits.'
           : null);
 
       _addressError = address.isEmpty
@@ -783,6 +848,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           label: 'Tenant Phone',
           hintText: 'Enter tenant phone number...',
           keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
         ),
 
         if (_tenantPhoneError != null) ...[
@@ -816,6 +885,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           label: 'Landlord Phone',
           hintText: 'Enter landlord phone number...',
           keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
         ),
 
         if (_landlordPhoneError != null) ...[

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:dio/dio.dart';
 
@@ -271,7 +272,10 @@ class SignUpController extends BaseController {
             '${signupRes.firstName ?? firstName} ${signupRes.lastName ?? lastName}'.trim();
         BaseController.email.value = (signupRes.email ?? email).trim();
         BaseController.phone.value = (signupRes.phone ?? phone).trim();
-        //BaseController.idCode.value = signupRes.idCode ?? idCode;
+        BaseController.userId.value = signupRes.id ?? 0;
+
+        final box = GetStorage();
+        box.write('userId', BaseController.userId.value);
 
         signupStatus.value = RxStatus.success();
         return null;

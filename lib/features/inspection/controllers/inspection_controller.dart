@@ -21,6 +21,7 @@ class InspectionController extends GetxController {
   final inspectionType = ''.obs;
   final inspectionPerformedBy = 'Tenant'.obs;
   final showPhoneInPdf = true.obs;
+  final editingRecordId = ''.obs;
 
 
   // Active rooms list
@@ -314,6 +315,7 @@ class InspectionController extends GetxController {
   }
 
   void clearInspectionData() {
+    editingRecordId.value = '';
     idCode.value = '';
     tenantName.value = '';
     tenantIdCodes.clear();
@@ -329,7 +331,7 @@ class InspectionController extends GetxController {
     possessionDate.value = '';
     agreementDate.value = '';
     inspectionType.value = '';
-    inspectionPerformedBy.value = 'Tenant';
+    inspectionPerformedBy.value = '';
     showPhoneInPdf.value = true;
 
     // Reset rooms and checklist items

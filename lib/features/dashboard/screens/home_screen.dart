@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:get/get.dart';
+import 'package:dio/dio.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/dashboard/controllers/dashboard_controller.dart';
@@ -8,6 +10,10 @@ import 'package:tenantsnap/features/property/screens/property_details_screen.dar
 import 'package:tenantsnap/features/inspection/screens/report_review_screen.dart';
 import 'profile_details_screen.dart';
 import 'history_screen.dart';
+import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:tenantsnap/core/utils/download_helper/download_helper.dart';
+import 'package:tenantsnap/core/services/rest_client.dart';
 
 class HomeScreen extends StatefulWidget {
   final String role;
@@ -496,11 +502,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSpacing: 16,
                     childAspectRatio: 1.15,
                     children: [
-                      _buildGridActionCard(
+                       _buildGridActionCard(
                         icon: Icons.play_arrow_rounded,
-                        title: activeRole == 'tenant' ? 'Start New' : 'Verify Checks',
-                        subtitle: activeRole == 'tenant' ? 'Launch property flow' : '2 pending tenant checklists',
+                        title: 'Start New',
+                        subtitle: activeRole == 'tenant' ? 'Launch property flow' : 'Verify property checks',
                         onTap: () {
+                          try {
+                            Get.find<InspectionController>().clearInspectionData();
+                          } catch (_) {}
                           Get.to(() => PropertyDetailsScreen(
                             role: activeRole,
                             userName: userName,
@@ -509,8 +518,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       _buildGridActionCard(
                         icon: Icons.description_outlined,
-                        title: activeRole == 'tenant' ? 'History & Reports' : 'Verified Archive',
-                        subtitle: activeRole == 'tenant' ? 'Open PDF reports' : '12 Spatial sign-offs',
+                        title: 'History & Reports',
+                        subtitle: activeRole == 'tenant' ? 'Open PDF reports' : 'View signed report archive',
                         onTap: () {
                           Get.to(() => HistoryScreen(
                             role: activeRole,
@@ -614,43 +623,108 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   // Submissions Card Container
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  Obx(() {
+                    if (dashboardController.isLoadingSubmissions.value) {
+                      return Container(
+                        height: 100,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        _buildRecentSubmissionItem(
-                          context: context,
-                          title: 'Unit 402 – Urban Loft',
-                          date: 'Jun 14',
-                          status: 'PENDING SIGNATURE',
-                          statusBg: const Color(0xFFFFF4E6),
-                          statusText: const Color(0xFFFD7E14),
-                          isCompleted: false,
+                        child: const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF007BFF)),
                         ),
-                        const Divider(color: Color(0xFFE2E8F0), height: 1),
-                        _buildRecentSubmissionItem(
-                          context: context,
-                          title: 'Suite 21B – Bayview Heights',
-                          date: 'May 28',
-                          status: 'VERIFIED',
-                          statusBg: const Color(0xFFEBFBEE),
-                          statusText: const Color(0xFF2B8A3E),
-                          isCompleted: true,
+                      );
+                    }
+
+                    if (dashboardController.recentSubmissions.isEmpty) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
                         ),
-                      ],
-                    ),
-                  ),
+                        child: const Center(
+                          child: Text(
+                            'No recent submissions',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 12,
+                              color: Color(0xFF7F8C8D),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: List.generate(dashboardController.recentSubmissions.length, (index) {
+                          final item = dashboardController.recentSubmissions[index];
+                          final String tenantVal = item['tenantName'] ?? '';
+                          final String landlordVal = item['landlordName'] ?? '';
+                          final String activeRole = dashboardController.activeRole.value;
+                          final String title = activeRole.toLowerCase() == 'landlord'
+                              ? (landlordVal.isNotEmpty && landlordVal != 'N/A' ? landlordVal : (item['title'] ?? 'Inspection Report'))
+                              : (tenantVal.isNotEmpty && tenantVal != 'N/A' ? tenantVal : (item['title'] ?? 'Inspection Report'));
+                          final String recordRole = (item['role'] ?? activeRole).toString().toLowerCase() == 'landlord' ? 'Landlord' : 'Tenant';
+                          final String dateStr = '${item['date'] ?? ''}  •  $recordRole';
+                          final String rawStatus = (item['status'] ?? 'VERIFIED').toString().toUpperCase().trim();
+                          
+                          Color statusBg = const Color(0xFFEBFBEE);
+                          Color statusText = const Color(0xFF2B8A3E);
+                          bool isCompleted = true;
+
+                          if (rawStatus == 'PENDING SIGNATURE') {
+                            statusBg = const Color(0xFFFFF4E6);
+                            statusText = const Color(0xFFFD7E14);
+                            isCompleted = false;
+                          } else if (rawStatus == 'VERIFIED') {
+                            statusBg = const Color(0xFFE6FCF5);
+                            statusText = const Color(0xFF0CA678);
+                            isCompleted = true;
+                          } else {
+                            statusBg = const Color(0xFFF1F3F5);
+                            statusText = const Color(0xFF495057);
+                            isCompleted = true;
+                          }
+
+                          return Column(
+                            children: [
+                              if (index > 0) const Divider(color: Color(0xFFE2E8F0), height: 1),
+                              _buildRecentSubmissionItem(
+                                context: context,
+                                title: title,
+                                date: dateStr,
+                                status: rawStatus,
+                                statusBg: statusBg,
+                                statusText: statusText,
+                                isCompleted: isCompleted,
+                                itemData: item,
+                              ),
+                            ],
+                          );
+                        }),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -735,6 +809,111 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _downloadAndOpenPdf(Map<String, dynamic> item) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Color(0xFF007BFF)),
+                SizedBox(height: 16),
+                Text(
+                  'Downloading report...',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final restClient = Get.find<RestClient>();
+      final dioClient = restClient.dio;
+
+      String rawBase = dioClient.options.baseUrl;
+      if (rawBase.endsWith('/')) {
+        rawBase = rawBase.substring(0, rawBase.length - 1);
+      }
+      final baseUrl = rawBase.endsWith('/api')
+          ? rawBase.substring(0, rawBase.length - 4)
+          : rawBase;
+
+      final pdfUrl = item['pdfUrl'] ?? '';
+      final String fullUrl;
+      if (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
+        fullUrl = pdfUrl;
+      } else {
+        fullUrl = '$baseUrl$pdfUrl';
+      }
+
+      debugPrint("Downloading PDF from: $fullUrl");
+
+      final downloadDio = Dio();
+      final response = await downloadDio.get<List<int>>(
+        fullUrl,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = Uint8List.fromList(response.data!);
+      
+      // Validate PDF signature magic bytes (%PDF)
+      if (bytes.length < 4 || 
+          bytes[0] != 0x25 || 
+          bytes[1] != 0x50 || 
+          bytes[2] != 0x44 || 
+          bytes[3] != 0x46) {
+        final sampleText = String.fromCharCodes(bytes.take(80));
+        debugPrint("Error: Server returned non-PDF content: $sampleText");
+        throw Exception("Downloaded content is not a valid PDF file. The file may be missing from the server.");
+      }
+
+      final fileName = 'TenantSnap_Report_${item['idCode'] ?? 'Archive'}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+      final savedPath = await DownloadHelper.downloadPdf(
+        bytes: bytes,
+        fileName: fileName,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading dialog
+
+      if (savedPath != null) {
+        final result = await OpenFilex.open(savedPath);
+        if (result.type != ResultType.done) {
+          throw Exception(result.message);
+        }
+      } else {
+        throw Exception('Could not write PDF to local storage.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      try {
+        Navigator.pop(context);
+      } catch (_) {}
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFE74C3C),
+          content: Text('Failed to open PDF: $e'),
+        ),
+      );
+    }
+  }
+
   Widget _buildRecentSubmissionItem({
     required BuildContext context,
     required String title,
@@ -743,21 +922,12 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color statusBg,
     required Color statusText,
     required bool isCompleted,
+    required Map<String, dynamic> itemData,
   }) {
-    final activeRole = dashboardController.activeRole.value;
-    final userName = dashboardController.userName.value;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          Get.to(() => ReportReviewScreen(
-            tenantName: activeRole == 'tenant' ? userName : 'Liam Carter',
-            landlordName: activeRole == 'landlord' ? userName : 'Victoria Sterling',
-            propertyAddress: title,
-            inspectionDate: date,
-          ));
-        },
+        onTap: () => _downloadAndOpenPdf(itemData),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 14.0),
           child: Row(
