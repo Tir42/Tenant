@@ -1082,8 +1082,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     }
 
                     Get.offAll(
-                          () => HomeScreen(
-                        role: 'tenant',
+                      () => HomeScreen(
+                        role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
                         userName: BaseController.name.value,
                       ),
                     );
@@ -1188,7 +1188,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
 
                     if (context.mounted) {
                       Get.offAll(() => HomeScreen(
-                        role: 'tenant',
+                        role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
                         userName: BaseController.name.value,
                       ));
                     }

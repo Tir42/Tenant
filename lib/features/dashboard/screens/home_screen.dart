@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
+import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
+import 'package:tenantsnap/core/utils/pdf/pdf_generator.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/dashboard/controllers/dashboard_controller.dart';
@@ -900,6 +903,67 @@ class _HomeScreenState extends State<HomeScreen> {
         throw Exception('Could not write PDF to local storage.');
       }
     } catch (e) {
+      final String? inspectionJson = item['inspectionData'];
+      if (inspectionJson != null && inspectionJson.isNotEmpty) {
+        try {
+          debugPrint("Download failed. Attempting on-the-fly PDF regeneration...");
+          final decoded = jsonDecode(inspectionJson);
+          final List<RoomInspection> rooms;
+          if (decoded is List) {
+            rooms = decoded.map((r) => RoomInspection.fromJson(r as Map<String, dynamic>)).toList();
+          } else if (decoded is Map && decoded['rooms'] is List) {
+            rooms = (decoded['rooms'] as List).map((r) => RoomInspection.fromJson(r as Map<String, dynamic>)).toList();
+          } else {
+            throw Exception("Invalid inspection data structure.");
+          }
+
+          final String idCode = item['idCode'] ?? '';
+          final String tenantName = item['tenantName'] ?? '';
+          final String landlordName = item['landlordName'] ?? '';
+          final String propertyAddress = item['propertyAddress'] ?? '';
+          final String inspectionDate = item['inspectionDate'] ?? '';
+
+          final pdfBytes = await generateInspectionReportPdf(
+            idCode: idCode,
+            tenantName: tenantName,
+            landlordName: landlordName,
+            propertyAddress: propertyAddress,
+            inspectionDate: inspectionDate,
+            inspectionType: 'Possession',
+            inspectionPerformedBy: item['role'] ?? 'tenant',
+            reportGeneratedOn: item['date'] ?? '',
+            rooms: rooms,
+            tenantPhone: item['tenantPhone'] ?? '',
+            landlordPhone: item['landlordPhone'] ?? '',
+            showPhone: true,
+            agreementDate: '',
+          );
+
+          final fileName = 'TenantSnap_Report_${idCode.isNotEmpty ? idCode : 'Archive'}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+          final savedPath = await DownloadHelper.downloadPdf(
+            bytes: pdfBytes,
+            fileName: fileName,
+          );
+
+          if (!mounted) return;
+          try {
+            Navigator.pop(context);
+          } catch (_) {}
+
+          if (savedPath != null) {
+            final result = await OpenFilex.open(savedPath);
+            if (result.type != ResultType.done) {
+              throw Exception(result.message);
+            }
+            return;
+          } else {
+            throw Exception('Could not write regenerated PDF to local storage.');
+          }
+        } catch (fallbackError) {
+          debugPrint("PDF regeneration fallback failed: $fallbackError");
+        }
+      }
+
       if (!mounted) return;
       try {
         Navigator.pop(context);
