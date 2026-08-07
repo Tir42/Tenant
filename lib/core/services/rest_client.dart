@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
 
@@ -9,9 +10,16 @@ class RestClient extends GetxService {
   RestClient() {
     _dio = Dio(
       BaseOptions(
-        //baseUrl: 'http://192.168.1.8:5000/api',
-        baseUrl: 'https://tenant-apis.vercel.app/api',
-        connectTimeout: const Duration(seconds: 10),
+        // --- 1. LOCAL BACKEND SERVER (Default) ---
+        // Use 10.0.2.2 for Android Emulator, and localhost for iOS Simulator/Web/Desktop
+        // baseUrl: Platform.isAndroid
+        //     ? 'http://tenant-apis.vercel.app/api'
+        //     : 'http://localhost:5000/api',
+
+        //--- 2. DEPLOYED PRODUCTION BACKEND SERVER ---
+       baseUrl: 'https://tenant-apis.vercel.app/api',
+        
+        connectTimeout: const Duration(seconds: 40),
         receiveTimeout: const Duration(seconds: 10),
         sendTimeout: const Duration(seconds: 10),
         headers: {

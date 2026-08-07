@@ -82,6 +82,7 @@ class LoginController extends BaseController {
 
           BaseController.phone.value = loginRes.phone ?? '';
           BaseController.idCode.value = loginRes.idCode ?? '';
+          BaseController.userId.value = loginRes.userId ?? 0;
 
           final box = GetStorage();
 
@@ -92,6 +93,7 @@ class LoginController extends BaseController {
           box.write('email', BaseController.email.value);
           box.write('phone', BaseController.phone.value);
           box.write('idCode', BaseController.idCode.value);
+          box.write('userId', BaseController.userId.value);
 
           loginStatus.value = RxStatus.success();
           return null;

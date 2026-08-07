@@ -11,6 +11,7 @@ class LoginRequest {
 }
 
 class LoginResponse {
+  final int? userId;
   final String? token;
   final String? error;
   final String? firstName;
@@ -20,6 +21,7 @@ class LoginResponse {
   final String? idCode;
 
   LoginResponse({
+    this.userId,
     this.token,
     this.error,
     this.firstName,
@@ -32,6 +34,7 @@ class LoginResponse {
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>?;
     return LoginResponse(
+      userId: json['userId'] ?? data?['userId'],
       token: json['token'],
       error: json['error'] ?? json['message'],
       firstName: data?['firstName'],

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -14,6 +16,7 @@ import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 
+import 'dart:convert';
 import '../../../core/controllers/base_controller.dart';
 import '../../dashboard/screens/home_screen.dart';
 
@@ -118,6 +121,72 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     document.dispose();
 
     return Uint8List.fromList(lockedBytes);
+  }
+
+  Future<void> _savePdfToHistory({
+    required Uint8List pdfBytes,
+    required String idCode,
+    required String tenantName,
+    required String landlordName,
+    required String propertyAddress,
+    required String inspectionDate,
+  }) async {
+    try {
+      final restClient = Get.find<RestClient>();
+      final String safeTitle = propertyAddress.contains(',')
+          ? propertyAddress.split(',').first.trim()
+          : (propertyAddress.isNotEmpty ? propertyAddress : 'Inspection Report');
+      
+      final String formattedDate = '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year}';
+      
+      final box = GetStorage();
+      final userId = box.read('userId') ?? 0;
+
+      final inspectionController = Get.find<InspectionController>();
+      final String editingId = inspectionController.editingRecordId.value;
+      final bool isEditing = editingId.isNotEmpty;
+
+      final Map<String, dynamic> exportData = inspectionController.exportToJson();
+      final String inspectionJson = jsonEncode(exportData);
+
+      final formData = dio_pkg.FormData.fromMap({
+        'pdf': dio_pkg.MultipartFile.fromBytes(
+          pdfBytes,
+          filename: 'TenantSnap_Report_${idCode.isNotEmpty ? idCode : DateTime.now().millisecondsSinceEpoch}.pdf',
+          contentType: dio_pkg.DioMediaType('application', 'pdf'),
+        ),
+        'title': safeTitle,
+        'date': formattedDate,
+        'status': 'VERIFIED',
+        'tenantName': tenantName.isNotEmpty ? tenantName : 'N/A',
+        'landlordName': landlordName.isNotEmpty ? landlordName : 'N/A',
+        'propertyAddress': propertyAddress.isNotEmpty ? propertyAddress : 'N/A',
+        'inspectionDate': inspectionDate.isNotEmpty ? inspectionDate : formattedDate,
+        'idCode': idCode.isNotEmpty ? idCode : 'N/A',
+        'userId': userId,
+        'inspectionData': inspectionJson,
+        'tenantPhone': inspectionController.tenantPhone.value.isNotEmpty ? inspectionController.tenantPhone.value : 'N/A',
+        'landlordPhone': inspectionController.landlordPhone.value.isNotEmpty ? inspectionController.landlordPhone.value : 'N/A',
+        'role': inspectionController.inspectionPerformedBy.value.isNotEmpty ? inspectionController.inspectionPerformedBy.value.toLowerCase() : 'tenant',
+      });
+
+      if (isEditing) {
+        await restClient.dio.put(
+          '/pdf-history/$editingId',
+          data: formData,
+        );
+        inspectionController.editingRecordId.value = '';
+        debugPrint("PDF report updated to Cloudflare and updated in history.");
+      } else {
+        await restClient.dio.post(
+          '/pdf-history/upload-cloudflare',
+          data: formData,
+        );
+        debugPrint("PDF report uploaded to Cloudflare and saved to history.");
+      }
+    } catch (e) {
+      debugPrint("Failed to save PDF to history: $e");
+    }
   }
 
   /// Builds a display string like:
@@ -926,10 +995,19 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
             // Closing the preview dialog (Close button, or dismiss) always
             // keeps all inspection data untouched -- no clearing happens here.
             Obx(
-                  () => TextButton(
+              () => TextButton(
                 onPressed: (isDownloading.value || isUploading.value)
                     ? null
-                    : () => Navigator.pop(dialogContext),
+                    : () {
+                        Navigator.pop(dialogContext);
+                        try {
+                          controller.clearInspectionData();
+                        } catch (_) {}
+                        Get.offAll(() => HomeScreen(
+                          role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
+                          userName: BaseController.name.value,
+                        ));
+                      },
                 child: Text(
                   'Close',
                   style: TextStyle(
@@ -988,6 +1066,15 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     }
 
                     // --- Success path ---
+                    await _savePdfToHistory(
+                      pdfBytes: finalPdfBytes,
+                      idCode: idCode,
+                      tenantName: tenantName,
+                      landlordName: landlordName,
+                      propertyAddress: propertyAddress,
+                      inspectionDate: inspectionDate,
+                    );
+
                     _clearAllInspectionData();
 
                     if (dialogContext.mounted) {
@@ -1244,5 +1331,15 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     if (result.status == ShareResultStatus.dismissed) {
       throw Exception('Share was cancelled.');
     }
+
+    // Save to history upon successful share
+    await _savePdfToHistory(
+      pdfBytes: finalPdfBytes,
+      idCode: idCode,
+      tenantName: tenantName,
+      landlordName: landlordName,
+      propertyAddress: propertyAddress,
+      inspectionDate: inspectionDate,
+    );
   }
 }

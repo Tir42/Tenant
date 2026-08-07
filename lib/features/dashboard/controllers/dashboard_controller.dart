@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
+import 'package:tenantsnap/core/services/rest_client.dart';
 
 class DashboardController extends GetxController {
   final activeRole = 'tenant'.obs;
@@ -11,6 +13,7 @@ class DashboardController extends GetxController {
     if (BaseController.name.value.isNotEmpty) {
       userName.value = BaseController.name.value;
     }
+    fetchRecentSubmissions();
   }
   
   final currentCarouselPage = 0.obs;
@@ -81,9 +84,44 @@ class DashboardController extends GetxController {
     },
   ].obs;
 
+  final recentSubmissions = <dynamic>[].obs;
+  final isLoadingSubmissions = false.obs;
+
+  Future<void> fetchRecentSubmissions() async {
+    try {
+      isLoadingSubmissions.value = true;
+      final restClient = Get.find<RestClient>();
+      final box = GetStorage();
+      final userId = box.read('userId') ?? 0;
+
+      final Map<String, dynamic> queryParams = {
+        'userName': BaseController.name.value.isNotEmpty ? BaseController.name.value : (activeRole.value == 'tenant' ? 'Tenant' : 'Landlord'),
+        'role': activeRole.value,
+      };
+      if (userId > 0) {
+        queryParams['userId'] = userId;
+      }
+
+      final response = await restClient.dio.get(
+        '/pdf-history',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200 && response.data != null && response.data['success'] == true) {
+        final List allData = response.data['data'] ?? [];
+        recentSubmissions.assignAll(allData.take(3).toList());
+      }
+    } catch (e) {
+      Get.log("Failed to fetch recent submissions: $e");
+    } finally {
+      isLoadingSubmissions.value = false;
+    }
+  }
+
   void toggleRole(String role) {
     activeRole.value = role;
     userName.value = BaseController.name.value.isNotEmpty ? BaseController.name.value : (role == 'tenant' ? 'Tenant' : 'Landlord');
+    fetchRecentSubmissions();
   }
 
   void updateUserName(String newName) {

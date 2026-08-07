@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/features/inspection/screens/inspection_flow_list_screen.dart';
 import 'package:tenantsnap/features/inspection/screens/report_review_screen.dart';
+import 'package:get/get.dart';
+import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+import 'package:tenantsnap/features/property/screens/property_details_screen.dart';
 
 class TenantDashboardScreen extends StatefulWidget {
   final String role; // 'tenant' or 'landlord'
@@ -440,32 +443,29 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
         _buildDashboardGridItem(
           onTap: () {
             if (isTenant) {
+              try {
+                Get.find<InspectionController>().clearInspectionData();
+              } catch (_) {}
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const InspectionFlowListScreen(),
                 ),
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Color(0xFF2C3E50),
-                  content: Text(
-                    'Opening verification queue for pending tenant submissions...',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Montserrat',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              );
+              try {
+                Get.find<InspectionController>().clearInspectionData();
+              } catch (_) {}
+              Get.to(() => PropertyDetailsScreen(
+                role: 'landlord',
+                userName: widget.userName,
+              ));
             }
           },
           hasActiveGlow: true,
           glowColor: roleColor,
           icon: isTenant ? Icons.add_a_photo_outlined : Icons.rate_review_outlined,
-          title: isTenant ? 'START NEW' : 'VERIFY CHECKS',
-          subtitle: isTenant ? 'Initialize new inspection grid' : '2 pending tenant checklists',
+          title: 'START NEW',
+          subtitle: isTenant ? 'Initialize new inspection grid' : 'Verify property checks',
           progressPercent: isTenant ? 0.0 : 100.0,
           progressText: isTenant ? '+' : '2',
         ),
@@ -521,8 +521,8 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
           hasActiveGlow: false,
           glowColor: const Color(0xFF2ECC71), // Green highlight
           icon: Icons.folder_shared_outlined,
-          title: isTenant ? 'HISTORY & REPORTS' : 'VERIFIED ARCHIVE',
-          subtitle: isTenant ? '4 Saved PDF structures' : '12 Spatial sign-offs',
+          title: 'HISTORY & REPORTS',
+          subtitle: isTenant ? '4 Saved PDF structures' : 'View signed report archive',
           progressPercent: historyReportsProgress.toDouble(),
         ),
 

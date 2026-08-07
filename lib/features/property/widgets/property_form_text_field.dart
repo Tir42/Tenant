@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/utils/responsive/responsive_extension.dart';
 
@@ -10,6 +11,7 @@ class PropertyFormTextField extends StatelessWidget {
   final bool isDatePicker;
   final VoidCallback? onTap;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
 
   const PropertyFormTextField({
     super.key,
@@ -20,6 +22,7 @@ class PropertyFormTextField extends StatelessWidget {
     this.isDatePicker = false,
     this.onTap,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
   });
 
   @override
@@ -52,6 +55,7 @@ class PropertyFormTextField extends StatelessWidget {
             readOnly: readOnly || isDatePicker,
             onTap: onTap,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             style: const TextStyle(
               color: Color(0xFF2C3E50),
               fontWeight: FontWeight.w600,

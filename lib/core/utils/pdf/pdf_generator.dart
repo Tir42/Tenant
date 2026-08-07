@@ -3,11 +3,24 @@ import 'package:flutter/material.dart' show debugPrint;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart'; // add if not already imported
+import 'package:image/image.dart' as img;
 
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/core/utils/image_loader/image_byte_loader.dart';
 
 import '../responsive/responsive_extension.dart';
+
+Uint8List _fixImageOrientation(Uint8List bytes) {
+  try {
+    final image = img.decodeImage(bytes);
+    if (image == null) return bytes;
+    final orientedImage = img.bakeOrientation(image);
+    return Uint8List.fromList(img.encodeJpg(orientedImage, quality: 90));
+  } catch (e) {
+    debugPrint('Failed to fix image orientation: $e');
+    return bytes;
+  }
+}
 
 class PdfTheme {
   static final black = PdfColor.fromInt(0xFF111827);
@@ -154,13 +167,14 @@ pw.Widget _imageBlock(Uint8List? bytes) {
     try {
       return pw.Container(
         width: double.infinity,
-        height: 210,
+        height: 260,
         decoration: pw.BoxDecoration(
+          color: PdfTheme.bgGrey,
           border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
         ),
         child: pw.Image(
           pw.MemoryImage(bytes),
-          fit: pw.BoxFit.cover,
+          fit: pw.BoxFit.contain,
         ),
       );
     } catch (e) {
@@ -250,13 +264,14 @@ pw.Widget _imageThumb(Uint8List? bytes) {
     try {
       return pw.Container(
         width: double.infinity,
-        height: 130,
+        height: 160,
         decoration: pw.BoxDecoration(
+          color: PdfTheme.bgGrey,
           border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
         ),
         child: pw.Image(
           pw.MemoryImage(bytes),
-          fit: pw.BoxFit.cover,
+          fit: pw.BoxFit.contain,
         ),
       );
     } catch (e) {
@@ -442,7 +457,7 @@ Future<Uint8List> generateInspectionReportPdf({
           try {
             final bytes = await fetchImageBytes(photoPath);
             if (bytes.isNotEmpty) {
-              loadedImages[photoPath] = bytes;
+              loadedImages[photoPath] = _fixImageOrientation(bytes);
             }
           } catch (e) {
             debugPrint('Image load failed: $photoPath $e');
