@@ -12,13 +12,13 @@ class RestClient extends GetxService {
       BaseOptions(
         // --- 1. LOCAL BACKEND SERVER (Default) ---
         // Use 10.0.2.2 for Android Emulator, and localhost for iOS Simulator/Web/Desktop
-        baseUrl: Platform.isAndroid
-            ? 'http://192.168.1.4:5000/api'
-            : 'http://localhost:5000/api',
+        // baseUrl: Platform.isAndroid
+        //     ? 'http://192.168.1.4:5000/api'
+        //     : 'http://localhost:5000/api',
 
-        //--- 2. DEPLOYED PRODUCTION BACKEND SERVER ---
-       // baseUrl: 'https://tenant-apis.vercel.app/api',
-       //
+        // --- 2. DEPLOYED PRODUCTION BACKEND SERVER ---
+        baseUrl: 'https://tenant-apis.vercel.app/api',
+    
         connectTimeout: const Duration(seconds: 40),
         receiveTimeout: const Duration(seconds: 10),
         sendTimeout: const Duration(seconds: 10),
