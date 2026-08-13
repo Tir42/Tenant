@@ -66,17 +66,99 @@ class RoomInspection {
     progress = (answered / checklist.length) * 100.0;
   }
 
+  static IconData _getStaticIcon(String name, int codePoint) {
+    final cleanName = name.toLowerCase().trim();
+    if (cleanName.contains('entry') || cleanName.contains('mudroom')) {
+      return Icons.door_front_door_outlined;
+    } else if (cleanName.contains('hallway') || cleanName.contains('corridor')) {
+      return Icons.alt_route_outlined;
+    } else if (cleanName.contains('living room') || cleanName.contains('lounge') || cleanName.contains('dining')) {
+      if (cleanName.contains('dining')) {
+        return Icons.local_dining_outlined;
+      }
+      return Icons.chair_outlined;
+    } else if (cleanName.contains('kitchen')) {
+      return Icons.kitchen_outlined;
+    } else if (cleanName.contains('bedroom') || cleanName.contains('bed room')) {
+      return Icons.bed_outlined;
+    } else if (cleanName.contains('guest room')) {
+      return Icons.bedroom_child_outlined;
+    } else if (cleanName.contains('bathroom') || cleanName.contains('bath room')) {
+      return Icons.bathtub_outlined;
+    } else if (cleanName.contains('laundry') || cleanName.contains('utility') || cleanName.contains('washroom')) {
+      return Icons.local_laundry_service_outlined;
+    } else if (cleanName.contains('pantry') || cleanName.contains('storage')) {
+      return Icons.inventory_2_outlined;
+    } else if (cleanName.contains('balcony') || cleanName.contains('terrace')) {
+      return Icons.balcony_outlined;
+    } else if (cleanName.contains('garage') || cleanName.contains('carport')) {
+      return Icons.garage_outlined;
+    } else if (cleanName.contains('study') || cleanName.contains('office')) {
+      return Icons.desktop_mac_outlined;
+    } else if (cleanName.contains('basement') || cleanName.contains('cellar')) {
+      return Icons.foundation_outlined;
+    } else if (cleanName.contains('attic') || cleanName.contains('loft')) {
+      return Icons.roofing_outlined;
+    } else if (cleanName.contains('sunroom') || cleanName.contains('conservatory')) {
+      return Icons.wb_sunny_outlined;
+    } else if (cleanName.contains('gym') || cleanName.contains('fitness')) {
+      return Icons.fitness_center_outlined;
+    } else if (cleanName.contains('workshop') || cleanName.contains('hobby') || cleanName.contains('build')) {
+      return Icons.build_outlined;
+    }
+
+    switch (codePoint) {
+      case 0xf0809:
+        return Icons.door_front_door_outlined;
+      case 0xf552:
+        return Icons.alt_route_outlined;
+      case 0xe14c:
+        return Icons.chair_outlined;
+      case 0xf193:
+        return Icons.local_dining_outlined;
+      case 0xf15d:
+        return Icons.kitchen_outlined;
+      case 0xf57c:
+        return Icons.bed_outlined;
+      case 0xe0cc:
+        return Icons.bedroom_child_outlined;
+      case 0xf5a5:
+        return Icons.bathtub_outlined;
+      case 0xf1a1:
+        return Icons.local_laundry_service_outlined;
+      case 0xe349:
+        return Icons.inventory_2_outlined;
+      case 0xe0a0:
+        return Icons.balcony_outlined;
+      case 0xf10d:
+        return Icons.garage_outlined;
+      case 0xf6ca:
+        return Icons.desktop_mac_outlined;
+      case 0xe2c6:
+        return Icons.foundation_outlined;
+      case 0xf0178:
+        return Icons.roofing_outlined;
+      case 0xf4b7:
+        return Icons.wb_sunny_outlined;
+      case 0xf07a:
+        return Icons.fitness_center_outlined;
+      case 0xf5e3:
+        return Icons.build_outlined;
+      case 0xf107:
+        return Icons.home_outlined;
+      default:
+        return Icons.home_outlined;
+    }
+  }
+
   factory RoomInspection.fromJson(Map<String, dynamic> json) {
     final iconData = json['icon'] as Map<String, dynamic>;
+    final name = json['name'] as String;
     return RoomInspection(
       id: json['id'] as int,
       number: json['number'] as String,
-      name: json['name'] as String,
-      icon: IconData(
-        iconData['codePoint'] as int,
-        fontFamily: iconData['fontFamily'] as String?,
-        fontPackage: iconData['fontPackage'] as String?,
-      ),
+      name: name,
+      icon: _getStaticIcon(name, iconData['codePoint'] as int),
       progress: (json['progress'] as num).toDouble(),
       checklist: (json['checklist'] as List)
           .map((item) => InspectionItem.fromJson(item as Map<String, dynamic>))

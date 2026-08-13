@@ -88,7 +88,11 @@ class LoginController extends BaseController {
 
           box.write('isLoggedIn', true);
           box.write('loginTime', DateTime.now().millisecondsSinceEpoch);
-          box.write('role', 'tenant');
+          final String computedRole = (BaseController.idCode.value.startsWith('ll') ||
+                  BaseController.idCode.value.startsWith('LL'))
+              ? 'landlord'
+              : 'tenant';
+          box.write('role', computedRole);
           box.write('userName', BaseController.name.value);
           box.write('email', BaseController.email.value);
           box.write('phone', BaseController.phone.value);

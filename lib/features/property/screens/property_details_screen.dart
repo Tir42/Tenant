@@ -44,8 +44,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   final TextEditingController _roleController = TextEditingController();
 
-  // Strict phone validation: exactly 10 digits.
-  final RegExp _phoneRegex = RegExp(r'^\d{10}$');
+  // Strict phone validation: 10 to 15 digits.
+  final RegExp _phoneRegex = RegExp(r'^\d{10,15}$');
 
   String? _idCodeError;
   String? _tenantError;
@@ -508,7 +508,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       _tenantPhoneError = tenantPhone.isEmpty
           ? 'Please enter the tenant phone number.'
           : (!_phoneRegex.hasMatch(tenantPhone)
-          ? 'Phone number must be exactly 10 digits.'
+          ? 'Phone number must be between 10 and 15 digits.'
           : null);
 
       _landlordError = landlordNames.isEmpty
@@ -518,7 +518,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       _landlordPhoneError = landlordPhone.isEmpty
           ? 'Please enter the landlord phone number.'
           : (!_phoneRegex.hasMatch(landlordPhone)
-          ? 'Phone number must be exactly 10 digits.'
+          ? 'Phone number must be between 10 and 15 digits.'
           : null);
 
       _addressError = address.isEmpty
@@ -850,7 +850,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           keyboardType: TextInputType.phone,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(10),
+            LengthLimitingTextInputFormatter(15),
           ],
         ),
 
@@ -887,7 +887,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           keyboardType: TextInputType.phone,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(10),
+            LengthLimitingTextInputFormatter(15),
           ],
         ),
 
