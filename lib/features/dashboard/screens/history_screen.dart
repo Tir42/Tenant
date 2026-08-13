@@ -305,6 +305,165 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  Future<void> _confirmDeleteHistoryItem(Map<String, dynamic> item) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Report?',
+          style: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2C3E50),
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete the inspection report for "${item['tenantName'] ?? item['landlordName'] ?? 'this property'}"?\nThis action cannot be undone.',
+          style: const TextStyle(
+            fontFamily: 'Montserrat',
+            fontSize: 14,
+            color: Color(0xFF7F8C8D),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF7F8C8D),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE74C3C),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteHistoryItem(item);
+    }
+  }
+
+  Future<void> _deleteHistoryItem(Map<String, dynamic> item) async {
+    // Show a loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  color: Color(0xFFE74C3C),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Deleting report...',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final restClient = Get.find<RestClient>();
+      final String id = item['_id'] ?? '';
+      if (id.isEmpty) {
+        throw Exception("Invalid report ID");
+      }
+
+      final response = await restClient.dio.delete('/pdf-history/$id');
+
+      // Pop the loading dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      if (response.statusCode == 200 && response.data != null && response.data['success'] == true) {
+        // Remove item from state locally
+        setState(() {
+          _historyItems.removeWhere((element) => element['_id'] == id);
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: Color(0xFF2ECC71),
+              content: Text(
+                'Report deleted successfully.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
+        }
+      } else {
+        throw Exception(response.data?['message'] ?? 'Failed to delete report');
+      }
+    } catch (e) {
+      // Pop the loading dialog
+      if (mounted) {
+        try {
+          Navigator.pop(context);
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFE74C3C),
+            content: Text(
+              'Failed to delete report: $e',
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   Color _getStatusColor(String status) {
     final normalized = status.toUpperCase().trim();
     if (normalized == 'VERIFIED') {
@@ -510,6 +669,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             statusColor: statusColor,
             onTap: () => _downloadAndOpenPdf(item),
             onEditTap: () => _editInspectionReport(item),
+            onDeleteTap: () => _confirmDeleteHistoryItem(item),
           );
         },
       ),
@@ -524,6 +684,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     required Color statusColor,
     required VoidCallback onTap,
     required VoidCallback onEditTap,
+    required VoidCallback onDeleteTap,
   }) {
     return Material(
       color: Colors.transparent,
@@ -602,6 +763,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   child: const Icon(
                     Icons.edit_outlined,
                     color: Color(0xFF7F8C8D),
+                    size: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onDeleteTap,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFDE8E8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Color(0xFFE74C3C),
                     size: 16,
                   ),
                 ),

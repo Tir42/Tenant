@@ -859,16 +859,106 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _showPdfPreviewDialog(
-            context,
-            idCode: idCode,
-            tenantName: tenantName,
-            landlordName: landlordName,
-            propertyAddress: propertyAddress,
-            inspectionDate: inspectionDate,
-            agreementDate:agreementDate,
-            allRooms: allRooms,
-          ),
+          onTap: () async {
+            final controller = Get.find<InspectionController>();
+            // Show a saving dialog
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (dialogCtx) => const Center(
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          color: Color(0xFF007BFF),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Saving report to history...',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2C3E50),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+
+            try {
+              final pdfBytes = await generateInspectionReportPdf(
+                idCode: idCode,
+                tenantName: tenantName,
+                landlordName: landlordName,
+                propertyAddress: propertyAddress,
+                inspectionDate: inspectionDate,
+                inspectionType: controller.inspectionType.value,
+                inspectionPerformedBy: controller.inspectionPerformedBy.value,
+                reportGeneratedOn: '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                rooms: allRooms,
+                tenantPhone: controller.tenantPhone.value,
+                landlordPhone: controller.landlordPhone.value,
+                showPhone: controller.showPhoneInPdf.value,
+                agreementDate: controller.agreementDate.value,
+              );
+
+              Uint8List finalPdfBytes = pdfBytes;
+              finalPdfBytes = await _lockPdf(finalPdfBytes);
+
+              await _savePdfToHistory(
+                pdfBytes: finalPdfBytes,
+                idCode: idCode,
+                tenantName: tenantName,
+                landlordName: landlordName,
+                propertyAddress: propertyAddress,
+                inspectionDate: inspectionDate,
+              );
+
+              // Dismiss loader
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
+
+              // Show preview dialog
+              if (context.mounted) {
+                _showPdfPreviewDialog(
+                  context,
+                  idCode: idCode,
+                  tenantName: tenantName,
+                  landlordName: landlordName,
+                  propertyAddress: propertyAddress,
+                  inspectionDate: inspectionDate,
+                  agreementDate: agreementDate,
+                  allRooms: allRooms,
+                );
+              }
+            } catch (e) {
+              // Dismiss loader
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
+              // Show error
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFFE74C3C),
+                    content: Text('Failed to save to history: $e'),
+                  ),
+                );
+              }
+            }
+          },
           borderRadius: BorderRadius.circular(12.0.w),
           child: Padding(
             padding:
@@ -919,6 +1009,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     final isDownloading = false.obs;
     final isUploading = false.obs;
     final isDisclaimerAccepted = false.obs;
+    final hasDownloadedOrShared = false.obs;
 
     showDialog(
       context: context,
@@ -1000,13 +1091,13 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     ? null
                     : () {
                         Navigator.pop(dialogContext);
-                        try {
-                          controller.clearInspectionData();
-                        } catch (_) {}
-                        Get.offAll(() => HomeScreen(
-                          role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
-                          userName: BaseController.name.value,
-                        ));
+                        if (hasDownloadedOrShared.value) {
+                          _clearAllInspectionData();
+                          Get.offAll(() => HomeScreen(
+                            role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
+                            userName: BaseController.name.value,
+                          ));
+                        }
                       },
                 child: Text(
                   'Close',
@@ -1066,35 +1157,15 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     }
 
                     // --- Success path ---
-                    await _savePdfToHistory(
-                      pdfBytes: finalPdfBytes,
-                      idCode: idCode,
-                      tenantName: tenantName,
-                      landlordName: landlordName,
-                      propertyAddress: propertyAddress,
-                      inspectionDate: inspectionDate,
-                    );
-
-                    _clearAllInspectionData();
-
-                    if (dialogContext.mounted) {
-                      Navigator.of(dialogContext).pop();
-                    }
-
-                    Get.offAll(
-                      () => HomeScreen(
-                        role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
-                        userName: BaseController.name.value,
-                      ),
-                    );
+                    hasDownloadedOrShared.value = true;
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          duration: const Duration(seconds: 8),
+                          duration: const Duration(seconds: 4),
                           backgroundColor: const Color(0xFF2ECC71),
-                          content: Text(
-                            'PDF saved here: $savedPath',
-                            style: const TextStyle(
+                          content: const Text(
+                            'PDF downloaded successfully.',
+                            style: TextStyle(
                               color: Colors.white,
                               fontFamily: 'Montserrat',
                               fontWeight: FontWeight.w600,
@@ -1180,18 +1251,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     );
 
                     // --- Success path ---
-                    _clearAllInspectionData();
-
-                    if (dialogContext.mounted) {
-                      Navigator.of(dialogContext).pop();
-                    }
-
-                    if (context.mounted) {
-                      Get.offAll(() => HomeScreen(
-                        role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
-                        userName: BaseController.name.value,
-                      ));
-                    }
+                    hasDownloadedOrShared.value = true;
 
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1331,15 +1391,5 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     if (result.status == ShareResultStatus.dismissed) {
       throw Exception('Share was cancelled.');
     }
-
-    // Save to history upon successful share
-    await _savePdfToHistory(
-      pdfBytes: finalPdfBytes,
-      idCode: idCode,
-      tenantName: tenantName,
-      landlordName: landlordName,
-      propertyAddress: propertyAddress,
-      inspectionDate: inspectionDate,
-    );
   }
 }
