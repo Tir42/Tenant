@@ -12,6 +12,7 @@ import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/core/utils/pdf/pdf_generator.dart';
 import 'package:tenantsnap/features/property/screens/property_details_screen.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
+import 'package:tenantsnap/features/dashboard/controllers/dashboard_controller.dart';
 
 class HistoryScreen extends StatefulWidget {
   final String role;
@@ -419,6 +420,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
         setState(() {
           _historyItems.removeWhere((element) => element['_id'] == id);
         });
+
+        // Update DashboardController's recent submissions if registered
+        if (Get.isRegistered<DashboardController>()) {
+          final dashboardController = Get.find<DashboardController>();
+          dashboardController.recentSubmissions.removeWhere((element) => element['_id'] == id);
+          dashboardController.fetchRecentSubmissions();
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
