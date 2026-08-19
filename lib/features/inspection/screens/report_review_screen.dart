@@ -1174,6 +1174,14 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                         ),
                       );
                     }
+                    _clearAllInspectionData();
+                    if (context.mounted) {
+                      Navigator.pop(dialogContext);
+                      Get.offAll(() => HomeScreen(
+                        role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
+                        userName: BaseController.name.value,
+                      ));
+                    }
                   } catch (e) {
                     // --- Failure path: keep data, dialog stays open ---
                     if (context.mounted) {
@@ -1268,6 +1276,14 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                           ),
                         ),
                       );
+                    }
+                    _clearAllInspectionData();
+                    if (context.mounted) {
+                      Navigator.pop(dialogContext);
+                      Get.offAll(() => HomeScreen(
+                        role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
+                        userName: BaseController.name.value,
+                      ));
                     }
                   } catch (e) {
                     // --- Failure path: keep data, dialog stays open ---
