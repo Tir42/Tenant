@@ -86,13 +86,9 @@ class SignUpController extends BaseController {
           return;
         }
 
-        if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-          phoneError.value = 'Phone number must contain digits only.';
-          return;
-        }
-
-        if (phone.length < 8 || phone.length > 10) {
-          phoneError.value = 'Enter a valid phone number.';
+        final error = validatePhoneNumberValue(phone);
+        if (error != null) {
+          phoneError.value = error;
           return;
         }
 
@@ -117,6 +113,10 @@ class SignUpController extends BaseController {
       },
       time: const Duration(milliseconds: 600),
     );
+
+    ever(selectedCountry, (_) {
+      phoneText.value = phoneController.text;
+    });
   }
 
   void toggleObscurePassword() {
@@ -131,7 +131,7 @@ class SignUpController extends BaseController {
     final lastName = lastNameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
-    //final idCode = idCodeController.text.trim();
+ 
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
@@ -166,22 +166,17 @@ class SignUpController extends BaseController {
     if (phone.isEmpty) {
       phoneError.value = 'Phone number is required.';
       isValid = false;
-    } else if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      phoneError.value = 'Phone number must contain digits only.';
-      isValid = false;
-    } else if (phone.length < 8 || phone.length > 10) {
-      phoneError.value = 'Enter a valid phone number.';
-      isValid = false;
-    } else if (phoneError.value == 'Phone number already exists.') {
-      isValid = false;
+    } else {
+      final error = validatePhoneNumberValue(phone);
+      if (error != null) {
+        phoneError.value = error;
+        isValid = false;
+      } else if (phoneError.value == 'Phone number already exists.') {
+        isValid = false;
+      }
     }
 
-    /*if (idCode.isEmpty) {
-      idCodeError.value = 'Tenant ID Code is required.';
-      isValid = false;
-    } else if (idCodeError.value == 'ID Code already exists.') {
-      isValid = false;
-    }*/
+  
 
     if (password.isEmpty) {
       passwordError.value = 'Password is required.';
@@ -341,6 +336,74 @@ class SignUpController extends BaseController {
     } catch (_) {
       return false;
     }
+  }
+
+  List<int> getValidPhoneLengths(String countryCode, String phoneCode, String example) {
+    final upperCountryCode = countryCode.toUpperCase();
+    
+    switch (upperCountryCode) {
+      case 'IN': // India
+        return [10];
+      case 'US': // USA
+      case 'CA': // Canada
+        return [10];
+      case 'GB': // UK
+        return [10];
+      case 'AU': // Australia
+        return [9];
+      case 'SG': // Singapore
+        return [8];
+      case 'AE': // UAE
+        return [9];
+      case 'MY': // Malaysia
+        return [9, 10];
+      case 'NZ': // New Zealand
+        return [8, 9, 10];
+      case 'DE': // Germany
+        return [10, 11];
+      case 'FR': // France
+        return [9];
+      case 'PK': // Pakistan
+        return [10];
+      case 'BD': // Bangladesh
+        return [10];
+      case 'ZA': // South Africa
+        return [9];
+      case 'SA': // Saudi Arabia
+        return [9];
+    }
+    
+    if (example.isNotEmpty) {
+      final cleanExample = example.replaceAll(RegExp(r'[^0-9]'), '');
+      if (cleanExample.isNotEmpty) {
+        return [cleanExample.length];
+      }
+    }
+    
+    return [8, 9, 10, 11, 12];
+  }
+
+  String? validatePhoneNumberValue(String phone) {
+    if (phone.isEmpty) {
+      return null;
+    }
+
+    if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
+      return 'Phone number must contain digits only.';
+    }
+
+    final country = selectedCountry.value;
+    final allowedLengths = getValidPhoneLengths(country.countryCode, country.phoneCode, country.example);
+
+    if (!allowedLengths.contains(phone.length)) {
+      if (allowedLengths.length == 1) {
+        return 'Phone number must be ${allowedLengths.first} digits for ${country.name}.';
+      } else {
+        return 'Phone number must be ${allowedLengths.join(' or ')} digits for ${country.name}.';
+      }
+    }
+
+    return null;
   }
 
   void clearFirstNameError() => firstNameError.value = null;
