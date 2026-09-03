@@ -1,12 +1,14 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response, MultipartFile, FormData;
 import 'package:get_storage/get_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:tenantsnap/core/services/rest_client.dart';
 import 'package:tenantsnap/core/utils/download_helper/download_helper.dart';
-import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/core/utils/pdf/pdf_generator.dart';
@@ -254,6 +256,169 @@ class _HistoryScreenState extends State<HistoryScreen> {
             backgroundColor: const Color(0xFFE74C3C),
             content: Text(
               'Failed to open report PDF: $e',
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sharePdf(Map<String, dynamic> item) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Color(0xFF007BFF)),
+                SizedBox(height: 16),
+                Text(
+                  'Preparing report to share...',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      Uint8List? bytes;
+
+      final pdfUrl = item['pdfUrl'] ?? '';
+      if (pdfUrl.isNotEmpty) {
+        try {
+          final restClient = Get.find<RestClient>();
+          final dioClient = restClient.dio;
+
+          String rawBase = dioClient.options.baseUrl;
+          if (rawBase.endsWith('/')) {
+            rawBase = rawBase.substring(0, rawBase.length - 1);
+          }
+          final baseUrl = rawBase.endsWith('/api')
+              ? rawBase.substring(0, rawBase.length - 4)
+              : rawBase;
+
+          final String fullUrl;
+          if (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
+            fullUrl = pdfUrl;
+          } else {
+            fullUrl = '$baseUrl$pdfUrl';
+          }
+
+          debugPrint("Downloading PDF to share from: $fullUrl");
+
+          final downloadDio = Dio();
+          final response = await downloadDio.get<List<int>>(
+            fullUrl,
+            options: Options(responseType: ResponseType.bytes),
+          );
+
+          final downloadedBytes = Uint8List.fromList(response.data!);
+          // Validate PDF signature magic bytes (%PDF)
+          if (downloadedBytes.length >= 4 &&
+              downloadedBytes[0] == 0x25 &&
+              downloadedBytes[1] == 0x50 &&
+              downloadedBytes[2] == 0x44 &&
+              downloadedBytes[3] == 0x46) {
+            bytes = downloadedBytes;
+          }
+        } catch (downloadErr) {
+          debugPrint("Could not download PDF from server: $downloadErr");
+        }
+      }
+
+      // If download didn't produce valid bytes, fallback to on-the-fly PDF regeneration
+      if (bytes == null) {
+        final String? inspectionJson = item['inspectionData'];
+        if (inspectionJson != null && inspectionJson.isNotEmpty) {
+          final decoded = jsonDecode(inspectionJson);
+          final List<RoomInspection> rooms;
+          if (decoded is List) {
+            rooms = decoded.map((r) => RoomInspection.fromJson(r as Map<String, dynamic>)).toList();
+          } else if (decoded is Map && decoded['rooms'] is List) {
+            rooms = (decoded['rooms'] as List).map((r) => RoomInspection.fromJson(r as Map<String, dynamic>)).toList();
+          } else {
+            throw Exception("Invalid inspection data structure.");
+          }
+
+          final String idCode = item['idCode'] ?? '';
+          final String tenantName = item['tenantName'] ?? '';
+          final String landlordName = item['landlordName'] ?? '';
+          final String propertyAddress = item['propertyAddress'] ?? '';
+          final String inspectionDate = item['inspectionDate'] ?? '';
+
+          bytes = await generateInspectionReportPdf(
+            idCode: idCode,
+            tenantName: tenantName,
+            landlordName: landlordName,
+            propertyAddress: propertyAddress,
+            inspectionDate: inspectionDate,
+            inspectionType: 'Possession',
+            inspectionPerformedBy: item['role'] ?? 'tenant',
+            reportGeneratedOn: item['date'] ?? '',
+            rooms: rooms,
+            tenantPhone: item['tenantPhone'] ?? '',
+            landlordPhone: item['landlordPhone'] ?? '',
+            showPhone: true,
+            agreementDate: '',
+          );
+        }
+      }
+
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception("Report PDF data is unavailable.");
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final idCode = (item['idCode'] ?? 'Report').toString().replaceAll(RegExp(r'[^\w-]'), '_');
+      final fileName = 'TenantSnap_Report_${idCode}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+      }
+
+      final String tenantVal = item['tenantName'] ?? '';
+      final String landlordVal = item['landlordName'] ?? '';
+      final String propertyAddress = item['propertyAddress'] ?? '';
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'TenantSnap Inspection Report - $propertyAddress',
+          text: 'TenantSnap Inspection Report\nTenant: $tenantVal\nLandlord: $landlordVal\nProperty: $propertyAddress',
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        try {
+          Navigator.pop(context);
+        } catch (_) {}
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFE74C3C),
+            content: Text(
+              'Failed to share PDF: $e',
               style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'Montserrat',
@@ -676,6 +841,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             status: status.toUpperCase(),
             statusColor: statusColor,
             onTap: () => _downloadAndOpenPdf(item),
+            onShareTap: () => _sharePdf(item),
             onEditTap: () => _editInspectionReport(item),
             onDeleteTap: () => _confirmDeleteHistoryItem(item),
           );
@@ -691,6 +857,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     required String status,
     required Color statusColor,
     required VoidCallback onTap,
+    required VoidCallback onShareTap,
     required VoidCallback onEditTap,
     required VoidCallback onDeleteTap,
   }) {
@@ -741,21 +908,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.2), width: 0.8),
+              if (status != 'VERIFIED' && status.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.2), width: 0.8),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontFamily: 'Montserrat',
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontFamily: 'Montserrat',
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
+                const SizedBox(width: 8),
+              ],
+              GestureDetector(
+                onTap: onShareTap,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEBF5FF),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.share_outlined,
+                    color: Color(0xFF007BFF),
+                    size: 16,
                   ),
                 ),
               ),
@@ -763,7 +948,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               GestureDetector(
                 onTap: onEditTap,
                 child: Container(
-                  padding: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(6),
                   decoration: const BoxDecoration(
                     color: Color(0xFFF2F4F7),
                     shape: BoxShape.circle,
@@ -779,7 +964,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               GestureDetector(
                 onTap: onDeleteTap,
                 child: Container(
-                  padding: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(6),
                   decoration: const BoxDecoration(
                     color: Color(0xFFFDE8E8),
                     shape: BoxShape.circle,

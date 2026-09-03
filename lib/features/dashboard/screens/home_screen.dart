@@ -10,7 +10,6 @@ import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/core/utils/responsive/responsive_extension.dart';
 import 'package:tenantsnap/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:tenantsnap/features/property/screens/property_details_screen.dart';
-import 'package:tenantsnap/features/inspection/screens/report_review_screen.dart';
 import 'profile_details_screen.dart';
 import 'history_screen.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
@@ -37,6 +36,59 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _carouselController = PageController();
   final PageController _subsController = PageController();
   Timer? _carouselTimer;
+
+  final List<Map<String, String>> _faqs = const [
+    {
+      'question': 'What is TenantSnap?',
+      'answer':
+          'TenantSnap helps tenants and landlords document a property’s condition with photos, notes, checklists, and inspection reports.',
+    },
+    {
+      'question': 'How do I start an inspection?',
+      'answer':
+          'Sign in, choose the property or inspection type, then work through each room’s checklist.',
+    },
+    {
+      'question': 'Can I add photos to an inspection?',
+      'answer':
+          'Yes. You can take photos or choose existing images to show the condition of rooms and items.',
+    },
+    {
+      'question': 'Can I add comments to photos or rooms?',
+      'answer':
+          'Yes. Add notes to explain damage, maintenance concerns, or any important details.',
+    },
+    {
+      'question': 'How is the inspection report created?',
+      'answer':
+          'TenantSnap combines your completed checklist, photos, and comments into a PDF inspection report.',
+    },
+    {
+      'question': 'Can I download or share my report?',
+      'answer':
+          'Yes. You can download the PDF report and share it by email or another available sharing option on your device.',
+    },
+    {
+      'question': 'Where can I find previous reports?',
+      'answer':
+          'Open the History or Reports area from the dashboard to view previously saved inspections.',
+    },
+    {
+      'question': 'Can both tenants and landlords use TenantSnap?',
+      'answer':
+          'Yes. TenantSnap supports both roles, helping each person review and keep a record of property condition.',
+    },
+    {
+      'question': 'What should I include in an inspection?',
+      'answer':
+          'Record the condition of walls, floors, doors, windows, fixtures, appliances, and any existing damage.',
+    },
+    {
+      'question': 'What should I do if I find damage?',
+      'answer':
+          'Take clear photos, add a detailed note, and mark the relevant checklist item so it appears in the final report.',
+    },
+  ];
 
   @override
   void initState() {
@@ -728,6 +780,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   }),
+                  const SizedBox(height: 24),
+                  _buildFaqSection(activeColor),
                 ],
               ),
             ),
@@ -1175,5 +1229,417 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Widget _buildFaqSection(Color activeColor) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showFaqBottomSheet(activeColor),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: activeColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.help_outline_rounded,
+                      color: activeColor,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Frequently Asked Questions',
+                        style: TextStyle(
+                          color: Color(0xFF2C3E50),
+                          fontFamily: 'Montserrat',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Tap to view all ${_faqs.length} questions and answers',
+                        style: TextStyle(
+                          color: const Color(0xFF7F8C8D).withValues(alpha: 0.9),
+                          fontFamily: 'Montserrat',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: activeColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_faqs.length} FAQs',
+                    style: TextStyle(
+                      color: activeColor,
+                      fontFamily: 'Montserrat',
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: Color(0xFF94A3B8),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFaqBottomSheet(Color activeColor) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (bottomSheetContext) {
+        return _FaqBottomSheet(
+          faqs: _faqs,
+          activeColor: activeColor,
+        );
+      },
+    );
+  }
 }
+
+class _FaqBottomSheet extends StatefulWidget {
+  final List<Map<String, String>> faqs;
+  final Color activeColor;
+
+  const _FaqBottomSheet({
+    required this.faqs,
+    required this.activeColor,
+  });
+
+  @override
+  State<_FaqBottomSheet> createState() => _FaqBottomSheetState();
+}
+
+class _FaqBottomSheetState extends State<_FaqBottomSheet> {
+  late Set<int> _expandedIndices;
+
+  @override
+  void initState() {
+    super.initState();
+    // By default all questions and answers are visible
+    _expandedIndices = List.generate(widget.faqs.length, (i) => i).toSet();
+  }
+
+  void _toggleAll() {
+    setState(() {
+      if (_expandedIndices.length == widget.faqs.length) {
+        _expandedIndices.clear();
+      } else {
+        _expandedIndices = List.generate(widget.faqs.length, (i) => i).toSet();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isAllExpanded = _expandedIndices.length == widget.faqs.length;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.88,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          const SizedBox(height: 12),
+          Container(
+            width: 44,
+            height: 5,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Header with Title, Count badge, and 'X' close button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: widget.activeColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.help_outline_rounded,
+                      color: widget.activeColor,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Frequently Asked Questions',
+                        style: TextStyle(
+                          color: Color(0xFF2C3E50),
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${widget.faqs.length} Questions & Answers',
+                        style: const TextStyle(
+                          color: Color(0xFF7F8C8D),
+                          fontFamily: 'Montserrat',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 'X' symbol button to close bottom sheet
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Controls row: Title & Expand/Collapse All
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'All Questions (${widget.faqs.length})',
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _toggleAll,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    isAllExpanded ? 'Collapse All' : 'Expand All',
+                    style: TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: widget.activeColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(color: Color(0xFFF1F5F9), height: 16, thickness: 1),
+
+          // All Questions and Answers List
+          Expanded(
+            child: ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              itemCount: widget.faqs.length,
+              itemBuilder: (context, index) {
+                final faq = widget.faqs[index];
+                final isExpanded = _expandedIndices.contains(index);
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: isExpanded
+                        ? widget.activeColor.withValues(alpha: 0.02)
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isExpanded
+                          ? widget.activeColor.withValues(alpha: 0.3)
+                          : const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          if (isExpanded) {
+                            _expandedIndices.remove(index);
+                          } else {
+                            _expandedIndices.add(index);
+                          }
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: isExpanded
+                                        ? widget.activeColor
+                                        : widget.activeColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'Q${index + 1}',
+                                    style: TextStyle(
+                                      color: isExpanded ? Colors.white : widget.activeColor,
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    faq['question'] ?? '',
+                                    style: TextStyle(
+                                      color: isExpanded ? const Color(0xFF1E293B) : const Color(0xFF2C3E50),
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13.5,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                AnimatedRotation(
+                                  turns: isExpanded ? 0.5 : 0.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: isExpanded ? widget.activeColor : const Color(0xFF94A3B8),
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (isExpanded) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFFEDF2F7),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  faq['answer'] ?? '',
+                                  style: const TextStyle(
+                                    color: Color(0xFF475569),
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tenantsnap/core/controllers/base_controller.dart';
 import 'package:tenantsnap/features/auth/login/screen/login_screen.dart';
 
@@ -19,14 +20,40 @@ class ProfileDetailsScreen extends StatefulWidget {
 }
 
 class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
+  static String? _cachedVersion;
+  static String? _cachedBuildNumber;
+
   late String _activeRole;
   late String _userName;
+  String _appVersion = _cachedVersion ?? '1.0.0';
+  String _buildNumber = _cachedBuildNumber ?? '1';
 
   @override
   void initState() {
     super.initState();
     _activeRole = widget.role;
     _userName = BaseController.name.value.isNotEmpty ? BaseController.name.value : widget.userName;
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (info.version.isNotEmpty) {
+        _cachedVersion = info.version;
+      }
+      if (info.buildNumber.isNotEmpty) {
+        _cachedBuildNumber = info.buildNumber;
+      }
+      if (mounted) {
+        setState(() {
+          _appVersion = _cachedVersion ?? '1.0.0';
+          _buildNumber = _cachedBuildNumber ?? '1';
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading package info: $e");
+    }
   }
 
   @override
@@ -173,6 +200,8 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               const Divider(color: Color(0xFFE2E8F0), height: 24),
               _buildTelemetryRow('Last Synced Stamp', 'June 16, 2026 • 17:30'),
               const Divider(color: Color(0xFFE2E8F0), height: 24),
+              _buildVersionRow(activeColor),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
               const SizedBox(height: 16),
               Container(
                 width: double.infinity,
@@ -269,6 +298,110 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
             fontFamily: 'Montserrat',
             fontSize: 12,
             fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVersionRow(Color activeColor) {
+    final String cleanVersion = (_appVersion.isNotEmpty && _appVersion != 'v')
+        ? _appVersion
+        : '1.0.0';
+    final String cleanBuild = (_buildNumber.isNotEmpty && _buildNumber != 'null')
+        ? _buildNumber
+        : '1';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'App Version',
+              style: TextStyle(
+                color: Color(0xFF7F8C8D),
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0F2FE),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFBAE6FD), width: 0.8),
+              ),
+              child: const Text(
+                'OFFICIAL',
+                style: TextStyle(
+                  color: Color(0xFF0284C7),
+                  fontFamily: 'Montserrat',
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF10B981), // Emerald green online dot
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'v$cleanVersion',
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontFamily: 'Montserrat',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFCBD5E1), width: 0.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'Build $cleanBuild',
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontFamily: 'Montserrat',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
