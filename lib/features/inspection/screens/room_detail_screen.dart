@@ -180,9 +180,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 85,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
       );
 
       if (pickedFile != null) {
@@ -214,9 +214,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   Future<void> _pickMultipleImages({required InspectionItem targetItem}) async {
     try {
       final List<XFile> pickedFiles = await _picker.pickMultiImage(
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 85,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
       );
 
       if (pickedFiles.isNotEmpty) {
@@ -823,6 +823,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                             ? Image.file(
                           File(photoPath),
                           fit: BoxFit.cover,
+                          cacheWidth: 800,
+                          errorBuilder: (context, error, stackTrace) => const Center(
+                            child: Icon(Icons.broken_image_outlined, size: 30, color: Color(0xFF95A5A6)),
+                          ),
                         )
                             : Image.network(
                           photoPath.contains("door")
@@ -833,6 +837,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                               ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600"
                               : "https://images.unsplash.com/photo-1558211583-d26f62177b97?w=600"),
                           fit: BoxFit.cover,
+                          cacheWidth: 800,
                         ),
                       ),
                     ),
@@ -957,6 +962,14 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         imageWidget = Image.file(
           File(photoPath),
           fit: BoxFit.cover,
+          cacheWidth: 200,
+          errorBuilder: (context, error, stackTrace) => Center(
+            child: Icon(
+              Icons.broken_image_outlined,
+              size: 24.w,
+              color: const Color(0xFF7F8C8D),
+            ),
+          ),
         );
       } else {
         imageWidget = Center(
@@ -982,6 +995,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       imageWidget = Image.network(
         imageUrl,
         fit: BoxFit.cover,
+        cacheWidth: 200,
         errorBuilder: (context, error, stackTrace) {
           return Center(
             child: Icon(

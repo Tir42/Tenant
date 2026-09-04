@@ -498,19 +498,28 @@ Future<Uint8List> generateInspectionReportPdf({
     }
   }
 
-  await Future.wait(
-    uniquePhotoPaths.map((photoPath) async {
-      try {
-        final bytes = await fetchImageBytes(photoPath);
-        if (bytes.isNotEmpty) {
-          final processed = await _processImageBytes(bytes);
-          loadedImages[photoPath] = processed;
+  // Process in small batches of 4 to prevent memory heap spikes when dozens of photos are attached
+  final List<String> pathList = uniquePhotoPaths.toList();
+  const int batchSize = 4;
+  for (int i = 0; i < pathList.length; i += batchSize) {
+    final batch = pathList.sublist(
+      i,
+      (i + batchSize > pathList.length) ? pathList.length : i + batchSize,
+    );
+    await Future.wait(
+      batch.map((photoPath) async {
+        try {
+          final bytes = await fetchImageBytes(photoPath);
+          if (bytes.isNotEmpty) {
+            final processed = await _processImageBytes(bytes);
+            loadedImages[photoPath] = processed;
+          }
+        } catch (e) {
+          debugPrint('Image load/process failed: $photoPath $e');
         }
-      } catch (e) {
-        debugPrint('Image load/process failed: $photoPath $e');
-      }
-    }),
-  );
+      }),
+    );
+  }
 
   final int totalRooms = rooms.length;
 

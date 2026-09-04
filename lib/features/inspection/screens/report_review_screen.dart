@@ -574,10 +574,18 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   ? Image.file(
                 File(photoPath),
                 fit: BoxFit.cover,
+                cacheWidth: 200,
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Icon(Icons.broken_image_outlined, size: 20, color: Color(0xFF95A5A6)),
+                ),
               )
                   : Image.network(
                 photoPath,
                 fit: BoxFit.cover,
+                cacheWidth: 200,
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Icon(Icons.broken_image_outlined, size: 20, color: Color(0xFF95A5A6)),
+                ),
               );
 
               return Stack(
@@ -675,11 +683,18 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       imageWidget = Image.file(
         File(photoPath),
         fit: BoxFit.contain,
+        cacheWidth: 800,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(Icons.image_not_supported_outlined),
+          );
+        },
       );
     } else {
       imageWidget = Image.network(
         photoPath,
         fit: BoxFit.contain,
+        cacheWidth: 800,
         errorBuilder: (context, error, stackTrace) {
           return const Center(
             child: Icon(Icons.image_not_supported_outlined),
