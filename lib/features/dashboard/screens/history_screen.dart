@@ -459,7 +459,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         inspectionController.landlordPhone.value = item['landlordPhone'];
       }
 
-      Get.to(() => PropertyDetailsScreen(role: widget.role, userName: widget.userName));
+      Get.to(() => PropertyDetailsScreen(role: widget.role, userName: widget.userName))?.then((_) {
+        _fetchHistory();
+      });
     } catch (e) {
       debugPrint("Failed to load inspection for editing: $e");
       ScaffoldMessenger.of(context).showSnackBar(

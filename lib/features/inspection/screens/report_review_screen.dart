@@ -1176,13 +1176,11 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     ? null
                     : () {
                         Navigator.pop(dialogContext);
-                        if (hasDownloadedOrShared.value) {
-                          _clearAllInspectionData();
-                          Get.offAll(() => HomeScreen(
-                            role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
-                            userName: BaseController.name.value,
-                          ));
-                        }
+                        _clearAllInspectionData();
+                        Get.offAll(() => HomeScreen(
+                          role: controller.inspectionPerformedBy.value.toLowerCase() == 'landlord' ? 'landlord' : 'tenant',
+                          userName: BaseController.name.value,
+                        ));
                       },
                 child: Text(
                   'Close',

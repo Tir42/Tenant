@@ -11,10 +11,10 @@ class RestClient extends GetxService {
       BaseOptions(
         // --- 1. LOCAL BACKEND SERVER (Active) ---
         // Your current Wi-Fi IP is 192.168.1.13. For Android emulator use 10.0.2.2:5000/api
-        // baseUrl: 'http://192.168.1.13:5000/api',
+        baseUrl: 'http://192.168.1.13:5000/api',
 
         // --- 2. DEPLOYED PRODUCTION BACKEND SERVER (Alternative) ---
-        baseUrl: 'https://tenant-apis.vercel.app/api',
+        // baseUrl: 'https://tenant-apis.vercel.app/api',
     
         connectTimeout: const Duration(seconds: 40),
         receiveTimeout: const Duration(seconds: 60),
