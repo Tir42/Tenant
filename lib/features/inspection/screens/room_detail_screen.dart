@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tenantsnap/core/theme/app_theme.dart';
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
 import 'package:tenantsnap/features/inspection/controllers/inspection_controller.dart';
@@ -179,10 +180,27 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
       );
 
       if (pickedFile != null) {
-        controller.addPhotoToItem(widget.roomId, targetItem.name, pickedFile.path);
+        String finalPath = pickedFile.path;
+        try {
+          final appDocDir = await getApplicationDocumentsDirectory();
+          final photosDir = Directory('${appDocDir.path}/inspection_photos');
+          if (!await photosDir.exists()) {
+            await photosDir.create(recursive: true);
+          }
+          final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
+          final savedFile = await File(pickedFile.path).copy('${photosDir.path}/$fileName');
+          finalPath = savedFile.path;
+        } catch (e) {
+          debugPrint('Failed to copy photo to permanent directory: $e');
+        }
+
+        controller.addPhotoToItem(widget.roomId, targetItem.name, finalPath);
 
         if (!mounted) return;
         _showTopToast('Photo added to ${targetItem.name}!');

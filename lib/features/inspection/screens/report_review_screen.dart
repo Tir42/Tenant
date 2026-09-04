@@ -171,21 +171,36 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       });
 
       if (isEditing) {
-        await restClient.dio.put(
+        final res = await restClient.dio.put(
           '/pdf-history/$editingId',
           data: formData,
+          options: dio_pkg.Options(
+            sendTimeout: const Duration(seconds: 60),
+            receiveTimeout: const Duration(seconds: 60),
+          ),
         );
+        if (res.statusCode != null && res.statusCode! >= 400) {
+          throw Exception(res.data?['message'] ?? 'Server returned status ${res.statusCode}');
+        }
         inspectionController.editingRecordId.value = '';
         debugPrint("PDF report updated to Cloudflare and updated in history.");
       } else {
-        await restClient.dio.post(
+        final res = await restClient.dio.post(
           '/pdf-history/upload-cloudflare',
           data: formData,
+          options: dio_pkg.Options(
+            sendTimeout: const Duration(seconds: 60),
+            receiveTimeout: const Duration(seconds: 60),
+          ),
         );
+        if (res.statusCode != null && res.statusCode! >= 400) {
+          throw Exception(res.data?['message'] ?? 'Server returned status ${res.statusCode}');
+        }
         debugPrint("PDF report uploaded to Cloudflare and saved to history.");
       }
     } catch (e) {
       debugPrint("Failed to save PDF to history: $e");
+      rethrow;
     }
   }
 
@@ -941,6 +956,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   inspectionDate: inspectionDate,
                   agreementDate: agreementDate,
                   allRooms: allRooms,
+                  pregeneratedPdfBytes: finalPdfBytes,
                 );
               }
             } catch (e) {
@@ -1004,6 +1020,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         required String propertyAddress,
         required String inspectionDate,
         required List<RoomInspection> allRooms, required String agreementDate,
+        Uint8List? pregeneratedPdfBytes,
       }) {
     final controller = Get.find<InspectionController>();
     final isDownloading = false.obs;
@@ -1118,33 +1135,38 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   isDownloading.value = true;
 
                   try {
-                    final pdfBytes = await generateInspectionReportPdf(
-                      idCode: idCode,
-                      tenantName: tenantName,
-                      landlordName: landlordName,
-                      propertyAddress: propertyAddress,
-                      inspectionDate: inspectionDate,
-                      inspectionType: controller.inspectionType.value,
-                      inspectionPerformedBy:
-                      controller.inspectionPerformedBy.value,
-                      reportGeneratedOn:
-                      '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-                      rooms: allRooms,
-                      tenantPhone: controller.tenantPhone.value,
-                      landlordPhone: controller.landlordPhone.value,
-                      showPhone: controller.showPhoneInPdf.value,
-                      agreementDate: controller.agreementDate.value,
-                    );
-
-                    Uint8List finalPdfBytes = pdfBytes;
-
-                    if (selectedLeasePdf != null) {
-                      finalPdfBytes = await _appendLeasePdf(
-                        reportPdfBytes: pdfBytes,
-                        leasePdfFile: selectedLeasePdf!,
+                    Uint8List finalPdfBytes;
+                    if (selectedLeasePdf == null && pregeneratedPdfBytes != null) {
+                      finalPdfBytes = pregeneratedPdfBytes;
+                    } else {
+                      final pdfBytes = await generateInspectionReportPdf(
+                        idCode: idCode,
+                        tenantName: tenantName,
+                        landlordName: landlordName,
+                        propertyAddress: propertyAddress,
+                        inspectionDate: inspectionDate,
+                        inspectionType: controller.inspectionType.value,
+                        inspectionPerformedBy:
+                        controller.inspectionPerformedBy.value,
+                        reportGeneratedOn:
+                        '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                        rooms: allRooms,
+                        tenantPhone: controller.tenantPhone.value,
+                        landlordPhone: controller.landlordPhone.value,
+                        showPhone: controller.showPhoneInPdf.value,
+                        agreementDate: controller.agreementDate.value,
                       );
+
+                      finalPdfBytes = pdfBytes;
+
+                      if (selectedLeasePdf != null) {
+                        finalPdfBytes = await _appendLeasePdf(
+                          reportPdfBytes: pdfBytes,
+                          leasePdfFile: selectedLeasePdf!,
+                        );
+                      }
+                      finalPdfBytes = await _lockPdf(finalPdfBytes);
                     }
-                    finalPdfBytes = await _lockPdf(finalPdfBytes);
 
                     final savedPath = await DownloadHelper.downloadPdf(
                       bytes: finalPdfBytes,
@@ -1256,6 +1278,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       inspectionDate: inspectionDate,
                       agreementDate: controller.agreementDate.value,
                       allRooms: allRooms,
+                      pregeneratedPdfBytes: pregeneratedPdfBytes,
                     );
 
                     // --- Success path ---
@@ -1349,36 +1372,42 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     required String inspectionDate,
     required String agreementDate,
     required List<RoomInspection> allRooms,
+    Uint8List? pregeneratedPdfBytes,
   }) async {
     final controller = Get.find<InspectionController>();
 
-    final pdfBytes = await generateInspectionReportPdf(
-      idCode: idCode,
-      tenantName: tenantName,
-      landlordName: landlordName,
-      propertyAddress: propertyAddress,
-      inspectionDate: inspectionDate,
-      inspectionType: controller.inspectionType.value,
-      inspectionPerformedBy:
-      controller.inspectionPerformedBy.value,
-      reportGeneratedOn:
-      '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-      agreementDate: controller.agreementDate.value,
-      rooms: allRooms,
-      tenantPhone: controller.tenantPhone.value,
-      landlordPhone: controller.landlordPhone.value,
-      showPhone: controller.showPhoneInPdf.value,
-    );
-
-    Uint8List finalPdfBytes = pdfBytes;
-
-    if (selectedLeasePdf != null) {
-      finalPdfBytes = await _appendLeasePdf(
-        reportPdfBytes: pdfBytes,
-        leasePdfFile: selectedLeasePdf!,
+    Uint8List finalPdfBytes;
+    if (selectedLeasePdf == null && pregeneratedPdfBytes != null) {
+      finalPdfBytes = pregeneratedPdfBytes;
+    } else {
+      final pdfBytes = await generateInspectionReportPdf(
+        idCode: idCode,
+        tenantName: tenantName,
+        landlordName: landlordName,
+        propertyAddress: propertyAddress,
+        inspectionDate: inspectionDate,
+        inspectionType: controller.inspectionType.value,
+        inspectionPerformedBy:
+        controller.inspectionPerformedBy.value,
+        reportGeneratedOn:
+        '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+        agreementDate: controller.agreementDate.value,
+        rooms: allRooms,
+        tenantPhone: controller.tenantPhone.value,
+        landlordPhone: controller.landlordPhone.value,
+        showPhone: controller.showPhoneInPdf.value,
       );
+
+      finalPdfBytes = pdfBytes;
+
+      if (selectedLeasePdf != null) {
+        finalPdfBytes = await _appendLeasePdf(
+          reportPdfBytes: pdfBytes,
+          leasePdfFile: selectedLeasePdf!,
+        );
+      }
+      finalPdfBytes = await _lockPdf(finalPdfBytes);
     }
-    finalPdfBytes = await _lockPdf(finalPdfBytes);
 
     final dir = await getTemporaryDirectory();
 

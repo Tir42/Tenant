@@ -1,8 +1,9 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart' show debugPrint;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:intl/intl.dart'; // add if not already imported
+import 'package:intl/intl.dart';
 import 'package:image/image.dart' as img;
 
 import 'package:tenantsnap/features/inspection/models/inspection_model.dart';
@@ -10,15 +11,34 @@ import 'package:tenantsnap/core/utils/image_loader/image_byte_loader.dart';
 
 import '../responsive/responsive_extension.dart';
 
-Uint8List _fixImageOrientation(Uint8List bytes) {
+Uint8List _optimizeImageForPdf(Uint8List bytes) {
   try {
     final image = img.decodeImage(bytes);
     if (image == null) return bytes;
     final orientedImage = img.bakeOrientation(image);
-    return Uint8List.fromList(img.encodeJpg(orientedImage, quality: 90));
+
+    const int maxDim = 1200;
+    img.Image finalImage = orientedImage;
+    if (orientedImage.width > maxDim || orientedImage.height > maxDim) {
+      if (orientedImage.width > orientedImage.height) {
+        finalImage = img.copyResize(orientedImage, width: maxDim);
+      } else {
+        finalImage = img.copyResize(orientedImage, height: maxDim);
+      }
+    }
+
+    return Uint8List.fromList(img.encodeJpg(finalImage, quality: 80));
   } catch (e) {
-    debugPrint('Failed to fix image orientation: $e');
+    debugPrint('Failed to optimize image for PDF: $e');
     return bytes;
+  }
+}
+
+Future<Uint8List> _processImageBytes(Uint8List bytes) async {
+  try {
+    return await compute(_optimizeImageForPdf, bytes);
+  } catch (e) {
+    return _optimizeImageForPdf(bytes);
   }
 }
 
@@ -450,22 +470,30 @@ Future<Uint8List> generateInspectionReportPdf({
     debugPrint('Logo load failed: $e');
   }
 
+  final Set<String> uniquePhotoPaths = {};
   for (final room in rooms) {
     for (final item in room.checklist) {
       for (final photoPath in item.photos) {
-        if (photoPath.isNotEmpty && !loadedImages.containsKey(photoPath)) {
-          try {
-            final bytes = await fetchImageBytes(photoPath);
-            if (bytes.isNotEmpty) {
-              loadedImages[photoPath] = _fixImageOrientation(bytes);
-            }
-          } catch (e) {
-            debugPrint('Image load failed: $photoPath $e');
-          }
+        if (photoPath.isNotEmpty) {
+          uniquePhotoPaths.add(photoPath);
         }
       }
     }
   }
+
+  await Future.wait(
+    uniquePhotoPaths.map((photoPath) async {
+      try {
+        final bytes = await fetchImageBytes(photoPath);
+        if (bytes.isNotEmpty) {
+          final processed = await _processImageBytes(bytes);
+          loadedImages[photoPath] = processed;
+        }
+      } catch (e) {
+        debugPrint('Image load/process failed: $photoPath $e');
+      }
+    }),
+  );
 
   final int totalRooms = rooms.length;
 
