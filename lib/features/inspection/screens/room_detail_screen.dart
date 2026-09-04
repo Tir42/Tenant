@@ -211,6 +211,49 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
+  Future<void> _pickMultipleImages({required InspectionItem targetItem}) async {
+    try {
+      final List<XFile> pickedFiles = await _picker.pickMultiImage(
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+
+      if (pickedFiles.isNotEmpty) {
+        final appDocDir = await getApplicationDocumentsDirectory();
+        final photosDir = Directory('${appDocDir.path}/inspection_photos');
+        if (!await photosDir.exists()) {
+          await photosDir.create(recursive: true);
+        }
+
+        final List<String> savedPaths = [];
+        for (int i = 0; i < pickedFiles.length; i++) {
+          final file = pickedFiles[i];
+          try {
+            final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${i}_${file.name}';
+            final savedFile = await File(file.path).copy('${photosDir.path}/$fileName');
+            savedPaths.add(savedFile.path);
+          } catch (e) {
+            debugPrint('Failed to copy photo to permanent directory: $e');
+            savedPaths.add(file.path);
+          }
+        }
+
+        controller.addPhotosToItem(widget.roomId, targetItem.name, savedPaths);
+
+        if (!mounted) return;
+        _showTopToast(
+          savedPaths.length == 1
+              ? 'Photo added to ${targetItem.name}!'
+              : '${savedPaths.length} photos added to ${targetItem.name}!',
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showTopToast('Error picking pictures: $e');
+    }
+  }
+
   void _showImageSourcePicker({required InspectionItem targetItem}) {
     showModalBottomSheet(
       context: context,
@@ -229,7 +272,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Add Photo for ${targetItem.name}',
+                  'Add Photos for ${targetItem.name}',
                   style: TextStyle(
                     color: const Color(0xFF2C3E50),
                     fontFamily: 'Montserrat',
@@ -278,7 +321,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                     GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
-                        _pickImage(ImageSource.gallery, targetItem: targetItem);
+                        _pickMultipleImages(targetItem: targetItem);
                       },
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -298,7 +341,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                           ),
                           SizedBox(height: 8.0.h),
                           Text(
-                            'From Gallery',
+                            'Gallery (Multi)',
                             style: TextStyle(
                               color: const Color(0xFF2C3E50),
                               fontFamily: 'Montserrat',

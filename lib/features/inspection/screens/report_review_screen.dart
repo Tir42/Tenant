@@ -130,6 +130,11 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     required String landlordName,
     required String propertyAddress,
     required String inspectionDate,
+    String? inspectionJsonOverride,
+    String? editingIdOverride,
+    String? tenantPhoneOverride,
+    String? landlordPhoneOverride,
+    String? roleOverride,
   }) async {
     try {
       final restClient = Get.find<RestClient>();
@@ -142,12 +147,16 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       final box = GetStorage();
       final userId = box.read('userId') ?? 0;
 
-      final inspectionController = Get.find<InspectionController>();
-      final String editingId = inspectionController.editingRecordId.value;
+      final InspectionController? inspectionController =
+          Get.isRegistered<InspectionController>() ? Get.find<InspectionController>() : null;
+      final String editingId = editingIdOverride ?? (inspectionController?.editingRecordId.value ?? '');
       final bool isEditing = editingId.isNotEmpty;
 
-      final Map<String, dynamic> exportData = inspectionController.exportToJson();
-      final String inspectionJson = jsonEncode(exportData);
+      final String inspectionJson = inspectionJsonOverride ??
+          (inspectionController != null ? jsonEncode(inspectionController.exportToJson()) : '{}');
+      final String tenantPhone = tenantPhoneOverride ?? (inspectionController?.tenantPhone.value ?? '');
+      final String landlordPhone = landlordPhoneOverride ?? (inspectionController?.landlordPhone.value ?? '');
+      final String role = roleOverride ?? (inspectionController?.inspectionPerformedBy.value ?? '');
 
       final formData = dio_pkg.FormData.fromMap({
         'pdf': dio_pkg.MultipartFile.fromBytes(
@@ -165,9 +174,9 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         'idCode': idCode.isNotEmpty ? idCode : 'N/A',
         'userId': userId,
         'inspectionData': inspectionJson,
-        'tenantPhone': inspectionController.tenantPhone.value.isNotEmpty ? inspectionController.tenantPhone.value : 'N/A',
-        'landlordPhone': inspectionController.landlordPhone.value.isNotEmpty ? inspectionController.landlordPhone.value : 'N/A',
-        'role': inspectionController.inspectionPerformedBy.value.isNotEmpty ? inspectionController.inspectionPerformedBy.value.toLowerCase() : 'tenant',
+        'tenantPhone': tenantPhone.isNotEmpty ? tenantPhone : 'N/A',
+        'landlordPhone': landlordPhone.isNotEmpty ? landlordPhone : 'N/A',
+        'role': role.isNotEmpty ? role.toLowerCase() : 'tenant',
       });
 
       if (isEditing) {
@@ -182,7 +191,9 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         if (res.statusCode != null && res.statusCode! >= 400) {
           throw Exception(res.data?['message'] ?? 'Server returned status ${res.statusCode}');
         }
-        inspectionController.editingRecordId.value = '';
+        if (inspectionController != null) {
+          inspectionController.editingRecordId.value = '';
+        }
         debugPrint("PDF report updated to Cloudflare and updated in history.");
       } else {
         final res = await restClient.dio.post(
@@ -876,7 +887,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         child: InkWell(
           onTap: () async {
             final controller = Get.find<InspectionController>();
-            // Show a saving dialog
+            // Show a preparation dialog
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -896,7 +907,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                         ),
                         SizedBox(height: 16),
                         Text(
-                          'Saving report to history...',
+                          'Preparing report PDF...',
                           style: TextStyle(
                             fontFamily: 'Montserrat',
                             fontWeight: FontWeight.bold,
@@ -929,23 +940,20 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               );
 
               Uint8List finalPdfBytes = pdfBytes;
+              if (selectedLeasePdf != null) {
+                finalPdfBytes = await _appendLeasePdf(
+                  reportPdfBytes: pdfBytes,
+                  leasePdfFile: selectedLeasePdf!,
+                );
+              }
               finalPdfBytes = await _lockPdf(finalPdfBytes);
 
-              await _savePdfToHistory(
-                pdfBytes: finalPdfBytes,
-                idCode: idCode,
-                tenantName: tenantName,
-                landlordName: landlordName,
-                propertyAddress: propertyAddress,
-                inspectionDate: inspectionDate,
-              );
-
-              // Dismiss loader
+              // Dismiss preparation dialog immediately
               if (context.mounted) {
                 Navigator.pop(context);
               }
 
-              // Show preview dialog
+              // Show preview dialog immediately so the user can download or share with zero wait
               if (context.mounted) {
                 _showPdfPreviewDialog(
                   context,
@@ -959,6 +967,51 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   pregeneratedPdfBytes: finalPdfBytes,
                 );
               }
+
+              // Snapshot controller inspection data before any subsequent clearing
+              final String editingId = controller.editingRecordId.value;
+              final String inspectionJson = jsonEncode(controller.exportToJson());
+              final String tenantPhone = controller.tenantPhone.value;
+              final String landlordPhone = controller.landlordPhone.value;
+              final String role = controller.inspectionPerformedBy.value;
+
+              // Upload report to Cloudflare & persist to history asynchronously in background
+              _savePdfToHistory(
+                pdfBytes: finalPdfBytes,
+                idCode: idCode,
+                tenantName: tenantName,
+                landlordName: landlordName,
+                propertyAddress: propertyAddress,
+                inspectionDate: inspectionDate,
+                inspectionJsonOverride: inspectionJson,
+                editingIdOverride: editingId,
+                tenantPhoneOverride: tenantPhone,
+                landlordPhoneOverride: landlordPhone,
+                roleOverride: role,
+              ).then((_) {
+                Get.snackbar(
+                  'Saved to History',
+                  'Inspection report synced to cloud successfully.',
+                  backgroundColor: const Color(0xFF2ECC71),
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.TOP,
+                  duration: const Duration(seconds: 3),
+                  margin: const EdgeInsets.all(12),
+                  borderRadius: 12,
+                );
+              }).catchError((e) {
+                debugPrint('Background cloud history sync error: $e');
+                Get.snackbar(
+                  'Cloud Sync Notice',
+                  'Could not sync to cloud history. Local PDF is still saved.',
+                  backgroundColor: const Color(0xFFE67E22),
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.TOP,
+                  duration: const Duration(seconds: 4),
+                  margin: const EdgeInsets.all(12),
+                  borderRadius: 12,
+                );
+              });
             } catch (e) {
               // Dismiss loader
               if (context.mounted) {
@@ -969,7 +1022,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: const Color(0xFFE74C3C),
-                    content: Text('Failed to save to history: $e'),
+                    content: Text('Failed to prepare report: $e'),
                   ),
                 );
               }
@@ -1136,7 +1189,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
 
                   try {
                     Uint8List finalPdfBytes;
-                    if (selectedLeasePdf == null && pregeneratedPdfBytes != null) {
+                    if (pregeneratedPdfBytes != null) {
                       finalPdfBytes = pregeneratedPdfBytes;
                     } else {
                       final pdfBytes = await generateInspectionReportPdf(
@@ -1377,7 +1430,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     final controller = Get.find<InspectionController>();
 
     Uint8List finalPdfBytes;
-    if (selectedLeasePdf == null && pregeneratedPdfBytes != null) {
+    if (pregeneratedPdfBytes != null) {
       finalPdfBytes = pregeneratedPdfBytes;
     } else {
       final pdfBytes = await generateInspectionReportPdf(

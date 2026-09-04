@@ -191,6 +191,20 @@ class InspectionController extends GetxController {
     }
   }
 
+  // Add multiple photos to a specific item at once
+  void addPhotosToItem(int roomId, String itemName, List<String> photoPaths) {
+    if (photoPaths.isEmpty) return;
+    int rIdx = roomsList.indexWhere((r) => r.id == roomId);
+    if (rIdx != -1) {
+      int iIdx = roomsList[rIdx].checklist.indexWhere((i) => i.name.toLowerCase() == itemName.toLowerCase());
+      if (iIdx != -1) {
+        roomsList[rIdx].checklist[iIdx].photos.addAll(photoPaths);
+        roomsList[rIdx].recalculateProgress();
+        roomsList.refresh();
+      }
+    }
+  }
+
   // Add comment to a specific item
   void updateItemComment(int roomId, String itemName, String comment) {
     int rIdx = roomsList.indexWhere((r) => r.id == roomId);
