@@ -85,6 +85,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
 
     final syncfusion_pdf.PdfDocument finalDocument =
     syncfusion_pdf.PdfDocument();
+    finalDocument.pageSettings.setMargins(0);
 
     for (int i = 0; i < reportDocument.pages.count; i++) {
       final template = reportDocument.pages[i].createTemplate();
@@ -412,6 +413,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                               ),
                             ),
                           ),
+
+                        SizedBox(height: 16.0.h),
+
+                        _buildLeaseAttachmentCard(context),
 
                         SizedBox(height: 16.0.h),
 
@@ -887,6 +892,127 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     );
   }
 
+  Widget _buildLeaseAttachmentCard(BuildContext context) {
+    final bool hasLease = selectedLeasePdf != null;
+    final String fileName = hasLease
+        ? selectedLeasePdf!.path.split(Platform.pathSeparator).last
+        : '';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.0.w),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2C3E50).withValues(alpha: 0.04),
+            blurRadius: 10.0.w,
+            offset: Offset(0, 4.0.h),
+          ),
+        ],
+        border: Border.all(
+          color: hasLease
+              ? const Color(0xFF2ECC71).withValues(alpha: 0.5)
+              : const Color(0xFFE2E8F0),
+          width: hasLease ? 1.5.w : 0.5.w,
+        ),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 14.0.h),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.0.w),
+            decoration: BoxDecoration(
+              color: hasLease
+                  ? const Color(0xFF2ECC71).withValues(alpha: 0.1)
+                  : const Color(0xFF007BFF).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12.0.w),
+            ),
+            child: Icon(
+              Icons.picture_as_pdf_rounded,
+              color: hasLease
+                  ? const Color(0xFF2ECC71)
+                  : const Color(0xFF007BFF),
+              size: 24.0.w,
+            ),
+          ),
+          SizedBox(width: 12.0.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Lease Agreement (Optional)',
+                  style: TextStyle(
+                    color: const Color(0xFF2C3E50),
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5.sp,
+                  ),
+                ),
+                SizedBox(height: 2.0.h),
+                Text(
+                  hasLease
+                      ? '✓ $fileName'
+                      : 'Attach lease agreement PDF to report',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: hasLease
+                        ? const Color(0xFF2ECC71)
+                        : const Color(0xFF7F8C8D),
+                    fontFamily: 'Montserrat',
+                    fontSize: 11.0.sp,
+                    fontWeight: hasLease ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8.0.w),
+          if (hasLease)
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  selectedLeasePdf = null;
+                });
+              },
+              icon: Icon(
+                Icons.close_rounded,
+                color: const Color(0xFFE74C3C),
+                size: 20.0.w,
+              ),
+              tooltip: 'Remove Lease PDF',
+            ),
+          ElevatedButton(
+            onPressed: _pickLeasePdf,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: hasLease
+                  ? const Color(0xFFF1F2F6)
+                  : const Color(0xFF007BFF),
+              foregroundColor: hasLease
+                  ? const Color(0xFF2C3E50)
+                  : Colors.white,
+              elevation: 0,
+              padding: EdgeInsets.symmetric(horizontal: 14.0.w, vertical: 8.0.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0.w),
+              ),
+            ),
+            child: Text(
+              hasLease ? 'Change' : 'Attach',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontWeight: FontWeight.bold,
+                fontSize: 12.0.sp,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildShareSendButton(
       BuildContext context, {
         required String idCode,
@@ -979,6 +1105,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   inspectionDate: inspectionDate,
                   agreementDate: agreementDate,
                   allRooms: allRooms,
+                  rawReportPdfBytes: pdfBytes,
                   pregeneratedPdfBytes: finalPdfBytes,
                 );
               }
@@ -1087,7 +1214,9 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         required String landlordName,
         required String propertyAddress,
         required String inspectionDate,
-        required List<RoomInspection> allRooms, required String agreementDate,
+        required List<RoomInspection> allRooms,
+        required String agreementDate,
+        required Uint8List rawReportPdfBytes,
         Uint8List? pregeneratedPdfBytes,
       }) {
     final controller = Get.find<InspectionController>();
@@ -1095,6 +1224,108 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     final isUploading = false.obs;
     final isDisclaimerAccepted = false.obs;
     final hasDownloadedOrShared = false.obs;
+    final isAttachingLease = false.obs;
+    final rxLeasePdf = Rx<File?>(selectedLeasePdf);
+    final rxPdfBytes = Rx<Uint8List>(pregeneratedPdfBytes ?? rawReportPdfBytes);
+
+    Future<void> pickLeaseInDialog() async {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        isAttachingLease.value = true;
+        try {
+          final merged = await _appendLeasePdf(
+            reportPdfBytes: rawReportPdfBytes,
+            leasePdfFile: file,
+          );
+          final locked = await _lockPdf(merged);
+          rxPdfBytes.value = locked;
+          rxLeasePdf.value = file;
+          setState(() {
+            selectedLeasePdf = file;
+          });
+
+          final String editingId = controller.editingRecordId.value;
+          final String inspectionJson = jsonEncode(controller.exportToJson());
+          final String tenantPhone = controller.tenantPhone.value;
+          final String landlordPhone = controller.landlordPhone.value;
+          final String role = controller.inspectionPerformedBy.value;
+
+          _savePdfToHistory(
+            pdfBytes: locked,
+            idCode: idCode,
+            tenantName: tenantName,
+            landlordName: landlordName,
+            propertyAddress: propertyAddress,
+            inspectionDate: inspectionDate,
+            inspectionJsonOverride: inspectionJson,
+            editingIdOverride: editingId,
+            tenantPhoneOverride: tenantPhone,
+            landlordPhoneOverride: landlordPhone,
+            roleOverride: role,
+          ).catchError((e) {
+            debugPrint('Background cloud history sync error: $e');
+          });
+
+          Get.snackbar(
+            'Lease Attached',
+            'Lease agreement merged into report PDF.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFF2ECC71),
+            colorText: Colors.white,
+          );
+        } catch (e) {
+          debugPrint('Error attaching lease PDF in dialog: $e');
+          Get.snackbar(
+            'Attachment Failed',
+            'Could not attach lease PDF: $e',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFFE74C3C),
+            colorText: Colors.white,
+          );
+        } finally {
+          isAttachingLease.value = false;
+        }
+      }
+    }
+
+    Future<void> removeLeaseInDialog() async {
+      isAttachingLease.value = true;
+      try {
+        final locked = await _lockPdf(rawReportPdfBytes);
+        rxPdfBytes.value = locked;
+        rxLeasePdf.value = null;
+        setState(() {
+          selectedLeasePdf = null;
+        });
+
+        final String editingId = controller.editingRecordId.value;
+        final String inspectionJson = jsonEncode(controller.exportToJson());
+        final String tenantPhone = controller.tenantPhone.value;
+        final String landlordPhone = controller.landlordPhone.value;
+        final String role = controller.inspectionPerformedBy.value;
+
+        _savePdfToHistory(
+          pdfBytes: locked,
+          idCode: idCode,
+          tenantName: tenantName,
+          landlordName: landlordName,
+          propertyAddress: propertyAddress,
+          inspectionDate: inspectionDate,
+          inspectionJsonOverride: inspectionJson,
+          editingIdOverride: editingId,
+          tenantPhoneOverride: tenantPhone,
+          landlordPhoneOverride: landlordPhone,
+          roleOverride: role,
+        ).catchError((e) {});
+      } finally {
+        isAttachingLease.value = false;
+      }
+    }
 
     showDialog(
       context: context,
@@ -1127,15 +1358,101 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 ),
               ),
               SizedBox(height: 12.0.h),
-              OutlinedButton.icon(
-                onPressed: _pickLeasePdf,
-                icon: const Icon(Icons.picture_as_pdf_rounded),
-                label: Text(
-                  selectedLeasePdf == null
-                      ? 'Attach Lease Agreement PDF'
-                      : 'Lease PDF Attached',
-                ),
-              ),
+              Obx(() {
+                if (isAttachingLease.value) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0.h),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 16.0.w,
+                          height: 16.0.h,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF007BFF),
+                          ),
+                        ),
+                        SizedBox(width: 8.0.w),
+                        Text(
+                          'Attaching lease agreement...',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 12.0.sp,
+                            color: const Color(0xFF007BFF),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (rxLeasePdf.value == null) {
+                  return OutlinedButton.icon(
+                    onPressed: (isDownloading.value || isUploading.value)
+                        ? null
+                        : pickLeaseInDialog,
+                    icon: const Icon(Icons.picture_as_pdf_rounded),
+                    label: const Text('Attach Lease Agreement PDF'),
+                  );
+                }
+
+                final String fileName = rxLeasePdf.value!.path
+                    .split(Platform.pathSeparator)
+                    .last;
+
+                return Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.0.w,
+                    vertical: 6.0.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(8.0.w),
+                    border: Border.all(
+                      color: const Color(0xFF81C784),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: const Color(0xFF2ECC71),
+                        size: 18.0.w,
+                      ),
+                      SizedBox(width: 6.0.w),
+                      Expanded(
+                        child: Text(
+                          fileName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2E7D32),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: 18.0.w,
+                          color: const Color(0xFFC62828),
+                        ),
+                        onPressed: (isDownloading.value || isUploading.value)
+                            ? null
+                            : removeLeaseInDialog,
+                        tooltip: 'Remove lease PDF',
+                      ),
+                    ],
+                  ),
+                );
+              }),
               SizedBox(height: 12.0.h),
               Material(
                 color: Colors.transparent,
@@ -1201,38 +1518,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   isDownloading.value = true;
 
                   try {
-                    Uint8List finalPdfBytes;
-                    if (pregeneratedPdfBytes != null) {
-                      finalPdfBytes = pregeneratedPdfBytes;
-                    } else {
-                      final pdfBytes = await generateInspectionReportPdf(
-                        idCode: idCode,
-                        tenantName: tenantName,
-                        landlordName: landlordName,
-                        propertyAddress: propertyAddress,
-                        inspectionDate: inspectionDate,
-                        inspectionType: controller.inspectionType.value,
-                        inspectionPerformedBy:
-                        controller.inspectionPerformedBy.value,
-                        reportGeneratedOn:
-                        '${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-                        rooms: allRooms,
-                        tenantPhone: controller.tenantPhone.value,
-                        landlordPhone: controller.landlordPhone.value,
-                        showPhone: controller.showPhoneInPdf.value,
-                        agreementDate: controller.agreementDate.value,
-                      );
-
-                      finalPdfBytes = pdfBytes;
-
-                      if (selectedLeasePdf != null) {
-                        finalPdfBytes = await _appendLeasePdf(
-                          reportPdfBytes: pdfBytes,
-                          leasePdfFile: selectedLeasePdf!,
-                        );
-                      }
-                      finalPdfBytes = await _lockPdf(finalPdfBytes);
-                    }
+                    final Uint8List finalPdfBytes = rxPdfBytes.value;
 
                     final savedPath = await DownloadHelper.downloadPdf(
                       bytes: finalPdfBytes,
@@ -1344,7 +1630,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       inspectionDate: inspectionDate,
                       agreementDate: controller.agreementDate.value,
                       allRooms: allRooms,
-                      pregeneratedPdfBytes: pregeneratedPdfBytes,
+                      pregeneratedPdfBytes: rxPdfBytes.value,
                     );
 
                     // --- Success path ---

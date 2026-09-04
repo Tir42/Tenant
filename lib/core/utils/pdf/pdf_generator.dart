@@ -199,43 +199,6 @@ pw.Widget _statusBadge(RoomItemStatus status) {
   );
 }
 
-pw.Widget _imageBlock(Uint8List? bytes) {
-  if (bytes != null && bytes.isNotEmpty) {
-    try {
-      return pw.Container(
-        width: double.infinity,
-        height: 260,
-        decoration: pw.BoxDecoration(
-          color: PdfTheme.bgGrey,
-          border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
-        ),
-        child: pw.Image(
-          pw.MemoryImage(bytes),
-          fit: pw.BoxFit.contain,
-        ),
-      );
-    } catch (e) {
-      debugPrint('PDF Image Error: $e');
-    }
-  }
-
-  return pw.Container(
-    width: double.infinity,
-    height: 210,
-    alignment: pw.Alignment.center,
-    decoration: pw.BoxDecoration(
-      color: PdfTheme.bgGrey,
-      border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
-    ),
-    child: pw.Text(
-      'Image not available',
-      style: pw.TextStyle(
-        color: PdfTheme.grey,
-        fontSize: 9,
-      ),
-    ),
-  );
-}
 
 pw.Widget _detailsWidget(InspectionItem item) {
   return pw.Column(
@@ -296,19 +259,26 @@ pw.Widget _detailsWidget(InspectionItem item) {
   );
 }
 
-pw.Widget _imageThumb(Uint8List? bytes) {
+pw.Widget _imageThumb(Uint8List? bytes, {double height = 125}) {
   if (bytes != null && bytes.isNotEmpty) {
     try {
       return pw.Container(
         width: double.infinity,
-        height: 160,
+        height: height,
         decoration: pw.BoxDecoration(
           color: PdfTheme.bgGrey,
           border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
         ),
-        child: pw.Image(
-          pw.MemoryImage(bytes),
-          fit: pw.BoxFit.contain,
+        child: pw.ClipRRect(
+          horizontalRadius: 4,
+          verticalRadius: 4,
+          child: pw.Center(
+            child: pw.Image(
+              pw.MemoryImage(bytes),
+              fit: pw.BoxFit.contain,
+            ),
+          ),
         ),
       );
     } catch (e) {
@@ -318,11 +288,12 @@ pw.Widget _imageThumb(Uint8List? bytes) {
 
   return pw.Container(
     width: double.infinity,
-    height: 130,
+    height: height,
     alignment: pw.Alignment.center,
     decoration: pw.BoxDecoration(
       color: PdfTheme.bgGrey,
       border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
     ),
     child: pw.Text(
       'Image not available',
@@ -331,84 +302,67 @@ pw.Widget _imageThumb(Uint8List? bytes) {
   );
 }
 
-pw.Widget _imageGrid(List<Uint8List?> images) {
-  if (images.isEmpty) {
-    return _imageThumb(null);
-  }
+List<pw.Widget> _featureWidgets({
+  required InspectionItem item,
+  required Map<String, Uint8List> loadedImages,
+}) {
+  final List<pw.Widget> widgets = [];
 
-  if (images.length == 1) {
-    return _imageThumb(images[0]);
-  }
+  final List<Uint8List> allImages = item.photos
+      .map((path) => loadedImages[path])
+      .where((bytes) => bytes != null && bytes.isNotEmpty)
+      .cast<Uint8List>()
+      .toList();
 
-  if (images.length == 2) {
-    return pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Expanded(child: _imageThumb(images[0])),
-        pw.SizedBox(width: 6),
-        pw.Expanded(child: _imageThumb(images[1])),
-      ],
-    );
-  }
+  // 1. Feature header card with observation, status, and photo count
+  widgets.add(
+    pw.Container(
+      width: double.infinity,
+      margin: const pw.EdgeInsets.only(top: 6, bottom: 6),
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+      ),
+      child: _detailsWidget(item),
+    ),
+  );
 
-  // 3+ images: wrap into rows of 2
-  final List<pw.Widget> rows = [];
-  for (int i = 0; i < images.length; i += 2) {
-    final bool hasSecond = i + 1 < images.length;
-    rows.add(
+  // 2. Photos arranged in rows of 2 as independent top-level widgets.
+  // Emitting each row directly to the page content list ensures that pw.MultiPage
+  // can smoothly split across page boundaries without overflowing or throwing TooManyPagesException!
+  if (allImages.isNotEmpty) {
+    for (int i = 0; i < allImages.length; i += 2) {
+      final bool hasSecond = i + 1 < allImages.length;
+      widgets.add(
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 6),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(child: _imageThumb(allImages[i])),
+              pw.SizedBox(width: 8),
+              pw.Expanded(
+                child: hasSecond ? _imageThumb(allImages[i + 1]) : pw.SizedBox(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  } else if (item.photos.isNotEmpty) {
+    widgets.add(
       pw.Padding(
         padding: const pw.EdgeInsets.only(bottom: 6),
-        child: pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Expanded(child: _imageThumb(images[i])),
-            pw.SizedBox(width: 6),
-            pw.Expanded(
-              child: hasSecond ? _imageThumb(images[i + 1]) : pw.SizedBox(),
-            ),
-          ],
-        ),
+        child: _imageThumb(null),
       ),
     );
   }
 
-  return pw.Column(
-    crossAxisAlignment: pw.CrossAxisAlignment.start,
-    children: rows,
-  );
-}
+  widgets.add(pw.SizedBox(height: 6));
 
-pw.Widget _featureBlock({
-  required InspectionItem item,
-  required Map<String, Uint8List> loadedImages,
-}) {
-  final List<Uint8List?> allImages = item.photos
-      .map((path) => loadedImages[path])
-      .where((bytes) => bytes != null && bytes.isNotEmpty)
-      .toList();
-
-  return pw.Container(
-    margin: const pw.EdgeInsets.only(bottom: 14),
-    padding: const pw.EdgeInsets.all(12),
-    decoration: pw.BoxDecoration(
-      border: pw.Border.all(color: PdfTheme.lightGrey, width: 0.8),
-      color: PdfColors.white,
-    ),
-    child: pw.Wrap(
-      children: [
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            _detailsWidget(item),
-            if (allImages.isNotEmpty) ...[
-              pw.SizedBox(height: 10),
-              _imageGrid(allImages),
-            ],
-          ],
-        ),
-      ],
-    ),
-  );
+  return widgets;
 }
 
 pw.TableRow _summaryRow(String label, String value) {
@@ -549,6 +503,7 @@ Future<Uint8List> generateInspectionReportPdf({
   pdf.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4,
+      maxPages: 100,
       margin: const pw.EdgeInsets.fromLTRB(34, 30, 34, 30),
       footer: (context) {
         return pw.Container(
@@ -680,6 +635,8 @@ Future<Uint8List> generateInspectionReportPdf({
                 _metadataRow('Inspection Type', inspectionType),
 
                 _metadataRow('Inspection Date', inspectionDate),
+                if (agreementDate.trim().isNotEmpty)
+                  _metadataRow('Agreement Date', agreementDate.trim()),
                 _metadataRow('Report Generated On', reportGeneratedOn),
               ],
             ),
@@ -770,8 +727,8 @@ Future<Uint8List> generateInspectionReportPdf({
           }
 
           for (final item in room.checklist) {
-            content.add(
-              _featureBlock(
+            content.addAll(
+              _featureWidgets(
                 item: item,
                 loadedImages: loadedImages,
               ),
